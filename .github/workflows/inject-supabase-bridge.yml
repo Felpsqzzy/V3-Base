@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Inject bridge and force technician SCM
+      - name: Inject bridge and technician SCM/SCI sidebar
         shell: python
         run: |
           from pathlib import Path
@@ -27,62 +27,71 @@ jobs:
           if tag not in text:
               text = text.replace('</body>', tag + '\n</body>', 1)
 
-          marker = '/* BIOTROP TECH SCM FORCE */'
+          marker = '/* BIOTROP TECH SCI SCM SIDEBAR V2 */'
           if marker not in text:
               patch = r'''<script>
-/* BIOTROP TECH SCM FORCE */
+/* BIOTROP TECH SCI SCM SIDEBAR V2 */
 (function () {
   'use strict';
-  function tecnico() {
+  function isTechnician() {
     try {
       var u = window.STATE && window.STATE.currentUser;
-      if (!u) return false;
-      var perfil = String(u.perfilId || '').trim().toLowerCase();
-      var papel = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').trim().toLowerCase();
-      return perfil === 'tecnico' || papel === 'tecnico' || papel === 'técnico';
+      if (u) {
+        var p = String(u.perfilId || u.perfil || '').toLowerCase();
+        var n = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').toLowerCase();
+        if (p.indexOf('tecnico') >= 0 || p.indexOf('técnico') >= 0 || n.indexOf('tecnico') >= 0 || n.indexOf('técnico') >= 0) return true;
+      }
+      var role = document.querySelector('.bt-rolepill__role, .user-role, .role, [class*="role"]');
+      var rt = String(role && role.textContent || '').toLowerCase();
+      if (rt.indexOf('tecnico') >= 0 || rt.indexOf('técnico') >= 0) return true;
+      var body = String(document.body && document.body.innerText || '').toLowerCase();
+      return /técnico\s*-|tecnico\s*-/.test(body);
     } catch (e) { return false; }
   }
-  function abrir() {
+  function go(id) {
     try {
-      if (typeof window.navigateTo === 'function') return window.navigateTo('almox_scm_form');
-      var alvo = document.querySelector('[data-nav="almox_scm_form"]');
-      if (alvo) alvo.click();
+      if (typeof window.navigateTo === 'function') { window.navigateTo(id); return; }
+      var el = document.querySelector('[data-nav="' + id + '"]');
+      if (el) el.click();
     } catch (e) {}
   }
-  function garantir() {
-    if (!tecnico()) return;
-    var nav = document.getElementById('bt-nav') || document.querySelector('.bt-nav');
-    if (!nav || nav.querySelector('[data-bt-tech-scm-force]')) return;
-    var referencia = nav.querySelector('[data-nav="almoxarifado"]') || nav.querySelector('[data-label="Nova solicitação"]');
+  function make(id, icon, label) {
     var b = document.createElement('button');
     b.type = 'button';
-    b.className = 'bt-nav__item';
-    b.setAttribute('data-nav', 'almox_scm_form');
-    b.setAttribute('data-label', 'Nova SCM');
-    b.setAttribute('data-bt-tech-scm-force', '1');
-    b.innerHTML = '<span class="bt-nav__icon">🛒</span><span class="bt-nav__label">Nova SCM</span>';
-    b.onclick = function (ev) { ev.preventDefault(); ev.stopPropagation(); abrir(); };
-    if (referencia && referencia.parentNode) referencia.parentNode.insertBefore(b, referencia.nextSibling);
-    else nav.appendChild(b);
+    b.className = 'nav-item bt-nav__item';
+    b.setAttribute('data-nav', id);
+    b.setAttribute('data-bt-tech-menu', id);
+    b.innerHTML = '<span class="bt-nav__icon">' + icon + '</span><span class="bt-nav__label">' + label + '</span>';
+    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(id); };
+    return b;
   }
-  function instalar() {
-    garantir();
-    if (typeof window.btRefreshNav === 'function' && !window.btRefreshNav.__techScmForce) {
-      var original = window.btRefreshNav;
-      window.btRefreshNav = function () {
-        var r = original.apply(this, arguments);
-        setTimeout(garantir, 0);
-        return r;
-      };
-      window.btRefreshNav.__techScmForce = true;
-    }
+  function ensure() {
+    if (!isTechnician()) return;
+    var nav = document.querySelector('.sidebar-nav, .bt-nav, #sidebar-nav, #bt-nav');
+    if (!nav) return;
+    var items = [
+      ['almox_solicitacoes', '📋', 'Solicitações (SCI)'],
+      ['almox_scm_form', '🛒', 'Nova compra (SCM)'],
+      ['almox_scm_gestao', '▤', 'Gestão de SCM']
+    ];
+    var anchor = nav.querySelector('[data-nav="almox_minhas"], [data-nav="almox_solicitacoes"], [data-nav="almoxarifado"]');
+    items.forEach(function (item) {
+      if (!nav.querySelector('[data-bt-tech-menu="' + item[0] + '"]')) {
+        var b = make(item[0], item[1], item[2]);
+        if (anchor && anchor.parentNode) {
+          anchor.parentNode.insertBefore(b, anchor.nextSibling);
+          anchor = b;
+        } else nav.appendChild(b);
+      }
+    });
   }
-  var obs = new MutationObserver(instalar);
-  if (document.body) obs.observe(document.body, { childList: true, subtree: true });
-  setTimeout(instalar, 50);
-  setTimeout(instalar, 300);
-  setTimeout(instalar, 1000);
-  setTimeout(instalar, 2500);
+  function run() { ensure(); }
+  var obs = new MutationObserver(run);
+  function start() {
+    if (document.body) obs.observe(document.body, {childList:true, subtree:true});
+    [0,100,300,700,1500,3000,5000].forEach(function(ms){ setTimeout(run, ms); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 </script>
 '''
@@ -92,7 +101,7 @@ jobs:
                   text = text.replace('</body>', patch + '</body>', 1)
 
           p.write_text(text, encoding='utf-8')
-          print('SCM técnico forçado no index.html')
+          print('Menu técnico SCI/SCM aplicado')
 
       - name: Commit changes
         run: |
@@ -100,5 +109,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Forçar Nova SCM na visão do técnico [skip bridge]"
+          git commit -m "Corrigir menu lateral do técnico SCI SCM [skip bridge]"
           git push
