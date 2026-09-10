@@ -1,4 +1,4 @@
-/* BIOTROP V3-Base — ponte Supabase + menu por perfil (segura) */
+/* BIOTROP V3-Base — ponte Supabase: dados + exclusão administrativa */
 (function () {
   'use strict';
 
@@ -17,27 +17,6 @@
       const u=currentUser();
       return !!(u && typeof window.isAdminUser==='function' && window.isAdminUser(u));
     } catch (_) { return false; }
-  }
-
-  function isTechnician(){
-    const u=currentUser();
-    try {
-      if (u && !isAdmin()) {
-        const pid=String(u.perfilId||u.perfil||u.role||'').toLowerCase();
-        if (pid.includes('tecnico') || pid.includes('técnico')) return true;
-        if (typeof window.getProfile==='function') {
-          const p=window.getProfile(u);
-          const n=String((p&&p.nome)||'').toLowerCase();
-          if (n.includes('tecnico') || n.includes('técnico')) return true;
-        }
-      }
-    } catch (_) {}
-    const roleEls=document.querySelectorAll('.user-role,.bt-rolepill__role,.sidebar .user-role');
-    for (const el of roleEls) {
-      const t=String(el.textContent||'').toLowerCase();
-      if (t.includes('técnico') || t.includes('tecnico')) return true;
-    }
-    return false;
   }
 
   function loadSdk(){
@@ -177,35 +156,6 @@
     });
   }
 
-  function navButton(id,label,icon){
-    const b=document.createElement('button');
-    b.type='button'; b.className='nav-item bt-tech-added-nav';
-    b.setAttribute('data-nav',id); b.setAttribute('data-bt-tech-nav',id);
-    b.innerHTML='<span style="width:18px;display:inline-flex;justify-content:center" aria-hidden="true">'+icon+'</span><span>'+label+'</span>';
-    b.onclick=function(e){e.preventDefault();e.stopPropagation();if(typeof window.navigateTo==='function')window.navigateTo(id);};
-    return b;
-  }
-
-  function injectTechnicianMenu(){
-    if(!isTechnician()) return;
-    const nav=document.querySelector('.sidebar-nav')||document.querySelector('.bt-nav')||document.getElementById('sidebar-nav');
-    if(!nav) return;
-    // IMPORTANT: do not remove/reinsert on every DOM mutation. That caused an infinite MutationObserver loop.
-    const wanted=[
-      ['almox_solicitacoes','Solicitações (SCI)','▤'],
-      ['almox_scm_form','Nova compra (SCM)','🛒'],
-      ['almox_scm_gestao','Gestão de SCM','▤']
-    ];
-    let anchor=Array.from(nav.querySelectorAll('button')).find(x=>/minhas solicitações/i.test(x.textContent||''));
-    if(!anchor) anchor=Array.from(nav.querySelectorAll('button')).find(x=>/nova solicitação/i.test(x.textContent||''));
-    wanted.forEach(function(item){
-      if(nav.querySelector('[data-bt-tech-nav="'+item[0]+'"]')) return;
-      const b=navButton(item[0],item[1],item[2]);
-      if(anchor && anchor.parentElement){ anchor.insertAdjacentElement('afterend',b); anchor=b; }
-      else nav.appendChild(b);
-    });
-  }
-
   function wrapSaveFunctions(){
     if(typeof window.saveSci==='function'&&!window.saveSci.__btWrapped){
       const old=window.saveSci; window.saveSci=function(list){const r=old(list);if(!BRIDGE.syncing)pushSci(list);return r;}; window.saveSci.__btWrapped=true;
@@ -218,28 +168,17 @@
   async function start(){
     if(BRIDGE.started) return; BRIDGE.started=true;
     try{
-      const observer=new MutationObserver(function(){
-        // Run at most once per event loop turn; if the menu already exists nothing is changed.
-        if(!BRIDGE._scheduled){
-          BRIDGE._scheduled=true;
-          setTimeout(function(){BRIDGE._scheduled=false;wrapSaveFunctions();injectDeleteButtons();injectTechnicianMenu();},0);
-        }
-      });
-      if(document.body) observer.observe(document.body,{childList:true,subtree:true});
-      injectTechnicianMenu();
       await loadSdk();
       BRIDGE.client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
       const ses=await signInLocalUser();
-      if(!ses){ injectTechnicianMenu(); return; }
+      if(!ses) return;
       BRIDGE.ready=true;
       await pullDatabase();
-      wrapSaveFunctions(); await pushSci(window.SCI_LIST||[]); await pushScm(window.SCM_LIST||[]);
-      injectDeleteButtons(); injectTechnicianMenu();
+      wrapSaveFunctions();
+      await pushSci(window.SCI_LIST||[]); await pushScm(window.SCM_LIST||[]);
+      injectDeleteButtons();
       console.info('[BIOTROP] Supabase conectado');
-    }catch(e){
-      injectTechnicianMenu();
-      console.warn('[BIOTROP] ponte Supabase indisponível:',e);
-    }
+    }catch(e){ console.warn('[BIOTROP] ponte Supabase indisponível:',e); }
   }
 
   setTimeout(start,250);
