@@ -6096,7 +6096,10 @@ function btIsTechOnly(user) {
   const u = user || STATE.currentUser;
   if (!u) return false;
   if (isAdminUser(u)) return false;
-  return u.perfilId === "tecnico";
+  const perfil = String(u.perfilId || u.perfil || u.role || u.cargo || u.funcao || "").trim().toLowerCase();
+  const nomePerfil = String(u.perfilNome || u.nomePerfil || "").trim().toLowerCase();
+  return perfil === "tecnico" || perfil.includes("tecnico") || perfil.includes("técnico") ||
+         nomePerfil.includes("tecnico") || nomePerfil.includes("técnico");
 }
 
 /** Pendências que viram contador vermelho no menu. */
@@ -9812,13 +9815,6 @@ btRenderNav = function () {
    A barra sai. O menu é a navegação; a tela mostra uma coisa só.
    ==================================================================== */
 
-const _corPrevRenderAlmox = renderAlmoxarifado;
-renderAlmoxarifado = function (initialTab) {
-  const html = _corPrevRenderAlmox(initialTab);
-  // Remove a barra de abas mantendo o resto intacto.
-  return html.replace(/<div class="tabs-row">[\s\S]*?<\/div>\s*(?=<div id="almox-tab-content")/, "");
-};
-
 /** Título da área do almoxarifado por tela, já que a aba não diz mais. */
 const ALMOX_TITULOS = {
   form: ["Nova solicitação de cadastro", "Peça o cadastro de um item que ainda não tem código."],
@@ -10470,6 +10466,7 @@ navigateTo = function (areaId) {
 };
 
 </script>
+
 <script src="/supabase-bridge.js"></script>
 </body>
 </html>
