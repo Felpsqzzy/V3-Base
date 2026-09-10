@@ -886,6 +886,700 @@ body.v12-dark .cert-name { color: var(--primary-dark); }
   @page { size: A4 portrait; margin: 14mm; }
 }
 </style>
+<style id="biotrop-side-v4">
+/* ====================================================================
+   Menu lateral v4
+
+   O problema não era o estilo da barra de rolagem: eram 16 itens
+   abertos ao mesmo tempo numa coluna de altura fixa. Três mudanças
+   atacam a causa, e a rolagem deixa de aparecer na maioria dos perfis:
+
+   1. grupos recolhíveis — abre o do lugar onde você está, os outros
+      ficam fechados e contam as pendências no próprio cabeçalho;
+   2. busca — com 16 destinos, achar é mais rápido que percorrer;
+   3. modo compacto — a coluna vira uma faixa de ícones de 76 px.
+
+   E quando ainda sobra rolagem, ela é fina, no tom do menu e só
+   aparece com o ponteiro em cima.
+   ==================================================================== */
+
+.bt-side { grid-template-rows: auto auto auto 1fr auto; gap: 12px; }
+
+/* ---------- cabeçalho com o botão de recolher ---------- */
+
+.bt-brand { position: relative; }
+.bt-railbtn {
+  position: absolute; right: -6px; top: 50%; transform: translateY(-50%);
+  width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center;
+  border: 1px solid rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .08);
+  color: #d9f7f3; cursor: pointer; font-size: 13px; line-height: 1; padding: 0;
+  transition: background .15s ease;
+}
+.bt-railbtn:hover { background: rgba(255, 255, 255, .18); }
+
+/* ---------- busca ---------- */
+
+.bt-navsearch { position: relative; }
+.bt-navsearch input {
+  width: 100%; box-sizing: border-box; padding: 9px 30px 9px 32px;
+  border-radius: 12px; border: 1px solid rgba(255, 255, 255, .16);
+  background: rgba(255, 255, 255, .07); color: #eafaf7; font-size: 12.5px;
+  font-family: inherit; outline: none;
+}
+.bt-navsearch input::placeholder { color: rgba(234, 250, 247, .5); }
+.bt-navsearch input:focus { border-color: rgba(255, 255, 255, .4); background: rgba(255, 255, 255, .12); }
+.bt-navsearch__ic {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  opacity: .55; font-size: 12px; pointer-events: none;
+}
+.bt-navsearch__clear {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  border: 0; background: none; color: rgba(234, 250, 247, .6); cursor: pointer;
+  font-size: 15px; line-height: 1; padding: 2px 4px;
+}
+
+/* ---------- grupos recolhíveis ---------- */
+
+.bt-nav { display: grid; gap: 2px; align-content: start; overflow-y: auto; padding-right: 3px; }
+
+.bt-nav__grouphead {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 11px; margin-top: 6px; border: 0; background: transparent;
+  color: rgba(255, 255, 255, .58); font-family: inherit; cursor: pointer;
+  font-size: 10.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  border-radius: 10px; transition: background .14s ease, color .14s ease;
+}
+.bt-nav__grouphead:first-child { margin-top: 0; }
+.bt-nav__grouphead:hover { background: rgba(255, 255, 255, .06); color: rgba(255, 255, 255, .85); }
+.bt-nav__grouphead .lbl { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bt-nav__chev {
+  font-size: 9px; opacity: .6; transition: transform .18s ease; display: inline-block;
+}
+.bt-nav__grouphead[aria-expanded="true"] .bt-nav__chev { transform: rotate(90deg); }
+.bt-nav__groupcount {
+  background: var(--danger); color: #fff; font-size: 9.5px; padding: 1px 6px;
+  border-radius: 999px; font-weight: 800; letter-spacing: 0;
+}
+.bt-nav__groupdot {
+  width: 5px; height: 5px; border-radius: 999px; background: rgba(255, 255, 255, .32);
+}
+
+.bt-nav__items { display: grid; gap: 2px; overflow: hidden; }
+.bt-nav__items[hidden] { display: none; }
+
+.bt-nav button.bt-nav__item {
+  position: relative; padding: 10px 12px 10px 15px; border-radius: 12px;
+}
+.bt-nav button.bt-nav__item.is-current::before {
+  content: ""; position: absolute; left: 5px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 17px; border-radius: 999px; background: #5fd6cf;
+}
+
+/* ---------- barra de rolagem discreta ---------- */
+
+.bt-nav { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .16) transparent; }
+.bt-nav::-webkit-scrollbar { width: 6px; }
+.bt-nav::-webkit-scrollbar-track { background: transparent; }
+.bt-nav::-webkit-scrollbar-thumb { background: transparent; border-radius: 999px; }
+.bt-nav:hover::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, .18); }
+.bt-nav::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .3); }
+
+/* Vale para o resto da aplicação também. */
+* { scrollbar-width: thin; }
+.bt-page ::-webkit-scrollbar, .bt-tablewrap::-webkit-scrollbar,
+.training-dialog::-webkit-scrollbar, .modal::-webkit-scrollbar { width: 8px; height: 8px; }
+.bt-page ::-webkit-scrollbar-track, .bt-tablewrap::-webkit-scrollbar-track { background: transparent; }
+.bt-page ::-webkit-scrollbar-thumb, .bt-tablewrap::-webkit-scrollbar-thumb,
+.training-dialog::-webkit-scrollbar-thumb, .modal::-webkit-scrollbar-thumb {
+  background: var(--border); border-radius: 999px;
+}
+.bt-page ::-webkit-scrollbar-thumb:hover, .bt-tablewrap::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* ---------- modo compacto (faixa de ícones) ---------- */
+
+body.bt-rail .bt-shell { grid-template-columns: 76px 1fr; }
+body.bt-rail .bt-side { padding: 18px 10px; gap: 10px; }
+body.bt-rail .bt-brand__name,
+body.bt-rail .bt-brand__sub,
+body.bt-rail .bt-rolepill,
+body.bt-rail .bt-navsearch,
+body.bt-rail .bt-nav__label,
+body.bt-rail .bt-nav__grouphead .lbl,
+body.bt-rail .bt-nav__chev,
+body.bt-rail .bt-sidefoot__mail,
+body.bt-rail .bt-sidefoot button span { display: none !important; }
+body.bt-rail .bt-brand { justify-content: center; }
+body.bt-rail .bt-brand__mark { width: 44px; height: 44px; border-radius: 14px; }
+body.bt-rail .bt-railbtn { right: -14px; }
+body.bt-rail .bt-nav__grouphead {
+  justify-content: center; padding: 6px 0; margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, .10); border-radius: 0;
+}
+body.bt-rail .bt-nav__grouphead:first-child { border-top: 0; margin-top: 0; }
+body.bt-rail .bt-nav__grouphead:hover { background: transparent; }
+body.bt-rail .bt-nav__items { display: grid !important; }
+body.bt-rail .bt-nav button.bt-nav__item { justify-content: center; padding: 11px 0; }
+body.bt-rail .bt-nav button.bt-nav__item.is-current::before { left: 2px; }
+body.bt-rail .bt-nav__badge {
+  position: absolute; top: 4px; right: 10px; padding: 0 4px; font-size: 9px; min-width: 14px; text-align: center;
+}
+body.bt-rail .bt-sidefoot { padding: 10px; }
+body.bt-rail .bt-sidefoot button { padding: 9px 0; }
+
+/* Rótulo flutuante no modo compacto, no lugar do texto escondido. */
+body.bt-rail .bt-nav__item { position: relative; }
+body.bt-rail .bt-nav__item::after {
+  content: attr(data-label); position: absolute; left: calc(100% + 10px); top: 50%;
+  transform: translateY(-50%) scale(.96); transform-origin: left center;
+  background: var(--text); color: var(--surface); padding: 6px 10px; border-radius: 9px;
+  font-size: 12px; font-weight: 700; white-space: nowrap; letter-spacing: 0;
+  text-transform: none; opacity: 0; pointer-events: none; z-index: 60;
+  transition: opacity .14s ease, transform .14s ease;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .22);
+}
+body.bt-rail .bt-nav__item:hover::after { opacity: 1; transform: translateY(-50%) scale(1); }
+
+/* ---------- resultado da busca ---------- */
+
+.bt-nav__empty {
+  padding: 16px 12px; font-size: 12px; color: rgba(255, 255, 255, .55); text-align: center;
+}
+.bt-nav__hit b { color: #fff; }
+
+@media (max-width: 1050px) {
+  body.bt-rail .bt-shell { grid-template-columns: 1fr; }
+  body.bt-rail .bt-side { width: 282px; padding: 22px 16px; }
+  body.bt-rail .bt-brand__name, body.bt-rail .bt-brand__sub, body.bt-rail .bt-rolepill,
+  body.bt-rail .bt-navsearch, body.bt-rail .bt-nav__label,
+  body.bt-rail .bt-nav__grouphead .lbl, body.bt-rail .bt-nav__chev,
+  body.bt-rail .bt-sidefoot__mail, body.bt-rail .bt-sidefoot button span { display: initial !important; }
+  body.bt-rail .bt-nav__grouphead .lbl { display: block !important; }
+  .bt-railbtn { display: none; }
+}
+</style>
+<style id="biotrop-ui-apple">
+/* ====================================================================
+   Camada visual v5 — linguagem do macOS/iOS sobre a identidade Biotrop
+
+   O que caracteriza esse visual, e o que aplico aqui:
+
+   1. Vidro fosco de verdade: fundo translúcido + backdrop-filter com
+      blur E saturate. Sem o saturate o vidro fica cinza; é ele que dá a
+      cor "vazando" por baixo.
+   2. Curvas contínuas e generosas: raio grande (18-26px) e borda de
+      espessura de fio (rgba, não cinza chapado).
+   3. Sombra em camadas: uma curta e escura para assentar o objeto, uma
+      longa e suave para a profundidade. Uma sombra só sempre parece
+      adesivo.
+   4. Movimento com física: a curva padrão da Apple é
+      cubic-bezier(.32,.72,0,1) — sai rápido e assenta devagar. Para o
+      que "aparece", um leve overshoot.
+   5. Resposta ao toque: tudo que é clicável encolhe um pouco no :active.
+      É o que faz a interface parecer material, e não desenho.
+
+   Tudo respeita prefers-reduced-motion no fim do arquivo.
+   ==================================================================== */
+
+:root {
+  /* Curvas de animação */
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --dur-1: .18s;
+  --dur-2: .32s;
+  --dur-3: .48s;
+
+  /* Vidro (claro) */
+  --glass-bg: rgba(255, 255, 255, .72);
+  --glass-bg-strong: rgba(255, 255, 255, .86);
+  --glass-line: rgba(255, 255, 255, .7);
+  --hairline: rgba(16, 36, 39, .10);
+  --blur: saturate(180%) blur(22px);
+
+  /* Sombra em camadas */
+  --lift-1: 0 1px 2px rgba(10, 38, 40, .07), 0 8px 24px -6px rgba(10, 38, 40, .10);
+  --lift-2: 0 2px 4px rgba(10, 38, 40, .08), 0 18px 44px -10px rgba(10, 38, 40, .16);
+  --lift-3: 0 4px 8px rgba(10, 38, 40, .10), 0 40px 80px -16px rgba(10, 38, 40, .28);
+
+  --radius: 22px;
+  --radius-sm: 14px;
+  --radius-xs: 11px;
+}
+
+body.v12-dark {
+  --glass-bg: rgba(18, 34, 36, .68);
+  --glass-bg-strong: rgba(18, 34, 36, .88);
+  --glass-line: rgba(255, 255, 255, .10);
+  --hairline: rgba(255, 255, 255, .12);
+  --lift-1: 0 1px 2px rgba(0, 0, 0, .32), 0 8px 24px -6px rgba(0, 0, 0, .42);
+  --lift-2: 0 2px 6px rgba(0, 0, 0, .38), 0 20px 48px -10px rgba(0, 0, 0, .55);
+  --lift-3: 0 6px 12px rgba(0, 0, 0, .42), 0 44px 88px -16px rgba(0, 0, 0, .68);
+}
+
+/* ---------- tipografia ---------- */
+
+body, .bt-btn, input, select, textarea, button {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text",
+    "Segoe UI", Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, .bt-kpi__value, .apt-title, .bt-hello, .cert-name {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI Variable Display",
+    "Segoe UI", Inter, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -.022em;
+}
+.bt-kpi__value, .apt-title, .bt-hello { letter-spacing: -.035em; }
+.bt-nav__group, .bt-steplabel, .bt-kpi__label, .bt-table th, .cert-brand {
+  letter-spacing: .06em;
+}
+
+/* ---------- fundo da aplicação ---------- */
+
+body {
+  background:
+    radial-gradient(1100px 640px at 8% -12%, rgba(13, 95, 100, .16), transparent 62%),
+    radial-gradient(900px 520px at 102% 4%, rgba(84, 214, 207, .13), transparent 58%),
+    var(--bg) !important;
+  background-attachment: fixed;
+}
+body.v12-dark {
+  background:
+    radial-gradient(1100px 640px at 8% -12%, rgba(52, 176, 177, .16), transparent 62%),
+    radial-gradient(900px 520px at 102% 4%, rgba(13, 95, 100, .22), transparent 58%),
+    var(--bg) !important;
+}
+
+/* ---------- barra lateral: vidro escuro ---------- */
+
+.bt-side {
+  background:
+    linear-gradient(180deg, rgba(7, 60, 63, .92) 0%, rgba(4, 38, 41, .94) 55%, rgba(3, 30, 33, .96) 100%) !important;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border-right: 1px solid rgba(255, 255, 255, .07);
+  box-shadow: 1px 0 0 rgba(255, 255, 255, .05), 12px 0 40px -12px rgba(2, 22, 24, .5);
+}
+body.v12-dark .bt-side {
+  background: linear-gradient(180deg, rgba(6, 26, 28, .92), rgba(4, 18, 20, .96)) !important;
+}
+
+.bt-brand__mark {
+  background: linear-gradient(145deg, rgba(255, 255, 255, .20), rgba(255, 255, 255, .06)) !important;
+  border: 1px solid rgba(255, 255, 255, .22) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .28), 0 6px 16px -4px rgba(0, 0, 0, .4);
+  transition: transform var(--dur-2) var(--ease-spring);
+}
+.bt-brand:hover .bt-brand__mark { transform: scale(1.04) rotate(-2deg); }
+
+.bt-rolepill, .bt-sidefoot {
+  background: rgba(255, 255, 255, .09) !important;
+  border: 1px solid rgba(255, 255, 255, .13) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+  backdrop-filter: blur(8px);
+}
+
+.bt-navsearch input {
+  background: rgba(255, 255, 255, .09) !important;
+  border: 1px solid rgba(255, 255, 255, .13) !important;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease);
+}
+.bt-navsearch input:focus {
+  background: rgba(255, 255, 255, .16) !important;
+  border-color: rgba(255, 255, 255, .34) !important;
+  box-shadow: 0 0 0 4px rgba(95, 214, 207, .16);
+}
+
+/* ---------- itens do menu ---------- */
+
+.bt-nav button.bt-nav__item {
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease),
+    transform var(--dur-1) var(--ease);
+}
+.bt-nav button.bt-nav__item:hover {
+  background: rgba(255, 255, 255, .10) !important;
+  transform: translateX(2px);
+}
+.bt-nav button.bt-nav__item:active { transform: translateX(2px) scale(.98); }
+.bt-nav button.bt-nav__item.is-current {
+  background: linear-gradient(90deg, rgba(95, 214, 207, .22), rgba(255, 255, 255, .07)) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+.bt-nav button.bt-nav__item.is-current::before {
+  background: linear-gradient(180deg, #7ff0e6, #3fb9b2);
+  box-shadow: 0 0 10px rgba(95, 214, 207, .7);
+}
+.bt-nav__items { animation: btNavOpen var(--dur-2) var(--ease) both; }
+@keyframes btNavOpen {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Item de submenu (Apontamentos, Gestão de medidores) recuado. */
+.bt-nav button.bt-nav__item[data-sub="1"] { padding-left: 34px; font-size: 13px; opacity: .92; }
+.bt-nav button.bt-nav__item[data-sub="1"]::after {
+  content: ""; position: absolute; left: 21px; top: 50%; width: 6px; height: 1px;
+  background: rgba(255, 255, 255, .28); transform: translateY(-50%);
+}
+body.bt-rail .bt-nav button.bt-nav__item[data-sub="1"] { padding-left: 0; }
+body.bt-rail .bt-nav button.bt-nav__item[data-sub="1"]::after { display: none; }
+
+/* ---------- topbar de vidro ---------- */
+
+.bt-topbar {
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--blur) !important;
+  -webkit-backdrop-filter: var(--blur) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+}
+
+/* ---------- superfícies ---------- */
+
+.bt-card, .table-card, .sci-card, .scm-item-card, .bt-kpi, .apt-choice, .apt-meter,
+.apt-last, .bt-bigaction, .cert-sheet {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--hairline) !important;
+  box-shadow: var(--lift-1) !important;
+  border-radius: var(--radius) !important;
+}
+.bt-kpi, .apt-meter { border-radius: var(--radius-sm) !important; }
+
+.bt-card__head { border-bottom: 1px solid var(--hairline); }
+.bt-card:hover { box-shadow: var(--lift-2) !important; }
+.bt-card { transition: box-shadow var(--dur-2) var(--ease), transform var(--dur-2) var(--ease); }
+
+/* Reflexo de topo, o brilho que o vidro da Apple tem. */
+.bt-card, .bt-kpi, .apt-choice, .bt-bigaction { position: relative; overflow: hidden; }
+.bt-card::before, .bt-kpi::before, .apt-choice::before, .bt-bigaction::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-line), transparent);
+  pointer-events: none;
+}
+
+/* ---------- entrada do conteúdo ---------- */
+
+#main-content { animation: btEnter var(--dur-3) var(--ease) both; }
+@keyframes btEnter {
+  from { opacity: 0; transform: translateY(10px) scale(.994); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Escada nos indicadores: cada um entra 40 ms depois do anterior. */
+.bt-grid--kpi > * { animation: btRise var(--dur-3) var(--ease) both; }
+.bt-grid--kpi > *:nth-child(1) { animation-delay: .02s; }
+.bt-grid--kpi > *:nth-child(2) { animation-delay: .06s; }
+.bt-grid--kpi > *:nth-child(3) { animation-delay: .10s; }
+.bt-grid--kpi > *:nth-child(4) { animation-delay: .14s; }
+.bt-grid--kpi > *:nth-child(n+5) { animation-delay: .18s; }
+@keyframes btRise {
+  from { opacity: 0; transform: translateY(12px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.bt-item { transition: background var(--dur-1) var(--ease); }
+.bt-table tbody tr { transition: background var(--dur-1) var(--ease); }
+
+/* ---------- botões ---------- */
+
+.bt-btn, .primary-btn, .ghost-btn, .danger-btn, .submit-btn, .icon-btn, .tab-btn, .bt-chip {
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+    box-shadow var(--dur-1) var(--ease), transform var(--dur-1) var(--ease),
+    color var(--dur-1) var(--ease);
+}
+.bt-btn:active, .primary-btn:active, .ghost-btn:active, .danger-btn:active,
+.submit-btn:active, .icon-btn:active, .bt-chip:active, .apt-choice:active,
+.apt-meter:active, .bt-bigaction:active { transform: scale(.97); }
+
+.bt-btn--primary, .primary-btn, .submit-btn {
+  background: linear-gradient(180deg, #12747a, #0b565a) !important;
+  border: 1px solid rgba(0, 0, 0, .12) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 6px 18px -6px rgba(11, 86, 90, .6) !important;
+}
+.bt-btn--primary:hover, .primary-btn:hover, .submit-btn:hover {
+  background: linear-gradient(180deg, #14848b, #0c6165) !important;
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .26), 0 10px 26px -8px rgba(11, 86, 90, .7) !important;
+}
+.bt-btn:not(.bt-btn--primary):not(.bt-btn--danger), .ghost-btn {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--hairline) !important;
+}
+.bt-btn--danger, .danger-btn {
+  background: linear-gradient(180deg, #d1585e, #b53c43) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 6px 18px -6px rgba(181, 60, 67, .5) !important;
+}
+
+/* ---------- campos ---------- */
+
+.bt-field input, .bt-field select, .bt-field textarea, .modal-input, .input-wrap {
+  background: var(--glass-bg) !important;
+  border: 1px solid var(--hairline) !important;
+  border-radius: var(--radius-xs) !important;
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease),
+    background var(--dur-1) var(--ease);
+}
+.bt-field input:focus, .bt-field select:focus, .bt-field textarea:focus,
+.modal-input:focus, .input-wrap:focus-within {
+  border-color: rgba(13, 95, 100, .55) !important;
+  box-shadow: 0 0 0 4px rgba(13, 95, 100, .12) !important;
+  background: var(--glass-bg-strong) !important;
+}
+
+/* ---------- modais ---------- */
+
+.modal-backdrop, .training-modal {
+  background: rgba(8, 28, 30, .34) !important;
+  backdrop-filter: saturate(140%) blur(14px) !important;
+  -webkit-backdrop-filter: saturate(140%) blur(14px) !important;
+  animation: btFade var(--dur-2) var(--ease) both;
+}
+@keyframes btFade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal, .training-dialog {
+  background: var(--glass-bg-strong) !important;
+  backdrop-filter: var(--blur) !important;
+  -webkit-backdrop-filter: var(--blur) !important;
+  border: 1px solid var(--glass-line) !important;
+  border-radius: 26px !important;
+  box-shadow: var(--lift-3) !important;
+  animation: btPop var(--dur-3) var(--ease-spring) both;
+}
+@keyframes btPop {
+  from { opacity: 0; transform: scale(.94) translateY(12px); }
+  to { opacity: 1; transform: none; }
+}
+.modal-header { border-bottom: 1px solid var(--hairline); padding-bottom: 14px; }
+
+/* ---------- avisos e etiquetas ---------- */
+
+.bt-notice {
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(10px);
+  animation: btRise var(--dur-2) var(--ease) both;
+}
+.bt-badge {
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  transition: transform var(--dur-1) var(--ease);
+}
+.bt-badge--danger { animation: btPulse 2.4s ease-in-out infinite; }
+@keyframes btPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(196, 69, 76, 0); }
+  50% { box-shadow: 0 0 0 4px rgba(196, 69, 76, .14); }
+}
+.bt-nav__badge, .bt-nav__groupcount { animation: btPulse 2.4s ease-in-out infinite; }
+
+/* ---------- abas ---------- */
+
+.tabs-row { border-bottom: 1px solid var(--hairline) !important; }
+.tab-btn { border-radius: var(--radius-xs) var(--radius-xs) 0 0; position: relative; }
+.tab-btn.active::after {
+  content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px;
+  border-radius: 2px; background: var(--primary);
+  animation: btGrow var(--dur-2) var(--ease) both;
+}
+@keyframes btGrow { from { transform: scaleX(0); } to { transform: none; } }
+
+/* ---------- ícones ---------- */
+
+/* Caixa fixa: é o alinhamento que faz um conjunto de ícones parecer
+   organizado, mais até que o desenho de cada um. */
+.bt-nav__icon, .bt-tabbar__ic {
+  width: 20px; height: 20px; display: grid; place-items: center; flex: 0 0 auto;
+}
+.bt-nav__icon svg, .bt-tabbar__ic svg { width: 18px; height: 18px; display: block; }
+.bt-nav__item .bt-nav__icon svg { opacity: .82; transition: opacity var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
+.bt-nav__item:hover .bt-nav__icon svg { opacity: 1; transform: scale(1.06); }
+.bt-nav__item.is-current .bt-nav__icon svg { opacity: 1; }
+
+.page-icon {
+  background: linear-gradient(145deg, rgba(13, 95, 100, .16), rgba(13, 95, 100, .06)) !important;
+  border: 1px solid rgba(13, 95, 100, .16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
+  border-radius: 16px !important;
+  display: grid; place-items: center;
+  width: 46px; height: 46px;
+}
+.bt-bigaction__ic {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center;
+  background: linear-gradient(145deg, rgba(13, 95, 100, .14), rgba(13, 95, 100, .05));
+  border: 1px solid rgba(13, 95, 100, .14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
+  transition: transform var(--dur-2) var(--ease-spring);
+}
+.bt-bigaction:hover .bt-bigaction__ic { transform: scale(1.08) translateY(-2px); }
+.bt-bigaction { transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-1) var(--ease); }
+.bt-bigaction:hover { transform: translateY(-4px); box-shadow: var(--lift-2) !important; }
+
+.apt-choice__ic {
+  width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+  background: linear-gradient(145deg, rgba(13, 95, 100, .13), rgba(13, 95, 100, .05));
+  border: 1px solid rgba(13, 95, 100, .13);
+  font-size: 22px; margin-bottom: 8px;
+}
+.apt-choice { transition: transform var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease), border-color var(--dur-1) var(--ease); }
+.apt-choice:hover { transform: translateY(-4px); box-shadow: var(--lift-2) !important; }
+
+/* ---------- barra inferior do celular ---------- */
+
+@media (max-width: 1050px) {
+  .bt-tabbar {
+    background: var(--glass-bg-strong) !important;
+    backdrop-filter: var(--blur) !important;
+    -webkit-backdrop-filter: var(--blur) !important;
+    border-top: 1px solid var(--hairline) !important;
+  }
+  .bt-tabbar button { transition: color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease); }
+  .bt-tabbar button:active { transform: scale(.92); }
+  .bt-side { box-shadow: var(--lift-3); }
+  .bt-scrim { backdrop-filter: blur(6px); animation: btFade var(--dur-2) var(--ease) both; }
+}
+
+/* ---------- barra de progresso ---------- */
+
+.bt-progress { background: var(--hairline); }
+.bt-progress__fill, .bt-bar__fill {
+  background: linear-gradient(90deg, #0d5f64, #3fb9b2) !important;
+  box-shadow: 0 0 12px -2px rgba(63, 185, 178, .5);
+  transition: width var(--dur-3) var(--ease);
+}
+
+/* ---------- respeito a quem pediu menos movimento ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+</style>
+<style id="biotrop-ui-correcoes">
+/* ====================================================================
+   Correções do visual v5
+
+   1. VIDRO SOBRE VIDRO. O fundo do modal tinha backdrop-filter e o
+      modal dentro dele também. backdrop-filter cria um contexto novo:
+      aninhado, o filho borra o que o pai já borrou e o resultado é uma
+      névoa cinza sem contorno — foi o que apareceu na tela. O modal
+      passa a ter fundo quase opaco e NENHUM backdrop-filter; só o fundo
+      atrás dele desfoca, e menos.
+
+   2. PISCA-PISCA. Os contadores tinham animação infinita. Repetir para
+      sempre não chama atenção, vira defeito visual.
+
+   3. ENTRADA EXAGERADA. Escada nos indicadores e deslocamento no
+      conteúdo faziam a tela parecer que estava carregando errado.
+      Sobrou um fade curto.
+   ==================================================================== */
+
+/* ---------- 1. modal: fundo sólido, sem vidro aninhado ---------- */
+
+.modal-backdrop, .training-modal {
+  background: rgba(6, 24, 26, .52) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  animation: none !important;
+  /* Alinha no topo: modal alto centralizado nasce com o meio na tela e
+     parece cortado. */
+  align-items: flex-start !important;
+  padding: 32px 20px !important;
+  overflow-y: auto !important;
+}
+
+.modal, .training-dialog {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(16, 36, 39, .10) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 12px rgba(6, 24, 26, .16), 0 32px 72px -16px rgba(6, 24, 26, .40) !important;
+  animation: btPopSuave .22s var(--ease) both !important;
+  max-height: none !important;
+  margin: 0 auto;
+}
+body.v12-dark .modal, body.v12-dark .training-dialog {
+  background: #14262a !important;
+  border-color: rgba(255, 255, 255, .12) !important;
+}
+@keyframes btPopSuave {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Detalhe de solicitação tem muitos campos: 460px comprimia tudo. */
+.modal { max-width: 620px !important; }
+.modal.small { max-width: 400px !important; }
+
+.modal-header {
+  position: sticky; top: 0; z-index: 2;
+  background: inherit;
+  margin: -24px -24px 14px;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--hairline);
+  border-radius: 20px 20px 0 0;
+}
+
+/* ---------- 2. sem animação infinita ---------- */
+
+.bt-badge--danger, .bt-nav__badge, .bt-nav__groupcount {
+  animation: none !important;
+}
+.bt-nav__badge, .bt-nav__groupcount {
+  box-shadow: 0 0 0 3px rgba(196, 69, 76, .12);
+}
+
+/* ---------- 3. entrada discreta ---------- */
+
+#main-content {
+  animation: btFadeCurto .2s ease-out both !important;
+}
+@keyframes btFadeCurto { from { opacity: 0; } to { opacity: 1; } }
+
+.bt-grid--kpi > * { animation: none !important; }
+.bt-notice { animation: none !important; }
+.bt-nav__items { animation: none !important; }
+
+/* Hover e clique continuam: é o que dá resposta ao toque. Só o que
+   acontece sozinho na tela saiu. */
+
+/* ---------- 4. reflexo do vidro só onde ajuda ---------- */
+
+/* O reflexo de topo em toda superfície virou risco claro atravessando
+   cartão pequeno. Fica só nos cartões grandes. */
+.bt-kpi::before, .apt-choice::before, .bt-bigaction::before { display: none; }
+
+/* overflow:hidden no cartão cortava menu de select e dica flutuante. */
+.bt-card { overflow: visible !important; }
+.bt-card__body--flush > .bt-tablewrap { border-radius: 0 0 var(--radius) var(--radius); overflow: auto; }
+
+/* ---------- 5. legibilidade sobre vidro ---------- */
+
+.bt-card, .table-card {
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.bt-kpi, .apt-choice, .apt-meter, .bt-bigaction, .apt-last {
+  background: var(--surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* O vidro fica onde ele tem função: barras que ficam sobre o conteúdo
+   enquanto ele rola. */
+.bt-topbar, .bt-tabbar, .bt-side { backdrop-filter: var(--blur) !important; }
+
+/* ---------- 6. título da página sem borrão ---------- */
+
+.page-title-row h1, .apt-title, .bt-hello {
+  text-shadow: none !important;
+  filter: none !important;
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -5425,7 +6119,7 @@ function btCounts() {
       return String(s.solicitanteEmailLider || "").trim().toLowerCase() === meuEmail &&
         s.status === "pendente_aprovacao_lider";
     }).length;
-    out.sci = loadSci().filter(function (s) { return s.status === "pendente"; }).length;
+    out.sci = loadSci().filter(function (s) { return ["aberto","pendente_aprovacao","aguardando_cadastro"].indexOf(s.status) >= 0; }).length;
     out.scmQueue = loadScm().filter(function (s) { return s.status === "aprovada" || s.status === "em_tratativa"; }).length;
   } catch (err) { /* contador é enfeite, não pode derrubar a casca */ }
   return out;
@@ -6246,10 +6940,13 @@ function dashSciByStatus() {
 }
 
 const SCI_STATUS_COLORS = [
-  { id: "pendente", label: "Pendente", color: "var(--warning)" },
-  { id: "aprovado", label: "Aprovada", color: "var(--info)" },
-  { id: "cadastrado", label: "Cadastrada", color: "var(--success)" },
-  { id: "recusado", label: "Recusada", color: "var(--danger)" }
+  { id: "aberto", label: "Aberto", color: "var(--muted)" },
+  { id: "pendente_aprovacao", label: "Pendente de Aprovação", color: "var(--warning)" },
+  { id: "revisao_solicitante", label: "Aguardando Revisão do Solicitante", color: "var(--warning)" },
+  { id: "aguardando_cadastro", label: "Aguardando Cadastro de Item", color: "var(--info)" },
+  { id: "em_compra", label: "Em Compra", color: "var(--info)" },
+  { id: "cadastrado", label: "Cadastrado", color: "var(--success)" },
+  { id: "rejeitada", label: "Rejeitada", color: "var(--danger)" }
 ];
 
 function dashScmByStatus(list) {
@@ -6297,7 +6994,7 @@ function dashHeader(kicker, titulo, sub) {
 function renderDashPcm() {
   const u = dashUtilities(30);
   const sci = loadSci();
-  const sciPend = sci.filter(function (s) { return s.status === "pendente"; });
+  const sciPend = sci.filter(function (s) { return ["aberto","pendente_aprovacao","aguardando_cadastro"].indexOf(s.status) >= 0; });
   const meuEmail = String((STATE.currentUser || {}).usuario || "").trim().toLowerCase();
   const scmAprovar = loadScm().filter(function (s) {
     return s.status === "pendente_aprovacao_lider" &&
@@ -6390,7 +7087,7 @@ function renderDashPcm() {
 function renderDashAlmoxarife() {
   const sci = loadSci();
   const scm = loadScm();
-  const sciPend = sci.filter(function (s) { return s.status === "pendente"; });
+  const sciPend = sci.filter(function (s) { return ["aberto","pendente_aprovacao","aguardando_cadastro"].indexOf(s.status) >= 0; });
   const fila = scm.filter(function (s) { return s.status === "aprovada" || s.status === "em_tratativa"; });
   const mes = dashSince(30);
   const concluidas = scm.filter(function (s) {
@@ -6580,8 +7277,8 @@ function renderDashAdmin() {
   return dashHeader("Painel da administração", "", "Panorama de acessos, solicitações, utilidades e treinamento.") + `
   <div class="bt-grid--kpi" style="margin-bottom:18px">
     ${dashKpi("Usuários ativos", ativos.length, { hint: users.length - ativos.length + " bloqueado(s)", nav: "admin" })}
-    ${dashKpi("SCI pendentes", sci.filter(function (s) { return s.status === "pendente"; }).length, {
-      cls: sci.filter(function (s) { return s.status === "pendente"; }).length ? "bt-kpi--warn" : "bt-kpi--ok",
+    ${dashKpi("SCI pendentes", sci.filter(function (s) { return ["aberto","pendente_aprovacao","aguardando_cadastro"].indexOf(s.status) >= 0; }).length, {
+      cls: sci.filter(function (s) { return ["aberto","pendente_aprovacao","aguardando_cadastro"].indexOf(s.status) >= 0; }).length ? "bt-kpi--warn" : "bt-kpi--ok",
       hint: "aguardando cadastro", nav: "almox_solicitacoes"
     })}
     ${dashKpi("SCM na aprovação", aprovarScm.length, {
@@ -6730,6 +7427,3047 @@ navigateTo = function (areaId) {
 
 // Roda antes do primeiro render, junto do restante da inicialização.
 dashMigrateProfiles();
+
+
+/* ====================================================================
+   Menu lateral v4 — grupos recolhíveis, busca e modo compacto
+
+   Substitui btRenderNav/renderAppShell/attachShellEvents da casca v3.
+   A rolagem feia era sintoma: dezesseis itens abertos numa coluna de
+   altura fixa. Com o grupo do lugar onde você está aberto e os outros
+   fechados, o perfil mais carregado cabe sem rolar.
+   ==================================================================== */
+
+const BT_NAV_KEY = "btlocal.nav_v4";
+const BT_NAV = { rail: false, open: {}, filter: "" };
+
+(function () {
+  const saved = readStore(BT_NAV_KEY, null);
+  if (saved && typeof saved === "object") {
+    BT_NAV.rail = Boolean(saved.rail);
+    BT_NAV.open = (saved.open && typeof saved.open === "object") ? saved.open : {};
+  }
+})();
+
+function btNavSave() {
+  writeStore(BT_NAV_KEY, { rail: BT_NAV.rail, open: BT_NAV.open });
+}
+
+function btGroupOf(areaId) {
+  const grupos = btNavGroups();
+  for (let i = 0; i < grupos.length; i++) {
+    if (grupos[i].items.some(function (it) { return it.id === areaId; })) return grupos[i].label;
+  }
+  return null;
+}
+
+/**
+ * Quais grupos abrem sozinhos.
+ *
+ * Abrir só o grupo da tela atual deixava o menu com um item na tela e
+ * um monte de cabeçalho fechado — trocava rolagem por vazio. Então: o
+ * grupo atual sempre abre, e depois os de cima para baixo vão abrindo
+ * enquanto couberem no orçamento de itens. O que o usuário abrir ou
+ * fechar na mão é gravado e tem preferência sobre isso.
+ */
+const BT_NAV_BUDGET = 8;
+
+function btDefaultOpenMap(grupos, atual) {
+  const map = {};
+  let usados = 0;
+  grupos.forEach(function (g) {
+    if (g.label === atual) { map[g.label] = true; usados += g.items.length; }
+  });
+  grupos.forEach(function (g) {
+    if (map[g.label]) return;
+    if (usados + g.items.length <= BT_NAV_BUDGET) { map[g.label] = true; usados += g.items.length; }
+    else map[g.label] = false;
+  });
+  return map;
+}
+
+function btGroupIsOpen(grupo, total, atual, padroes) {
+  if (Object.prototype.hasOwnProperty.call(BT_NAV.open, grupo.label)) return BT_NAV.open[grupo.label];
+  if (total <= 2) return true;
+  const map = padroes || btDefaultOpenMap(btNavGroups(), atual);
+  return Boolean(map[grupo.label]);
+}
+
+/** Busca sem acento: "utilidade" acha "Utilidades", "apontar" acha "Apontar". */
+function btNormalize(s) {
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+}
+
+function btRenderNav() {
+  const cur = STATE.activeArea;
+  const grupos = btNavGroups();
+  const atual = btGroupOf(cur);
+  const filtro = btNormalize(BT_NAV.filter).trim();
+
+  // Buscando: lista plana com os destinos que casam, sem cabeçalho.
+  if (filtro && !BT_NAV.rail) {
+    const hits = [];
+    grupos.forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (btNormalize(it.label).indexOf(filtro) >= 0 || btNormalize(g.label).indexOf(filtro) >= 0) {
+          hits.push({ grupo: g.label, item: it });
+        }
+      });
+    });
+    if (!hits.length) {
+      return '<div class="bt-nav__empty">Nenhum item do menu com “' + esc(BT_NAV.filter) + "”.</div>";
+    }
+    return hits.map(function (h) {
+      return '<button type="button" class="bt-nav__item bt-nav__hit' + (h.item.id === cur ? " is-current" : "") +
+        '" data-nav="' + esc(h.item.id) + '" data-label="' + esc(h.item.label) + '">' +
+        '<span class="bt-nav__icon" aria-hidden="true">' + h.item.icon + "</span>" +
+        '<span class="bt-nav__label">' + esc(h.item.label) +
+        '<span style="display:block;font-size:10px;opacity:.55;font-weight:600">' + esc(h.grupo) + "</span></span>" +
+        (h.item.badge ? '<span class="bt-nav__badge">' + h.item.badge + "</span>" : "") +
+        "</button>";
+    }).join("");
+  }
+
+  const padroes = btDefaultOpenMap(grupos, atual);
+  return grupos.map(function (g, gi) {
+    const aberto = BT_NAV.rail ? true : btGroupIsOpen(g, grupos.length, atual, padroes);
+    const pend = g.items.reduce(function (s, it) { return s + (Number(it.badge) || 0); }, 0);
+    const temAtual = g.items.some(function (it) { return it.id === cur; });
+
+    const head = `<button type="button" class="bt-nav__grouphead" data-navgroup="${esc(g.label)}"
+      aria-expanded="${aberto}" title="${esc(g.label)}">
+      <span class="bt-nav__chev" aria-hidden="true">▸</span>
+      <span class="lbl">${esc(g.label)}</span>
+      ${!aberto && pend ? '<span class="bt-nav__groupcount">' + pend + "</span>" : ""}
+      ${!aberto && !pend && temAtual ? '<span class="bt-nav__groupdot"></span>' : ""}
+    </button>`;
+
+    const items = `<div class="bt-nav__items" id="btnavgrp-${gi}"${aberto ? "" : " hidden"}>` +
+      g.items.map(function (it) {
+        return '<button type="button" class="bt-nav__item' + (it.id === cur ? " is-current" : "") +
+          '" data-nav="' + esc(it.id) + '" data-label="' + esc(it.label) + '" title="' + esc(it.label) + '">' +
+          '<span class="bt-nav__icon" aria-hidden="true">' + it.icon + "</span>" +
+          '<span class="bt-nav__label">' + esc(it.label) + "</span>" +
+          (it.badge ? '<span class="bt-nav__badge">' + it.badge + "</span>" : "") +
+          "</button>";
+      }).join("") + "</div>";
+
+    return head + items;
+  }).join("");
+}
+
+/** Casca: acrescenta busca e botão de recolher ao menu da v3. */
+function renderAppShell() {
+  const user = STATE.currentUser;
+  const profile = getProfile(user);
+  document.body.classList.toggle("bt-rail", BT_NAV.rail);
+
+  return `
+  <div class="bt-shell">
+    <aside class="bt-side" id="bt-side">
+      <div class="bt-brand">
+        <div class="bt-brand__mark"><img src="${LOGO_ICON}" alt=""></div>
+        <div style="min-width:0">
+          <div class="bt-brand__name">Manutenção</div>
+          <div class="bt-brand__sub">Biotrop</div>
+        </div>
+        <button class="bt-railbtn" id="bt-rail-toggle" aria-label="Recolher ou expandir o menu"
+          title="Recolher ou expandir o menu">${BT_NAV.rail ? "»" : "«"}</button>
+      </div>
+
+      <div class="bt-rolepill">
+        <div class="bt-rolepill__name">${esc(user.nome)}</div>
+        <div class="bt-rolepill__role">${esc(profile ? profile.nome : "sem perfil")}${user.time ? " · " + esc(user.time) : ""}</div>
+      </div>
+
+      <div class="bt-navsearch">
+        <span class="bt-navsearch__ic" aria-hidden="true">⌕</span>
+        <input id="bt-nav-search" type="search" placeholder="Buscar no menu" autocomplete="off"
+          value="${esc(BT_NAV.filter)}" aria-label="Buscar no menu">
+        ${BT_NAV.filter ? '<button class="bt-navsearch__clear" id="bt-nav-clear" aria-label="Limpar busca">&times;</button>' : ""}
+      </div>
+
+      <nav class="bt-nav" id="bt-nav" aria-label="Navegação principal">${btRenderNav()}</nav>
+
+      <div class="bt-sidefoot">
+        <div class="bt-sidefoot__mail">${esc(user.usuario)}</div>
+        <button type="button" id="logout-btn" title="Sair">${icon("logout", 15)}<span>Sair</span></button>
+      </div>
+    </aside>
+
+    <div class="bt-main">
+      <header class="bt-topbar">
+        <button class="bt-burger" id="bt-burger" aria-label="Abrir menu">${icon("menu", 19)}</button>
+        <div style="min-width:0">
+          <div class="bt-topbar__title" id="bt-page-title">Plataforma de Manutenção</div>
+          <div class="bt-topbar__sub">Versão local · dados neste navegador</div>
+        </div>
+        <div class="bt-topbar__spacer"></div>
+        <div class="bt-topbar__clock" id="bt-clock"></div>
+        <button class="bt-btn bt-btn--sm" id="bt-theme" title="Alternar tema claro e escuro">Tema</button>
+        <button class="bt-btn bt-btn--sm" id="bt-settings">Configurações</button>
+      </header>
+      <main class="bt-page"><div id="main-content"></div></main>
+    </div>
+  </div>
+  <nav class="bt-tabbar" id="bt-tabbar" aria-label="Atalhos">${btRenderTabbar()}</nav>`;
+}
+
+function btWireNav() {
+  document.querySelectorAll("#bt-nav [data-nav], #bt-tabbar [data-nav]").forEach(function (btn) {
+    btn.onclick = function () {
+      btCloseSide();
+      navigateTo(this.getAttribute("data-nav"));
+    };
+  });
+
+  document.querySelectorAll("#bt-nav [data-navgroup]").forEach(function (head) {
+    head.onclick = function () {
+      const label = this.getAttribute("data-navgroup");
+      const grupos = btNavGroups();
+      const g = grupos.find(function (x) { return x.label === label; });
+      const aberto = btGroupIsOpen(g, grupos.length, btGroupOf(STATE.activeArea));
+      BT_NAV.open[label] = !aberto;
+      btNavSave();
+      btRefreshNav();
+    };
+  });
+
+  const busca = document.getElementById("bt-nav-search");
+  if (busca) {
+    busca.oninput = function () {
+      BT_NAV.filter = this.value;
+      const nav = document.getElementById("bt-nav");
+      if (nav) nav.innerHTML = btRenderNav();
+      btWireNav();
+      const limpar = document.getElementById("bt-nav-clear");
+      if (BT_NAV.filter && !limpar) btRefreshSearchClear(true);
+      if (!BT_NAV.filter && limpar) btRefreshSearchClear(false);
+    };
+    busca.onkeydown = function (ev) {
+      if (ev.key === "Escape") { BT_NAV.filter = ""; this.value = ""; btRefreshNav(); return; }
+      if (ev.key === "Enter") {
+        const first = document.querySelector("#bt-nav [data-nav]");
+        if (first) { BT_NAV.filter = ""; navigateTo(first.getAttribute("data-nav")); }
+      }
+    };
+  }
+  const limpar = document.getElementById("bt-nav-clear");
+  if (limpar) limpar.onclick = function () { BT_NAV.filter = ""; btRefreshNav(); };
+}
+
+/** Mostra ou esconde o × da busca sem redesenhar o campo (perderia o foco). */
+function btRefreshSearchClear(mostrar) {
+  const wrap = document.querySelector(".bt-navsearch");
+  if (!wrap) return;
+  const atual = document.getElementById("bt-nav-clear");
+  if (mostrar && !atual) {
+    const b = document.createElement("button");
+    b.className = "bt-navsearch__clear";
+    b.id = "bt-nav-clear";
+    b.setAttribute("aria-label", "Limpar busca");
+    b.innerHTML = "&times;";
+    b.onclick = function () { BT_NAV.filter = ""; btRefreshNav(); };
+    wrap.appendChild(b);
+  } else if (!mostrar && atual) {
+    atual.remove();
+  }
+}
+
+function btRefreshNav() {
+  const nav = document.getElementById("bt-nav");
+  if (nav) nav.innerHTML = btRenderNav();
+  const tab = document.getElementById("bt-tabbar");
+  if (tab) tab.innerHTML = btRenderTabbar();
+  const busca = document.getElementById("bt-nav-search");
+  if (busca && busca.value !== BT_NAV.filter) busca.value = BT_NAV.filter;
+  btRefreshSearchClear(Boolean(BT_NAV.filter));
+  btWireNav();
+}
+
+function attachShellEvents() {
+  btWireNav();
+
+  const rail = document.getElementById("bt-rail-toggle");
+  if (rail) rail.onclick = function () {
+    BT_NAV.rail = !BT_NAV.rail;
+    BT_NAV.filter = "";
+    btNavSave();
+    document.body.classList.toggle("bt-rail", BT_NAV.rail);
+    this.textContent = BT_NAV.rail ? "»" : "«";
+    btRefreshNav();
+  };
+
+  const burger = document.getElementById("bt-burger");
+  if (burger) burger.onclick = function () {
+    const side = document.getElementById("bt-side");
+    if (!side) return;
+    const open = !side.classList.contains("is-open");
+    side.classList.toggle("is-open", open);
+    const old = document.querySelector(".bt-scrim");
+    if (old) old.remove();
+    if (open) {
+      const scrim = document.createElement("div");
+      scrim.className = "bt-scrim";
+      scrim.onclick = btCloseSide;
+      document.body.appendChild(scrim);
+    }
+  };
+
+  installV12Controls();
+}
+
+
+/* ====================================================================
+   ALMOXARIFADO — ajustes da reunião com o Plinio
+
+   1. Status da SCI conforme a lista do Forms, com o laço de volta para
+      o solicitante: "Aguardando revisão do solicitante".
+   2. "Nº do Processo (ME)" virou "Número da solicitação de cadastro" —
+      o ME pertence ao fluxo de compra, não ao de cadastro.
+   3. Campo "Código do item", obrigatório para fechar em Cadastrado: é
+      o código que nasce do cadastro, e não se confunde com o número da
+      solicitação.
+   4. Menu do almoxarifado unificado num grupo só.
+   5. "Minhas solicitações" para o técnico, com SCI e SCM juntas e o
+      botão de corrigir e reenviar quando a solicitação volta para ele.
+   ==================================================================== */
+
+/* ---------- status novos ---------- */
+
+/**
+ * Status da SCI — lista fechada na transcrição da reunião.
+ *
+ * O Plinio abriu a lista e ditou: Aberto (inicial), Pendente de
+ * Aprovação (a do líder), Aguardando Revisão do Solicitante, Aguardando
+ * Cadastro de Item, Em Compra e Rejeitada. "Cadastrado" fica como o
+ * estado final, porque é nele que o código do item passa a ser exigido.
+ *
+ * Diferença em relação ao que eu havia implementado antes: a solicitação
+ * nasce como ABERTO, não como pendente de aprovação — o pendente de
+ * aprovação é uma etapa, não a entrada. E "Reprovada" virou "Rejeitada",
+ * que é a palavra usada no processo.
+ */
+const SCI_STATUS_V2 = [
+  { id: "aberto", label: "Aberto", bg: "#eef2f0", color: "#4d635a", tom: "neutro" },
+  { id: "pendente_aprovacao", label: "Pendente de Aprovação", bg: "#fff4e5", color: "#8a5a00", tom: "warn" },
+  { id: "revisao_solicitante", label: "Aguardando Revisão do Solicitante", bg: "#fdf3e2", color: "#8a5a00", tom: "warn" },
+  { id: "aguardando_cadastro", label: "Aguardando Cadastro de Item", bg: "#e3eff0", color: "#003C41", tom: "info" },
+  { id: "em_compra", label: "Em Compra", bg: "#e8f0fe", color: "#1a4f8f", tom: "info" },
+  { id: "cadastrado", label: "Cadastrado", bg: "#e6f7ee", color: "#0f7a44", tom: "ok" },
+  { id: "rejeitada", label: "Rejeitada", bg: "#fdecec", color: "#b3261e", tom: "danger" }
+];
+
+// De onde vem cada status antigo. Sem isso as solicitações já gravadas
+// no navegador apareceriam sem rótulo depois da troca.
+const SCI_STATUS_MAP = {
+  // nomes do arquivo original
+  pendente: "aberto",
+  aprovado: "em_compra",
+  solicitado_cadastro: "aguardando_cadastro",
+  recusado: "rejeitada",
+  // nomes da minha versão anterior
+  reprovada: "rejeitada",
+  // nomes atuais, que passam direto
+  aberto: "aberto",
+  pendente_aprovacao: "pendente_aprovacao",
+  revisao_solicitante: "revisao_solicitante",
+  aguardando_cadastro: "aguardando_cadastro",
+  em_compra: "em_compra",
+  cadastrado: "cadastrado",
+  rejeitada: "rejeitada"
+};
+
+/** Status com que toda solicitação nasce. */
+const SCI_STATUS_INICIAL = "aberto";
+
+const SCI_MIGR_KEY = "btlocal.sci_migr_v4";
+
+function sciMigrate() {
+  SCI_LIST = loadSci();
+  let changed = false;
+  SCI_LIST.forEach(function (s) {
+    const novo = SCI_STATUS_MAP[s.status] || SCI_STATUS_INICIAL;
+    if (s.status !== novo) { s.status = novo; changed = true; }
+    // O antigo "Nº do processo (ME)" era usado como número da solicitação
+    // de cadastro; passa a se chamar pelo que é.
+    if (s.numeroSolicitacaoCadastro === undefined) {
+      s.numeroSolicitacaoCadastro = s.numeroProcessoME || "";
+      changed = true;
+    }
+    if (s.codigoItem === undefined) { s.codigoItem = ""; changed = true; }
+    if (s.historico === undefined) { s.historico = []; changed = true; }
+  });
+  if (changed) saveSci(SCI_LIST);
+  try { localStorage.setItem(SCI_MIGR_KEY, "1"); } catch (e) {}
+}
+
+// Substitui as definições antigas para toda a interface já existente.
+SCI_STATUS_DEFS.length = 0;
+SCI_STATUS_V2.forEach(function (d) { SCI_STATUS_DEFS.push(d); });
+
+/**
+ * Normaliza o status na GRAVAÇÃO, não só na migração de boot.
+ *
+ * O formulário original grava status: "pendente" fixo no código. Migrar
+ * só no carregamento deixava a solicitação recém-criada com o rótulo
+ * antigo até o próximo F5 — e a fila do almoxarifado não a enxergava.
+ * Interceptar a gravação cobre esse caminho e qualquer outro.
+ */
+(function () {
+  const anterior = saveSci;
+  saveSci = function (list) {
+    (list || []).forEach(function (s) {
+      const novo = SCI_STATUS_MAP[s.status];
+      if (novo && s.status !== novo) s.status = novo;
+      if (!novo) s.status = SCI_STATUS_INICIAL;
+      if (s.numeroSolicitacaoCadastro === undefined) s.numeroSolicitacaoCadastro = s.numeroProcessoME || "";
+      if (s.codigoItem === undefined) s.codigoItem = "";
+      if (s.historico === undefined) s.historico = [];
+    });
+    return anterior(list);
+  };
+})();
+
+function sciStatusTom(status) {
+  const d = SCI_STATUS_DEFS.find(function (x) { return x.id === status; });
+  return d ? d.tom : "warn";
+}
+
+function sciBadge(status) {
+  const tom = sciStatusTom(status);
+  const d = statusDef(status);
+  const cls = tom === "ok" ? "bt-badge--ok" : tom === "danger" ? "bt-badge--danger"
+    : tom === "info" ? "bt-badge--info" : tom === "neutro" ? "" : "bt-badge--warn";
+  return '<span class="bt-badge ' + cls + '">' + esc(d.label) + "</span>";
+}
+
+/* ---------- gravação de status com as regras novas ---------- */
+
+function setSciStatus(sciId, status, numeroSolicitacao, observacaoAlmoxarife, codigoItem) {
+  const idx = SCI_LIST.findIndex(function (x) { return x.id === sciId; });
+  if (idx < 0) return;
+  const s = SCI_LIST[idx];
+
+  // Fechar em Cadastrado sem o código do item deixaria a solicitação
+  // concluída sem o dado que é a razão dela existir.
+  if (status === "cadastrado" && !String(codigoItem || "").trim()) {
+    const box = document.getElementById("sci-status-error");
+    if (box) {
+      box.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Informe o <b>código do item</b> para concluir como Cadastrado.</div></div>';
+    } else {
+      alert("Informe o código do item para concluir como Cadastrado.");
+    }
+    return;
+  }
+  if (status === "revisao_solicitante" && !String(observacaoAlmoxarife || "").trim()) {
+    const box = document.getElementById("sci-status-error");
+    if (box) {
+      box.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Devolver para revisão exige dizer o que o solicitante precisa corrigir. Escreva na observação do almoxarife.</div></div>';
+    }
+    return;
+  }
+
+  const anterior = s.status;
+  s.status = status;
+  s.numeroSolicitacaoCadastro = String(numeroSolicitacao || "").trim();
+  s.numeroProcessoME = s.numeroSolicitacaoCadastro; // compatibilidade com o que já exporta
+  s.observacaoAlmoxarife = String(observacaoAlmoxarife || "").trim();
+  s.codigoItem = String(codigoItem || "").trim();
+  s.historico = s.historico || [];
+  s.historico.push({
+    de: anterior, para: status, em: new Date().toISOString(),
+    por: (STATE.currentUser && STATE.currentUser.nome) || "—",
+    nota: s.observacaoAlmoxarife
+  });
+
+  // Aviso ao solicitante: só neste status, como o Plinio pediu. Aqui não
+  // há servidor de e-mail, então fica registrado e aparece em "Minhas
+  // solicitações" — o disparo real entra junto com o backend.
+  if (status === "revisao_solicitante") {
+    s.avisoSolicitante = { em: new Date().toISOString(), lido: false, motivo: s.observacaoAlmoxarife };
+  } else if (status !== anterior) {
+    s.avisoSolicitante = null;
+  }
+
+  saveSci(SCI_LIST);
+  closeSciModal();
+  if (typeof renderAlmoxTabContent === "function") renderAlmoxTabContent();
+}
+
+/* ---------- modal de atendimento, com os campos novos ---------- */
+
+const _sciPrevOpenDetail = openSciDetail;
+openSciDetail = function (sciId) {
+  _sciPrevOpenDetail(sciId);
+  const s = SCI_LIST.find(function (x) { return x.id === sciId; });
+  if (!s) return;
+
+  const label = document.querySelector('#almox-modal-root label[for], #almox-modal-root .field-label');
+  // Renomeia o rótulo do campo e acrescenta o código do item logo abaixo.
+  const labels = document.querySelectorAll("#almox-modal-root .field-label");
+  labels.forEach(function (l) {
+    if (l.textContent.indexOf("Processo (ME)") >= 0) l.textContent = "Número da solicitação de cadastro";
+  });
+  const campoNum = document.getElementById("sci-processo-me");
+  if (campoNum) {
+    campoNum.value = s.numeroSolicitacaoCadastro || "";
+    campoNum.placeholder = "Gerado na plataforma 4MDG";
+    const hint = document.createElement("div");
+    hint.className = "bt-field__hint";
+    hint.textContent = "É o número da solicitação de cadastro, não o processo ME de compra.";
+    campoNum.insertAdjacentElement("afterend", hint);
+
+    const wrap = document.createElement("div");
+    wrap.innerHTML = '<label class="field-label" style="margin-top:14px;">Código do item' +
+      ' <span class="bt-small bt-muted" style="font-weight:500">(obrigatório para concluir como Cadastrado)</span></label>' +
+      '<input class="modal-input" id="sci-codigo-item" value="' + esc(s.codigoItem || "") + '" placeholder="Código gerado no cadastro">';
+    hint.insertAdjacentElement("afterend", wrap);
+  }
+
+  const sel = document.getElementById("sci-status-select");
+  if (sel) {
+    const erro = document.createElement("div");
+    erro.id = "sci-status-error";
+    sel.insertAdjacentElement("afterend", erro);
+    sel.onchange = function () {
+      const box = document.getElementById("sci-status-error");
+      if (this.value === "revisao_solicitante") {
+        box.innerHTML = '<div class="bt-notice bt-notice--info"><span class="bt-notice__ic">i</span><div>O solicitante será avisado desta pendência e poderá corrigir e reenviar em <b>Minhas solicitações</b>.</div></div>';
+      } else if (this.value === "cadastrado") {
+        box.innerHTML = '<div class="bt-notice bt-notice--info"><span class="bt-notice__ic">i</span><div>Preencha o <b>código do item</b> para concluir.</div></div>';
+      } else { box.innerHTML = ""; }
+    };
+  }
+
+  if (s.historico && s.historico.length) {
+    const acoes = document.querySelector("#almox-modal-root .modal-actions");
+    if (acoes) {
+      const h = document.createElement("div");
+      h.innerHTML = '<div class="sci-section-title" style="margin-top:16px;">Histórico</div>' +
+        '<div class="bt-timeline">' + s.historico.slice().reverse().map(function (x) {
+          return '<div class="bt-tl"><span class="bt-tl__dot"></span><div class="bt-tl__body">' +
+            esc(statusDef(x.para).label) + (x.nota ? " — " + esc(x.nota) : "") +
+            '<div class="bt-tl__when">' + formatDate(x.em) + " · " + esc(x.por) + "</div></div></div>";
+        }).join("") + "</div>";
+      acoes.insertAdjacentElement("beforebegin", h);
+    }
+  }
+
+  const btn = document.getElementById("sci-save-status-btn");
+  if (btn) btn.onclick = function () {
+    setSciStatus(
+      sciId,
+      document.getElementById("sci-status-select").value,
+      document.getElementById("sci-processo-me").value,
+      document.getElementById("sci-obs-almoxarife").value,
+      (document.getElementById("sci-codigo-item") || {}).value
+    );
+  };
+};
+
+/* ---------- minhas solicitações (SCI + SCM do usuário) ---------- */
+
+function renderMinhasSolicitacoes() {
+  SCI_LIST = loadSci();
+  const u = STATE.currentUser || {};
+  const meuId = u.id;
+  const meuMail = String(u.usuario || "").toLowerCase();
+
+  const minhasSci = SCI_LIST.filter(function (s) { return s.solicitanteId === meuId; });
+  const minhasScm = loadScm().filter(function (s) {
+    return s.solicitanteId === meuId || String(s.solicitanteEmail || "").toLowerCase() === meuMail;
+  });
+  const paraRevisar = minhasSci.filter(function (s) { return s.status === "revisao_solicitante"; });
+
+  const linhasSci = minhasSci.slice().sort(function (a, b) {
+    return new Date(b.dataCriacao) - new Date(a.dataCriacao);
+  }).map(function (s) {
+    return `<tr>
+      <td class="bt-mono">${esc(s.codigo)}</td>
+      <td><b>${esc(s.familiaNome)}</b>${s.codigoItem ? '<div class="bt-small bt-muted">item ' + esc(s.codigoItem) + "</div>" : ""}</td>
+      <td>${formatDate(s.dataCriacao)}</td>
+      <td>${sciBadge(s.status)}</td>
+      <td>${s.status === "revisao_solicitante"
+        ? '<button class="bt-btn bt-btn--primary bt-btn--sm" data-sci-revisar="' + esc(s.id) + '">Corrigir e reenviar</button>'
+        : '<button class="bt-btn bt-btn--sm" data-sci-ver="' + esc(s.id) + '">Ver</button>'}</td>
+    </tr>`;
+  }).join("");
+
+  const linhasScm = minhasScm.slice().sort(function (a, b) {
+    return new Date(b.dataCriacao) - new Date(a.dataCriacao);
+  }).map(function (s) {
+    return `<tr>
+      <td class="bt-mono">${esc(s.codigo)}</td>
+      <td><b>${esc((s.descricaoUso || "").slice(0, 54) || "—")}</b><div class="bt-small bt-muted">${(s.itens || []).length} item(ns) · ${esc(s.camm || "—")}</div></td>
+      <td>${formatDate(s.dataCriacao)}</td>
+      <td>${scmStatusBadge(s.status)}</td>
+      <td><button class="bt-btn bt-btn--sm" data-scm-ver="${esc(s.id)}">Ver</button></td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="page-title-row">
+    <div class="page-icon">${icon("clipboard", 22)}</div>
+    <div>
+      <h1>Minhas solicitações</h1>
+      <p>Cadastro de itens (SCI) e compra de materiais (SCM) abertos por você.</p>
+    </div>
+  </div>
+
+  ${paraRevisar.length ? `<div class="bt-notice bt-notice--warn" style="margin-bottom:18px">
+    <span class="bt-notice__ic">!</span>
+    <div><b>${paraRevisar.length} solicitação(ões) esperando a sua revisão.</b>
+      O almoxarifado devolveu com uma pendência: corrija e reenvie.
+      ${paraRevisar.map(function (s) {
+        return '<div style="margin-top:6px"><b class="bt-mono">' + esc(s.codigo) + "</b> — " +
+          esc(s.observacaoAlmoxarife || "sem detalhe informado") + "</div>";
+      }).join("")}
+    </div>
+  </div>` : ""}
+
+  <div class="bt-card" style="margin-bottom:18px">
+    <div class="bt-card__head"><div><h2>Cadastro de itens · SCI</h2><p>${minhasSci.length} solicitação(ões)</p></div>
+      <button class="bt-btn bt-btn--sm bt-right" data-nav="almoxarifado">Nova SCI</button></div>
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table">
+        <thead><tr><th>Código</th><th>Item</th><th>Data</th><th>Situação</th><th></th></tr></thead>
+        <tbody>${linhasSci || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCI sua</strong>Abra a primeira em Nova solicitação.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="bt-card">
+    <div class="bt-card__head"><div><h2>Compra de materiais · SCM</h2><p>${minhasScm.length} solicitação(ões)</p></div>
+      <button class="bt-btn bt-btn--sm bt-right" data-nav="almox_scm_form">Nova SCM</button></div>
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table">
+        <thead><tr><th>Código</th><th>Uso</th><th>Data</th><th>Situação</th><th></th></tr></thead>
+        <tbody>${linhasScm || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCM sua</strong>Abra a primeira em Nova compra.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+  <div id="almox-modal-root"></div>`;
+}
+
+function attachMinhasSolicitacoesEvents() {
+  document.querySelectorAll("#main-content [data-nav]").forEach(function (b) {
+    b.onclick = function () { navigateTo(this.getAttribute("data-nav")); };
+  });
+  document.querySelectorAll("[data-sci-ver]").forEach(function (b) {
+    b.onclick = function () { openSciDetailReadonly(this.getAttribute("data-sci-ver")); };
+  });
+  document.querySelectorAll("[data-scm-ver]").forEach(function (b) {
+    b.onclick = function () { openScmDetailReadonly(this.getAttribute("data-scm-ver"), "almox-modal-root"); };
+  });
+  document.querySelectorAll("[data-sci-revisar]").forEach(function (b) {
+    b.onclick = function () { openSciRevisao(this.getAttribute("data-sci-revisar")); };
+  });
+}
+
+/** Visão do solicitante: sem os campos do almoxarife. */
+function openSciDetailReadonly(sciId) {
+  const s = SCI_LIST.find(function (x) { return x.id === sciId; });
+  if (!s) return;
+  const campos = (s.camposDefs || []).map(function (c) {
+    return '<div class="sci-detail-row"><span class="sci-detail-label">' + esc(c.label) +
+      '</span><span class="sci-detail-value">' + esc((s.campos || {})[c.id] || "—") + "</span></div>";
+  }).join("");
+  const root = document.getElementById("almox-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="sci-ro-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>${esc(s.codigo)} — ${esc(s.familiaNome)}</h3>
+        <button class="icon-btn" id="sci-ro-close">${icon("x", 18)}</button>
+      </div>
+      <div class="bt-row" style="margin-bottom:12px">${sciBadge(s.status)}
+        ${s.codigoItem ? '<span class="bt-badge bt-badge--ok">item ' + esc(s.codigoItem) + "</span>" : ""}</div>
+      <div class="sci-detail-row"><span class="sci-detail-label">Aberta em</span><span class="sci-detail-value">${formatDate(s.dataCriacao)}</span></div>
+      ${s.numeroSolicitacaoCadastro ? '<div class="sci-detail-row"><span class="sci-detail-label">Nº da solicitação de cadastro</span><span class="sci-detail-value">' + esc(s.numeroSolicitacaoCadastro) + "</span></div>" : ""}
+      <div class="sci-section-title" style="margin-top:14px;">Dados do item</div>
+      ${campos}
+      <div class="sci-detail-row"><span class="sci-detail-label">Marcas homologadas</span><span class="sci-detail-value">${esc(s.marcas || "—")}</span></div>
+      <div class="sci-detail-row"><span class="sci-detail-label">Observações</span><span class="sci-detail-value">${esc(s.observacoes || "—")}</span></div>
+      ${s.observacaoAlmoxarife ? '<div class="bt-notice bt-notice--info" style="margin-top:14px"><span class="bt-notice__ic">i</span><div><b>Almoxarifado:</b> ' + esc(s.observacaoAlmoxarife) + "</div></div>" : ""}
+      <div class="modal-actions"><button class="primary-btn" id="sci-ro-ok">Fechar</button></div>
+    </div>
+  </div>`;
+  const close = function () { root.innerHTML = ""; };
+  document.getElementById("sci-ro-backdrop").onclick = close;
+  document.getElementById("sci-ro-close").onclick = close;
+  document.getElementById("sci-ro-ok").onclick = close;
+}
+
+/** Corrigir e reenviar: volta para Pendente de aprovação. */
+function openSciRevisao(sciId) {
+  const s = SCI_LIST.find(function (x) { return x.id === sciId; });
+  if (!s) return;
+  const campos = (s.camposDefs || []).map(function (c) {
+    return '<label class="field-label" style="margin-top:12px;">' + esc(c.label) +
+      (c.obrigatorio ? ' <span style="color:#d64545">*</span>' : "") + "</label>" +
+      '<input class="modal-input sci-rev-field" data-field-id="' + esc(c.id) + '" data-required="' +
+      (c.obrigatorio ? "1" : "0") + '" value="' + esc((s.campos || {})[c.id] || "") + '" placeholder="' + esc(c.label) + '">';
+  }).join("");
+
+  const root = document.getElementById("almox-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="sci-rev-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Corrigir ${esc(s.codigo)}</h3>
+        <button class="icon-btn" id="sci-rev-close">${icon("x", 18)}</button>
+      </div>
+      <div class="bt-notice bt-notice--warn" style="margin-bottom:14px">
+        <span class="bt-notice__ic">!</span>
+        <div><b>O que o almoxarifado pediu:</b><br>${esc(s.observacaoAlmoxarife || "sem detalhe informado")}</div>
+      </div>
+      <div class="sci-section-title">Dados do item</div>
+      ${campos}
+      <label class="field-label" style="margin-top:14px;">Marcas homologadas</label>
+      <input class="modal-input" id="sci-rev-marcas" value="${esc(s.marcas || "")}">
+      <label class="field-label" style="margin-top:14px;">Observações</label>
+      <textarea class="modal-input" id="sci-rev-obs" rows="3">${esc(s.observacoes || "")}</textarea>
+      <label class="field-label" style="margin-top:14px;">O que você corrigiu <span style="color:#d64545">*</span></label>
+      <textarea class="modal-input" id="sci-rev-nota" rows="2" placeholder="Explique brevemente a correção"></textarea>
+      <div id="sci-rev-erro"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="sci-rev-cancel">Cancelar</button>
+        <button class="primary-btn" id="sci-rev-send">${icon("send", 16)} Reenviar</button>
+      </div>
+    </div>
+  </div>`;
+  const close = function () { root.innerHTML = ""; };
+  document.getElementById("sci-rev-backdrop").onclick = close;
+  document.getElementById("sci-rev-close").onclick = close;
+  document.getElementById("sci-rev-cancel").onclick = close;
+  document.getElementById("sci-rev-send").onclick = function () {
+    const erro = document.getElementById("sci-rev-erro");
+    const faltando = [];
+    const campos = {};
+    document.querySelectorAll(".sci-rev-field").forEach(function (i) {
+      const v = i.value.trim();
+      campos[i.getAttribute("data-field-id")] = v;
+      if (i.getAttribute("data-required") === "1" && !v) faltando.push(i.getAttribute("placeholder"));
+    });
+    const nota = document.getElementById("sci-rev-nota").value.trim();
+    if (faltando.length) {
+      erro.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Preencha: ' + esc(faltando.join(", ")) + "</div></div>";
+      return;
+    }
+    if (!nota) {
+      erro.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Diga o que foi corrigido — é o que o almoxarifado vai ler.</div></div>';
+      return;
+    }
+    s.campos = campos;
+    s.marcas = document.getElementById("sci-rev-marcas").value.trim();
+    s.observacoes = document.getElementById("sci-rev-obs").value.trim();
+    s.status = "pendente_aprovacao";
+    s.avisoSolicitante = null;
+    s.historico = s.historico || [];
+    s.historico.push({
+      de: "revisao_solicitante", para: "pendente_aprovacao", em: new Date().toISOString(),
+      por: (STATE.currentUser && STATE.currentUser.nome) || "—", nota: nota
+    });
+    saveSci(SCI_LIST);
+    close();
+    navigateTo("almox_minhas");
+  };
+}
+
+/* ====================================================================
+   UTILIDADES — reorganização pedida na reunião
+
+   O painel saiu da primeira versão. No lugar, a mesma organização por
+   abas que o almoxarifado usa:
+
+     Novo apontamento · Apontamentos · Gestão de medidores
+
+   "Apontar horímetros" virou "Apontar consumo": o processo cobre água,
+   gás, energia e horímetro, não só horímetro de máquina.
+
+   Apontamentos é lista mestre — uma linha por registro, com CAMM, tipo,
+   medidor, leitura, consumo e observação, e filtros para o PCM
+   analisar. A verificação de desvio compara cada leitura com a anterior
+   e a seguinte do mesmo medidor e sinaliza o que merece o olho humano.
+
+   Gestão de medidores permite acrescentar e inativar. Medidor inativo
+   deixa de aparecer para quem aponta, sem apagar o histórico dele.
+   ==================================================================== */
+
+const UTIL_TABS_STATE = { tab: "novo" };
+const UTIL_FILTER = { camm: "", tipo: "", meter: "", de: "", ate: "", texto: "", soDesvio: false };
+
+/** Só os ativos aparecem para quem aponta. */
+function utilMetersAtivos() {
+  return getUtilityData().filter(function (m) { return m.ativo !== false; });
+}
+
+/**
+ * Desvio: o que precisa de decisão humana.
+ *
+ * - consumo negativo: leitura menor que a anterior (só entra por dado
+ *   antigo ou troca física do medidor);
+ * - salto: consumo acima de 3x a média do medidor;
+ * - parado: consumo zero com leitura anterior existente;
+ * - sem evidência: leitura de horímetro sem foto.
+ */
+function utilAnalisar(readings, meters) {
+  const porMedidor = {};
+  readings.forEach(function (r) {
+    (porMedidor[r.meterId] = porMedidor[r.meterId] || []).push(r);
+  });
+  Object.keys(porMedidor).forEach(function (k) {
+    porMedidor[k].sort(function (a, b) { return new Date(a.at) - new Date(b.at); });
+  });
+
+  // Mediana, não média: com média o próprio salto puxa a referência para
+  // cima e se esconde. Um consumo de 790 entre 10 e 10 tem mediana 10 e
+  // salta à vista; com média (400) ele passaria por normal.
+  const mediana = function (valores) {
+    if (!valores.length) return 0;
+    const v = valores.slice().sort(function (a, b) { return a - b; });
+    const meio = Math.floor(v.length / 2);
+    return v.length % 2 ? v[meio] : (v[meio - 1] + v[meio]) / 2;
+  };
+  const referencia = {};
+  Object.keys(porMedidor).forEach(function (k) {
+    referencia[k] = {};
+    const serie = porMedidor[k];
+    serie.forEach(function (atual) {
+      // Referência de cada leitura = mediana das OUTRAS leituras do medidor.
+      const outros = serie.filter(function (x) { return x !== atual; })
+        .map(function (x) { return Number(x.consumption); })
+        .filter(function (v) { return isFinite(v) && v > 0; });
+      referencia[k][atual.id] = mediana(outros);
+    });
+  });
+
+  return readings.map(function (r) {
+    const m = meters.find(function (x) { return x.id === r.meterId; }) || {};
+    const serie = porMedidor[r.meterId] || [];
+    const i = serie.indexOf(r);
+    const anterior = i > 0 ? serie[i - 1] : null;
+    const seguinte = i >= 0 && i < serie.length - 1 ? serie[i + 1] : null;
+    const avisos = [];
+
+    if (r.consumption != null && Number(r.consumption) < 0) {
+      avisos.push({ tom: "danger", txt: "consumo negativo" });
+    }
+    if (seguinte && Number(seguinte.reading) < Number(r.reading)) {
+      avisos.push({ tom: "danger", txt: "leitura seguinte menor" });
+    }
+    const ref = (referencia[r.meterId] || {})[r.id] || 0;
+    if (ref > 0 && r.consumption != null && Number(r.consumption) > ref * 3) {
+      avisos.push({ tom: "warn", txt: "salto de consumo" });
+    }
+    if (anterior && r.consumption != null && Number(r.consumption) === 0) {
+      avisos.push({ tom: "warn", txt: "consumo zero" });
+    }
+    if (m.type === "horimetro" && !r.photo) {
+      avisos.push({ tom: "warn", txt: "sem foto" });
+    }
+    return { r: r, m: m, anterior: anterior, avisos: avisos, referencia: ref };
+  });
+}
+
+/* ---------- casca com abas ---------- */
+
+function renderUtilidades(initialTab) {
+  const perms = getPerms(STATE.currentUser);
+  const gestor = btPodeVerSalaControle();
+  const abas = [{ id: "novo", label: "Novo apontamento" }];
+  if (gestor) {
+    abas.push({ id: "lista", label: "Apontamentos" });
+    abas.push({ id: "medidores", label: "Gestão de medidores" });
+  }
+  const validos = abas.map(function (a) { return a.id; });
+  UTIL_TABS_STATE.tab = validos.indexOf(initialTab) >= 0 ? initialTab : (validos.indexOf(UTIL_TABS_STATE.tab) >= 0 ? UTIL_TABS_STATE.tab : "novo");
+
+  const tabsHtml = abas.length > 1
+    ? '<div class="tabs-row">' + abas.map(function (a) {
+      return '<button class="tab-btn' + (a.id === UTIL_TABS_STATE.tab ? " active" : "") +
+        '" data-utiltab="' + a.id + '">' + esc(a.label) + "</button>";
+    }).join("") + "</div>"
+    : "";
+
+  return `
+  <div class="page-title-row" style="margin-bottom:18px;">
+    <div class="page-icon">${icon("gauge", 22)}</div>
+    <div>
+      <h1>Utilidades</h1>
+      <p>Apontamento de consumo de água, gás, energia e horímetro.</p>
+    </div>
+  </div>
+  ${tabsHtml}
+  <div id="util-tab-content"></div>`;
+}
+
+function renderUtilTabContent() {
+  const box = document.getElementById("util-tab-content");
+  if (!box) return;
+  if (UTIL_TABS_STATE.tab === "lista") { box.innerHTML = renderUtilLista(); attachUtilListaEvents(); return; }
+  if (UTIL_TABS_STATE.tab === "medidores") { box.innerHTML = renderUtilMedidores(); attachUtilMedidoresEvents(); return; }
+  box.innerHTML = renderApontar();
+  attachApontarEvents();
+}
+
+function attachUtilidadesEvents() {
+  document.querySelectorAll("[data-utiltab]").forEach(function (b) {
+    b.onclick = function () {
+      UTIL_TABS_STATE.tab = this.getAttribute("data-utiltab");
+      document.querySelectorAll("[data-utiltab]").forEach(function (x) {
+        x.classList.toggle("active", x.getAttribute("data-utiltab") === UTIL_TABS_STATE.tab);
+      });
+      renderUtilTabContent();
+    };
+  });
+  renderUtilTabContent();
+}
+
+/* ---------- aba: lista mestre de apontamentos ---------- */
+
+function renderUtilLista() {
+  const meters = getUtilityData();
+  const todas = getUtilityReadings();
+  const analise = utilAnalisar(todas, meters);
+
+  const camms = [];
+  meters.forEach(function (m) { const c = aptCammOf(m); if (camms.indexOf(c) < 0) camms.push(c); });
+  camms.sort(aptSortCamm);
+  const tipos = Object.keys(APT_TYPES);
+
+  const f = UTIL_FILTER;
+  const filtradas = analise.filter(function (x) {
+    if (f.camm && aptCammOf(x.m) !== f.camm) return false;
+    if (f.tipo && x.m.type !== f.tipo) return false;
+    if (f.meter && x.r.meterId !== f.meter) return false;
+    if (f.de && new Date(x.r.at) < new Date(f.de + "T00:00")) return false;
+    if (f.ate && new Date(x.r.at) > new Date(f.ate + "T23:59")) return false;
+    if (f.soDesvio && !x.avisos.length) return false;
+    if (f.texto) {
+      const alvo = (x.m.name + " " + (x.r.observation || "") + " " + (x.r.user || "") + " " + x.r.meterId).toLowerCase();
+      if (alvo.indexOf(f.texto.toLowerCase()) < 0) return false;
+    }
+    return true;
+  }).sort(function (a, b) { return new Date(b.r.at) - new Date(a.r.at); });
+
+  const comDesvio = analise.filter(function (x) { return x.avisos.length; }).length;
+
+  const linhas = filtradas.map(function (x) {
+    const unidade = esc(x.m.unit || "");
+    return `<tr${x.avisos.length ? ' style="background:rgba(185,119,14,.06)"' : ""}>
+      <td>${new Date(x.r.at).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+      <td>${esc(aptCammOf(x.m))}</td>
+      <td>${aptTypeIcon(x.m.type)} ${esc(aptTypeLabel(x.m.type))}</td>
+      <td><b>${esc(x.m.name || x.r.meterName)}</b><div class="bt-small bt-muted">${esc(x.r.meterId)}</div></td>
+      <td class="bt-num">${x.anterior ? Number(x.anterior.reading).toLocaleString("pt-BR") : "—"}</td>
+      <td class="bt-num"><b>${Number(x.r.reading).toLocaleString("pt-BR")}</b> ${unidade}</td>
+      <td class="bt-num">${x.r.consumption == null ? "—" : Number(x.r.consumption).toLocaleString("pt-BR") + " " + unidade}</td>
+      <td>${x.r.photo ? '<span class="bt-badge bt-badge--ok">foto</span>' : '<span class="bt-badge">sem foto</span>'}</td>
+      <td>${esc(x.r.user || "—")}</td>
+      <td>${esc(x.r.observation || "—")}</td>
+      <td>${x.avisos.length
+        ? x.avisos.map(function (a) { return '<span class="bt-badge bt-badge--' + a.tom + '">' + esc(a.txt) + "</span>"; }).join(" ")
+        : '<span class="bt-badge bt-badge--ok">ok</span>'}</td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="bt-grid--kpi" style="margin-bottom:16px">
+    <div class="bt-kpi"><div class="bt-kpi__label">Registros</div><div class="bt-kpi__value">${todas.length}</div><div class="bt-kpi__hint">no histórico</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Exibidos</div><div class="bt-kpi__value">${filtradas.length}</div><div class="bt-kpi__hint">com os filtros atuais</div></div>
+    <div class="bt-kpi ${comDesvio ? "bt-kpi--warn" : "bt-kpi--ok"}"><div class="bt-kpi__label">Possíveis desvios</div><div class="bt-kpi__value">${comDesvio}</div><div class="bt-kpi__hint">${comDesvio ? "merecem conferência" : "nada sinalizado"}</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Medidores ativos</div><div class="bt-kpi__value">${utilMetersAtivos().length}</div><div class="bt-kpi__hint">de ${meters.length} cadastrados</div></div>
+  </div>
+
+  <div class="bt-card" style="margin-bottom:16px">
+    <div class="bt-card__body">
+      <div class="bt-fields2">
+        <div class="bt-field"><label>CAMM</label><select id="uf-camm">
+          <option value="">Todos</option>
+          ${camms.map(function (c) { return '<option value="' + esc(c) + '"' + (f.camm === c ? " selected" : "") + ">" + esc(c) + "</option>"; }).join("")}
+        </select></div>
+        <div class="bt-field"><label>Tipo de energia</label><select id="uf-tipo">
+          <option value="">Todos</option>
+          ${tipos.map(function (t) { return '<option value="' + t + '"' + (f.tipo === t ? " selected" : "") + ">" + esc(aptTypeLabel(t)) + "</option>"; }).join("")}
+        </select></div>
+        <div class="bt-field"><label>Medidor</label><select id="uf-meter">
+          <option value="">Todos</option>
+          ${meters.map(function (m) { return '<option value="' + esc(m.id) + '"' + (f.meter === m.id ? " selected" : "") + ">" + esc(m.name) + "</option>"; }).join("")}
+        </select></div>
+        <div class="bt-field"><label>De</label><input id="uf-de" type="date" value="${esc(f.de)}"></div>
+        <div class="bt-field"><label>Até</label><input id="uf-ate" type="date" value="${esc(f.ate)}"></div>
+        <div class="bt-field"><label>Buscar</label><input id="uf-texto" value="${esc(f.texto)}" placeholder="medidor, responsável, observação"></div>
+      </div>
+      <div class="bt-row">
+        <label class="bt-row" style="gap:8px;cursor:pointer"><input type="checkbox" id="uf-desvio" ${f.soDesvio ? "checked" : ""}>
+          <span class="bt-small">Mostrar só possíveis desvios</span></label>
+        <button class="bt-btn bt-btn--sm bt-right" id="uf-limpar">Limpar filtros</button>
+        <button class="bt-btn bt-btn--sm" id="uf-csv">Exportar CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bt-card">
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table" style="min-width:1080px">
+        <thead><tr>
+          <th>Data</th><th>CAMM</th><th>Tipo</th><th>Medidor</th>
+          <th class="bt-num">Anterior</th><th class="bt-num">Leitura</th><th class="bt-num">Consumo</th>
+          <th>Evidência</th><th>Responsável</th><th>Observações</th><th>Verificação</th>
+        </tr></thead>
+        <tbody>${linhas || '<tr><td colspan="11"><div class="bt-state"><strong>Nenhum apontamento com esses filtros</strong>Limpe os filtros para ver todos os registros.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="bt-notice bt-notice--info" style="margin-top:16px">
+    <span class="bt-notice__ic">i</span>
+    <div>A verificação compara cada leitura com a anterior e a seguinte do mesmo medidor. Ela sinaliza
+      consumo negativo, leitura seguinte menor que a atual, salto acima de três vezes a média do medidor,
+      consumo zero e horímetro sem foto. Sinalizar não é bloquear: quem decide é o PCM.</div>
+  </div>`;
+}
+
+function attachUtilListaEvents() {
+  const liga = function (id, campo, tipo) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const ev = tipo === "text" ? "input" : "change";
+    el.addEventListener(ev, function () {
+      UTIL_FILTER[campo] = tipo === "check" ? this.checked : this.value;
+      renderUtilTabContent();
+    });
+  };
+  liga("uf-camm", "camm"); liga("uf-tipo", "tipo"); liga("uf-meter", "meter");
+  liga("uf-de", "de"); liga("uf-ate", "ate"); liga("uf-texto", "texto", "text");
+  liga("uf-desvio", "soDesvio", "check");
+
+  const limpar = document.getElementById("uf-limpar");
+  if (limpar) limpar.onclick = function () {
+    UTIL_FILTER.camm = ""; UTIL_FILTER.tipo = ""; UTIL_FILTER.meter = "";
+    UTIL_FILTER.de = ""; UTIL_FILTER.ate = ""; UTIL_FILTER.texto = ""; UTIL_FILTER.soDesvio = false;
+    renderUtilTabContent();
+  };
+
+  const csv = document.getElementById("uf-csv");
+  if (csv) csv.onclick = function () {
+    const meters = getUtilityData();
+    const analise = utilAnalisar(getUtilityReadings(), meters);
+    const linhas = [["Data", "CAMM", "Tipo", "Medidor", "Codigo", "Anterior", "Leitura", "Consumo", "Unidade", "Evidencia", "Responsavel", "Observacao", "Verificacao"]
+      .map(csvEscape).join(";")];
+    analise.sort(function (a, b) { return new Date(b.r.at) - new Date(a.r.at); }).forEach(function (x) {
+      linhas.push([
+        new Date(x.r.at).toLocaleString("pt-BR"), aptCammOf(x.m), aptTypeLabel(x.m.type),
+        x.m.name || x.r.meterName, x.r.meterId,
+        x.anterior ? x.anterior.reading : "", x.r.reading,
+        x.r.consumption == null ? "" : x.r.consumption, x.m.unit || "",
+        x.r.photo ? "com foto" : "sem foto", x.r.user || "", x.r.observation || "",
+        x.avisos.map(function (a) { return a.txt; }).join(" / ") || "ok"
+      ].map(csvEscape).join(";"));
+    });
+    downloadCsv(linhas.join("\r\n"), "apontamentos-utilidades.csv");
+  };
+}
+
+/* ---------- aba: gestão de medidores ---------- */
+
+function renderUtilMedidores() {
+  const meters = getUtilityData();
+  const readings = getUtilityReadings();
+
+  const linhas = meters.slice().sort(function (a, b) {
+    return aptSortCamm(aptCammOf(a), aptCammOf(b)) || String(a.name).localeCompare(String(b.name));
+  }).map(function (m) {
+    const rs = readings.filter(function (r) { return r.meterId === m.id; });
+    const ultima = rs.sort(function (a, b) { return new Date(b.at) - new Date(a.at); })[0];
+    const inativo = m.ativo === false;
+    return `<tr${inativo ? ' style="opacity:.6"' : ""}>
+      <td class="bt-mono">${esc(m.id)}</td>
+      <td><b>${esc(m.name)}</b>${inativo ? ' <span class="bt-badge">inativo</span>' : ""}</td>
+      <td>${esc(aptCammOf(m))}</td>
+      <td>${aptTypeIcon(m.type)} ${esc(aptTypeLabel(m.type))}</td>
+      <td>${esc(m.unit || "—")}</td>
+      <td class="bt-num">${rs.length}</td>
+      <td>${ultima ? new Date(ultima.at).toLocaleDateString("pt-BR") + " · " + Number(ultima.reading).toLocaleString("pt-BR") : "sem leitura"}</td>
+      <td>
+        <div class="bt-row" style="gap:6px;flex-wrap:nowrap">
+          <button class="bt-btn bt-btn--sm" data-med-edit="${esc(m.id)}">Editar</button>
+          <button class="bt-btn bt-btn--sm" data-med-toggle="${esc(m.id)}">${inativo ? "Reativar" : "Inativar"}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  const inativos = meters.filter(function (m) { return m.ativo === false; }).length;
+
+  return `
+  <div class="page-title-row" style="margin-bottom:16px">
+    <div></div>
+    <button class="primary-btn" id="med-novo">${icon("plus", 16)} Novo medidor</button>
+  </div>
+
+  <div class="bt-card">
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table" style="min-width:900px">
+        <thead><tr><th>Código</th><th>Medidor</th><th>CAMM</th><th>Tipo</th><th>Unidade</th>
+          <th class="bt-num">Leituras</th><th>Última leitura</th><th></th></tr></thead>
+        <tbody>${linhas || '<tr><td colspan="8"><div class="bt-state"><strong>Nenhum medidor</strong>Cadastre o primeiro no botão acima.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="bt-notice bt-notice--info" style="margin-top:16px">
+    <span class="bt-notice__ic">i</span>
+    <div>Inativar não apaga nada: o medidor sai da lista de quem aponta e o histórico dele continua nos
+      apontamentos. ${inativos ? "Hoje há <b>" + inativos + "</b> medidor(es) inativo(s)." : "Nenhum medidor inativo hoje."}</div>
+  </div>
+  <div id="med-modal-root"></div>`;
+}
+
+function utilMedidorForm(meterId) {
+  const meters = getUtilityData();
+  const m = meterId ? meters.find(function (x) { return x.id === meterId; }) : null;
+  const camms = ["CAMM 1", "CAMM 2", "CAMM 3", "C. LOG"];
+  const root = document.getElementById("med-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="med-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>${m ? "Editar medidor" : "Novo medidor"}</h3>
+        <button class="icon-btn" id="med-close">${icon("x", 18)}</button>
+      </div>
+      <label class="field-label">Código ${m ? "(não muda)" : ""}</label>
+      <input class="modal-input" id="med-id" value="${m ? esc(m.id) : ""}" ${m ? "disabled" : ""} placeholder="Ex.: CAMM1-AGUA-07">
+      <label class="field-label" style="margin-top:12px;">Nome</label>
+      <input class="modal-input" id="med-nome" value="${m ? esc(m.name) : ""}" placeholder="Ex.: HIDRÔMETRO 07 - CAMM 1">
+      <label class="field-label" style="margin-top:12px;">CAMM / unidade</label>
+      <select class="modal-input" id="med-camm">${camms.map(function (c) {
+        return '<option value="' + c + '"' + (m && aptCammOf(m) === c ? " selected" : "") + ">" + c + "</option>";
+      }).join("")}</select>
+      <label class="field-label" style="margin-top:12px;">Tipo de medição</label>
+      <select class="modal-input" id="med-tipo">${Object.keys(APT_TYPES).map(function (t) {
+        return '<option value="' + t + '"' + (m && m.type === t ? " selected" : "") + ">" + esc(aptTypeLabel(t)) + "</option>";
+      }).join("")}</select>
+      <label class="field-label" style="margin-top:12px;">Unidade de medida</label>
+      <input class="modal-input" id="med-unidade" value="${m ? esc(m.unit || "") : ""}" placeholder="m³, Nm³, kWh, h">
+      <label class="field-label" style="margin-top:12px;">Leitura inicial</label>
+      <input class="modal-input" id="med-inicial" type="number" step="0.001" value="${m ? Number(m.initial || 0) : 0}">
+      <label class="checkbox-row" style="margin-top:14px;"><input type="checkbox" id="med-ativo" ${!m || m.ativo !== false ? "checked" : ""}><span>Ativo (aparece para quem aponta)</span></label>
+      <div id="med-erro"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="med-cancel">Cancelar</button>
+        <button class="primary-btn" id="med-save">${m ? "Salvar" : "Cadastrar"}</button>
+      </div>
+    </div>
+  </div>`;
+  const close = function () { root.innerHTML = ""; };
+  document.getElementById("med-backdrop").onclick = close;
+  document.getElementById("med-close").onclick = close;
+  document.getElementById("med-cancel").onclick = close;
+  document.getElementById("med-save").onclick = function () {
+    const erro = document.getElementById("med-erro");
+    const nome = document.getElementById("med-nome").value.trim();
+    const id = m ? m.id : document.getElementById("med-id").value.trim().toUpperCase();
+    if (!id) { erro.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Informe o código do medidor.</div></div>'; return; }
+    if (!nome) { erro.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Informe o nome do medidor.</div></div>'; return; }
+    if (!m && meters.some(function (x) { return x.id === id; })) {
+      erro.innerHTML = '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Já existe um medidor com este código.</div></div>';
+      return;
+    }
+    const payload = {
+      name: nome,
+      asset: document.getElementById("med-camm").value,
+      type: document.getElementById("med-tipo").value,
+      unit: document.getElementById("med-unidade").value.trim() || "un",
+      initial: Number(document.getElementById("med-inicial").value || 0),
+      ativo: document.getElementById("med-ativo").checked
+    };
+    if (m) Object.assign(m, payload);
+    else meters.push(Object.assign({ id: id }, payload));
+    saveUtilityData(meters);
+    close();
+    renderUtilTabContent();
+  };
+}
+
+function attachUtilMedidoresEvents() {
+  const novo = document.getElementById("med-novo");
+  if (novo) novo.onclick = function () { utilMedidorForm(null); };
+  document.querySelectorAll("[data-med-edit]").forEach(function (b) {
+    b.onclick = function () { utilMedidorForm(this.getAttribute("data-med-edit")); };
+  });
+  document.querySelectorAll("[data-med-toggle]").forEach(function (b) {
+    b.onclick = function () {
+      const id = this.getAttribute("data-med-toggle");
+      const meters = getUtilityData();
+      const m = meters.find(function (x) { return x.id === id; });
+      if (!m) return;
+      const inativando = m.ativo !== false;
+      if (inativando && !confirm("Inativar " + m.name + "?\n\nEle sai da lista de quem aponta. O histórico de leituras continua.")) return;
+      m.ativo = !inativando;
+      saveUtilityData(meters);
+      renderUtilTabContent();
+    };
+  });
+}
+
+/* ---------- o assistente passa a usar só medidores ativos ---------- */
+
+aptMeters = function () { return utilMetersAtivos(); };
+
+/* ====================================================================
+   GRUPOS COM RESPONSÁVEL DIRETO
+
+   Antes o aprovador da SCM vinha de um campo de texto solto no cadastro
+   do usuário ("e-mail do líder"). Bastava um erro de digitação para a
+   solicitação não chegar a ninguém — e o painel da administração vivia
+   apontando gente sem líder.
+
+   Agora a pessoa pertence a um GRUPO, e o grupo tem um RESPONSÁVEL
+   DIRETO. A aprovação segue o responsável do grupo; o campo antigo
+   continua existindo apenas como exceção, para quando alguém aprova
+   fora da estrutura. Isso também é o que permite matricular treinamento
+   por grupo: entrar ou sair do grupo atualiza a obrigação sozinho.
+
+   Os onze grupos são os que o cliente informou.
+   ==================================================================== */
+
+const GRUPOS_KEY = "btlocal.grupos_v1";
+
+const GRUPOS_SEED = [
+  { id: "g-mecanica", nome: "Mecânica", area: "Manutenção", responsavelId: null, ativo: true },
+  { id: "g-soldador", nome: "Soldador", area: "Manutenção", responsavelId: null, ativo: true },
+  { id: "g-tec-utilidades", nome: "Técnico Utilidades", area: "Utilidades", responsavelId: null, ativo: true },
+  { id: "g-eletrica-automacao", nome: "Elétrica / Automação", area: "Manutenção", responsavelId: null, ativo: true },
+  { id: "g-predial", nome: "Predial", area: "Facilities", responsavelId: null, ativo: true },
+  { id: "g-predial-eletrica", nome: "Predial Elétrica", area: "Facilities", responsavelId: null, ativo: true },
+  { id: "g-eletromecanica", nome: "Eletromecânica", area: "Manutenção", responsavelId: null, ativo: true },
+  { id: "g-pcm", nome: "PCM", area: "PCM", responsavelId: null, ativo: true },
+  { id: "g-almoxarifado", nome: "Almoxarifado", area: "Almoxarifado", responsavelId: null, ativo: true },
+  { id: "g-coord-adm", nome: "Coordenador ADM", area: "Coordenação", responsavelId: null, ativo: true },
+  { id: "g-coord-eletrica", nome: "Coordenador Elétrica", area: "Coordenação", responsavelId: null, ativo: true }
+];
+
+function loadGrupos() {
+  return seedStore(GRUPOS_KEY, GRUPOS_SEED);
+}
+function saveGrupos(lista) {
+  return writeStore(GRUPOS_KEY, lista);
+}
+
+function grupoPor(id) {
+  if (!id) return null;
+  return loadGrupos().find(function (g) { return g.id === id; }) || null;
+}
+
+function grupoDoUsuario(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return null;
+  return grupoPor(u.grupoId);
+}
+
+/** Membros ativos de um grupo. */
+function grupoMembros(grupoId) {
+  return loadUsers().filter(function (u) { return u.grupoId === grupoId && u.ativo !== false; });
+}
+
+/**
+ * Quem aprova a solicitação desta pessoa.
+ *
+ * Ordem: responsável do grupo → e-mail de exceção no cadastro → ninguém.
+ * Devolver o e-mail (e não o id) mantém compatibilidade com a SCM, que
+ * já grava solicitanteEmailLider e filtra a fila de aprovação por ele.
+ */
+function responsavelDe(user) {
+  const u = user || STATE.currentUser || {};
+  const g = grupoPor(u.grupoId);
+  if (g && g.responsavelId) {
+    const resp = loadUsers().find(function (x) { return x.id === g.responsavelId; });
+    if (resp && resp.ativo !== false) {
+      return { email: String(resp.usuario || "").toLowerCase(), nome: resp.nome, origem: "grupo", grupo: g.nome };
+    }
+  }
+  const exc = String(u.emailLider || "").trim().toLowerCase();
+  if (exc) return { email: exc, nome: exc, origem: "excecao", grupo: g ? g.nome : null };
+  return { email: "", nome: "", origem: "nenhum", grupo: g ? g.nome : null };
+}
+
+/** Alguém é responsável direto de pelo menos um grupo? */
+function ehResponsavelDeGrupo(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return false;
+  return loadGrupos().some(function (g) { return g.responsavelId === u.id && g.ativo !== false; });
+}
+
+/** Grupos sob responsabilidade da pessoa. */
+function meusGrupos(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return [];
+  return loadGrupos().filter(function (g) { return g.responsavelId === u.id; });
+}
+
+/** Pessoas que respondem a mim, direta ou por exceção. */
+function minhaEquipe(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return [];
+  const meuMail = String(u.usuario || "").toLowerCase();
+  const ids = meusGrupos(u).map(function (g) { return g.id; });
+  return loadUsers().filter(function (x) {
+    if (x.id === u.id) return false;
+    if (ids.indexOf(x.grupoId) >= 0) return true;
+    return String(x.emailLider || "").toLowerCase() === meuMail;
+  });
+}
+
+/* ---------- tela: grupos e responsáveis ---------- */
+
+function renderGrupos() {
+  const grupos = loadGrupos();
+  const users = loadUsers();
+  const semResponsavel = grupos.filter(function (g) { return g.ativo !== false && !g.responsavelId; });
+
+  const linhas = grupos.slice().sort(function (a, b) {
+    return String(a.area).localeCompare(String(b.area)) || String(a.nome).localeCompare(String(b.nome));
+  }).map(function (g) {
+    const resp = g.responsavelId ? users.find(function (u) { return u.id === g.responsavelId; }) : null;
+    const membros = grupoMembros(g.id);
+    const inativo = g.ativo === false;
+    return `<tr${inativo ? ' style="opacity:.6"' : ""}>
+      <td><b>${esc(g.nome)}</b>${inativo ? ' <span class="bt-badge">inativo</span>' : ""}</td>
+      <td>${esc(g.area || "—")}</td>
+      <td>${resp
+        ? "<b>" + esc(resp.nome) + '</b><div class="bt-small bt-muted">' + esc(resp.usuario) + "</div>"
+        : '<span class="bt-badge bt-badge--danger">sem responsável</span>'}</td>
+      <td class="bt-num">${membros.length}</td>
+      <td>
+        <div class="bt-row" style="gap:6px;flex-wrap:nowrap">
+          <button class="bt-btn bt-btn--sm" data-grupo-edit="${esc(g.id)}">Editar</button>
+          <button class="bt-btn bt-btn--sm" data-grupo-membros="${esc(g.id)}">Membros</button>
+          <button class="bt-btn bt-btn--sm" data-grupo-toggle="${esc(g.id)}">${inativo ? "Reativar" : "Inativar"}</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="page-title-row" style="margin-bottom:16px">
+    <div></div>
+    <button class="primary-btn" id="grupo-novo">${icon("plus", 16)} Novo grupo</button>
+  </div>
+
+  ${semResponsavel.length ? `<div class="bt-notice bt-notice--warn" style="margin-bottom:16px">
+    <span class="bt-notice__ic">!</span>
+    <div><b>${semResponsavel.length} grupo(s) sem responsável direto.</b>
+      A SCM de quem está nesses grupos não chega a ninguém para aprovar:
+      ${esc(semResponsavel.map(function (g) { return g.nome; }).join(", "))}.</div>
+  </div>` : ""}
+
+  <div class="bt-card">
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table">
+        <thead><tr><th>Grupo / cargo</th><th>Área</th><th>Responsável direto</th>
+          <th class="bt-num">Pessoas</th><th></th></tr></thead>
+        <tbody>${linhas || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhum grupo</strong>Cadastre o primeiro no botão acima.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="bt-notice bt-notice--info" style="margin-top:16px">
+    <span class="bt-notice__ic">i</span>
+    <div>O responsável direto do grupo é quem aprova a SCM de quem está nele, e é quem vê a
+      conformidade de treinamento da equipe. O campo "e-mail do líder" no cadastro do usuário
+      continua valendo apenas como exceção, quando alguém aprova fora da estrutura do grupo.</div>
+  </div>
+  <div id="grupo-modal-root"></div>`;
+}
+
+function grupoForm(grupoId) {
+  const grupos = loadGrupos();
+  const g = grupoId ? grupos.find(function (x) { return x.id === grupoId; }) : null;
+  const users = loadUsers().filter(function (u) { return u.ativo !== false; })
+    .sort(function (a, b) { return String(a.nome).localeCompare(String(b.nome)); });
+  const areas = ["Manutenção", "Utilidades", "Facilities", "PCM", "Almoxarifado", "Coordenação", "Administrativo"];
+
+  const root = document.getElementById("grupo-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="grupo-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>${g ? "Editar grupo" : "Novo grupo"}</h3>
+        <button class="icon-btn" id="grupo-close">${icon("x", 18)}</button>
+      </div>
+      <label class="field-label">Nome do grupo / cargo</label>
+      <input class="modal-input" id="grupo-nome" value="${g ? esc(g.nome) : ""}" placeholder="Ex.: Elétrica / Automação">
+      <label class="field-label" style="margin-top:12px;">Área</label>
+      <select class="modal-input" id="grupo-area">${areas.map(function (a) {
+        return '<option value="' + esc(a) + '"' + (g && g.area === a ? " selected" : "") + ">" + esc(a) + "</option>";
+      }).join("")}</select>
+      <label class="field-label" style="margin-top:12px;">Responsável direto</label>
+      <select class="modal-input" id="grupo-resp">
+        <option value="">— sem responsável —</option>
+        ${users.map(function (u) {
+          return '<option value="' + esc(u.id) + '"' + (g && g.responsavelId === u.id ? " selected" : "") + ">" +
+            esc(u.nome) + " · " + esc(u.usuario) + "</option>";
+        }).join("")}
+      </select>
+      <div class="bt-field__hint">É quem aprova a SCM do grupo e acompanha a conformidade de treinamento dele.</div>
+      <label class="checkbox-row" style="margin-top:14px;"><input type="checkbox" id="grupo-ativo" ${!g || g.ativo !== false ? "checked" : ""}><span>Ativo</span></label>
+      <div id="grupo-erro"></div>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="grupo-cancel">Cancelar</button>
+        <button class="primary-btn" id="grupo-save">${g ? "Salvar" : "Cadastrar"}</button>
+      </div>
+    </div>
+  </div>`;
+  const close = function () { root.innerHTML = ""; };
+  document.getElementById("grupo-backdrop").onclick = close;
+  document.getElementById("grupo-close").onclick = close;
+  document.getElementById("grupo-cancel").onclick = close;
+  document.getElementById("grupo-save").onclick = function () {
+    const nome = document.getElementById("grupo-nome").value.trim();
+    if (!nome) {
+      document.getElementById("grupo-erro").innerHTML =
+        '<div class="bt-notice bt-notice--danger"><span class="bt-notice__ic">!</span><div>Informe o nome do grupo.</div></div>';
+      return;
+    }
+    const payload = {
+      nome: nome,
+      area: document.getElementById("grupo-area").value,
+      responsavelId: document.getElementById("grupo-resp").value || null,
+      ativo: document.getElementById("grupo-ativo").checked
+    };
+    if (g) Object.assign(g, payload);
+    else grupos.push(Object.assign({ id: "g" + Date.now() }, payload));
+    saveGrupos(grupos);
+    close();
+    if (typeof renderAdminTabContent === "function") renderAdminTabContent();
+  };
+}
+
+function grupoMembrosModal(grupoId) {
+  const g = grupoPor(grupoId);
+  if (!g) return;
+  const todos = loadUsers();
+  const membros = todos.filter(function (u) { return u.grupoId === g.id; });
+  const fora = todos.filter(function (u) { return u.grupoId !== g.id && u.ativo !== false; });
+
+  const root = document.getElementById("grupo-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="gm-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>${esc(g.nome)} — membros</h3>
+        <button class="icon-btn" id="gm-close">${icon("x", 18)}</button>
+      </div>
+      <div class="bt-small bt-muted" style="margin-bottom:12px">
+        Mudar alguém de grupo troca o aprovador da SCM dele e revê os treinamentos obrigatórios do grupo.
+      </div>
+      <div class="sci-section-title">No grupo (${membros.length})</div>
+      <div class="bt-stack" style="gap:7px;margin:10px 0 16px">
+        ${membros.map(function (u) {
+          return `<div class="bt-row" style="gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:12px">
+            <span><b>${esc(u.nome)}</b><div class="bt-small bt-muted">${esc(u.usuario)}</div></span>
+            <button class="bt-btn bt-btn--sm bt-right" data-gm-out="${esc(u.id)}">Remover</button>
+          </div>`;
+        }).join("") || '<div class="bt-small bt-muted">Ninguém neste grupo ainda.</div>'}
+      </div>
+      <div class="sci-section-title">Acrescentar</div>
+      <select class="modal-input" id="gm-add" style="margin-top:10px">
+        <option value="">— escolha uma pessoa —</option>
+        ${fora.map(function (u) {
+          const gg = grupoPor(u.grupoId);
+          return '<option value="' + esc(u.id) + '">' + esc(u.nome) +
+            (gg ? " (hoje em " + esc(gg.nome) + ")" : " (sem grupo)") + "</option>";
+        }).join("")}
+      </select>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="gm-ok">Fechar</button>
+        <button class="primary-btn" id="gm-save">Acrescentar ao grupo</button>
+      </div>
+    </div>
+  </div>`;
+  const fechar = function () { root.innerHTML = ""; if (typeof renderAdminTabContent === "function") renderAdminTabContent(); };
+  document.getElementById("gm-backdrop").onclick = fechar;
+  document.getElementById("gm-close").onclick = fechar;
+  document.getElementById("gm-ok").onclick = fechar;
+
+  root.querySelectorAll("[data-gm-out]").forEach(function (b) {
+    b.onclick = function () {
+      const id = this.getAttribute("data-gm-out");
+      const users = loadUsers();
+      const u = users.find(function (x) { return x.id === id; });
+      if (u) { u.grupoId = null; saveUsers(users); }
+      grupoMembrosModal(grupoId);
+    };
+  });
+  document.getElementById("gm-save").onclick = function () {
+    const id = document.getElementById("gm-add").value;
+    if (!id) return;
+    const users = loadUsers();
+    const u = users.find(function (x) { return x.id === id; });
+    if (u) {
+      u.grupoId = g.id;
+      saveUsers(users);
+      if (typeof lmsSyncGrupos === "function") lmsSyncGrupos();
+    }
+    grupoMembrosModal(grupoId);
+  };
+}
+
+function attachGruposEvents() {
+  const novo = document.getElementById("grupo-novo");
+  if (novo) novo.onclick = function () { grupoForm(null); };
+  document.querySelectorAll("[data-grupo-edit]").forEach(function (b) {
+    b.onclick = function () { grupoForm(this.getAttribute("data-grupo-edit")); };
+  });
+  document.querySelectorAll("[data-grupo-membros]").forEach(function (b) {
+    b.onclick = function () { grupoMembrosModal(this.getAttribute("data-grupo-membros")); };
+  });
+  document.querySelectorAll("[data-grupo-toggle]").forEach(function (b) {
+    b.onclick = function () {
+      const id = this.getAttribute("data-grupo-toggle");
+      const grupos = loadGrupos();
+      const g = grupos.find(function (x) { return x.id === id; });
+      if (!g) return;
+      const inativando = g.ativo !== false;
+      if (inativando) {
+        const n = grupoMembros(g.id).length;
+        if (n && !confirm("Inativar " + g.nome + "?\n\nHá " + n + " pessoa(s) neste grupo. Elas ficam sem aprovador até serem movidas.")) return;
+      }
+      g.ativo = !inativando;
+      saveGrupos(grupos);
+      if (typeof renderAdminTabContent === "function") renderAdminTabContent();
+    };
+  });
+}
+
+/* ---------- administração: nova aba ---------- */
+
+const _admPrevRenderTabContent = renderAdminTabContent;
+renderAdminTabContent = function () {
+  const el = document.getElementById("admin-tab-content");
+  if (!el) return;
+  if (ADMIN_STATE.tab === "grupos") {
+    el.innerHTML = renderGrupos();
+    attachGruposEvents();
+    return;
+  }
+  return _admPrevRenderTabContent();
+};
+
+const _admPrevRender = renderAdmin;
+renderAdmin = function () {
+  const html = _admPrevRender();
+  // Acrescenta a aba de grupos ao lado das existentes.
+  return html.replace(
+    '<button class="tab-btn" data-admintab="profiles">Perfis de Acesso</button>',
+    '<button class="tab-btn" data-admintab="profiles">Perfis de Acesso</button>' +
+    '<button class="tab-btn" data-admintab="grupos">Grupos e Responsáveis</button>'
+  );
+};
+
+/* ---------- cadastro do usuário: grupo em vez de time livre ---------- */
+
+const _grupoPrevOpenUserForm = openUserForm;
+openUserForm = function (userId) {
+  _grupoPrevOpenUserForm(userId);
+  const campoTime = document.getElementById("uf-time");
+  if (!campoTime) return;
+
+  const users = loadUsers();
+  const editing = users.find(function (u) { return String(u.id) === String(userId); }) || null;
+  const grupos = loadGrupos().filter(function (g) { return g.ativo !== false; });
+
+  // O campo livre "Time" vira seleção de grupo: é o grupo que define o aprovador.
+  const wrap = document.createElement("div");
+  wrap.innerHTML =
+    '<label class="field-label" style="margin-top:12px;">Grupo / cargo</label>' +
+    '<select class="modal-input" id="uf-grupo"><option value="">— sem grupo —</option>' +
+    grupos.map(function (g) {
+      const resp = g.responsavelId ? users.find(function (u) { return u.id === g.responsavelId; }) : null;
+      return '<option value="' + esc(g.id) + '"' + (editing && editing.grupoId === g.id ? " selected" : "") + ">" +
+        esc(g.nome) + (resp ? " · responsável " + esc(resp.nome) : " · sem responsável") + "</option>";
+    }).join("") + "</select>" +
+    '<div class="bt-field__hint" id="uf-grupo-hint"></div>';
+
+  const labelTime = campoTime.previousElementSibling;
+  if (labelTime) labelTime.textContent = "Time (texto livre, opcional)";
+  campoTime.insertAdjacentElement("afterend", wrap);
+
+  const hint = document.getElementById("uf-grupo-hint");
+  const sel = document.getElementById("uf-grupo");
+  const atualizaHint = function () {
+    const g = grupoPor(sel.value);
+    if (!g) { hint.textContent = "Sem grupo, a SCM desta pessoa só chega a alguém pelo e-mail de exceção abaixo."; return; }
+    const resp = g.responsavelId ? users.find(function (u) { return u.id === g.responsavelId; }) : null;
+    hint.textContent = resp
+      ? "A SCM desta pessoa vai para " + resp.nome + " (" + resp.usuario + ")."
+      : "Este grupo ainda não tem responsável direto: defina em Administração > Grupos e Responsáveis.";
+  };
+  sel.onchange = atualizaHint;
+  atualizaHint();
+
+  const lider = document.getElementById("uf-lider");
+  if (lider) {
+    const l = lider.previousElementSibling;
+    if (l) l.textContent = "E-mail do líder (exceção, só se aprovar fora do grupo)";
+  }
+
+  // Reescreve o salvar para gravar o grupo junto.
+  const btn = document.getElementById("save-user-form");
+  if (btn) {
+    const anterior = btn.onclick;
+    btn.onclick = function () {
+      const grupoId = document.getElementById("uf-grupo").value || null;
+      const antes = loadUsers().map(function (u) { return { id: u.id, grupoId: u.grupoId }; });
+      anterior.call(this);
+      // O salvar original recarrega e grava USERS; aplica o grupo em seguida.
+      const depois = loadUsers();
+      const alvo = editing
+        ? depois.find(function (u) { return String(u.id) === String(editing.id); })
+        : depois.slice().sort(function (a, b) { return String(b.id).localeCompare(String(a.id)); })[0];
+      if (alvo && alvo.grupoId !== grupoId) {
+        alvo.grupoId = grupoId;
+        saveUsers(depois);
+        if (typeof lmsSyncGrupos === "function") lmsSyncGrupos();
+        if (typeof renderAdminTabContent === "function") renderAdminTabContent();
+      }
+      void antes;
+    };
+  }
+};
+
+/* ---------- a fila de aprovação passa a seguir o responsável do grupo ---------- */
+
+// Na criação da SCM o arquivo original grava solicitanteEmailLider a partir do
+// campo do usuário. Aqui o valor passa a ser resolvido pelo grupo.
+(function () {
+  const anterior = saveScm;
+  saveScm = function (list) {
+    try {
+      const users = loadUsers();
+      (list || []).forEach(function (s) {
+        if (s.status !== "pendente_aprovacao_lider") return;
+        if (s.aprovadorResolvido) return;
+        const dono = users.find(function (u) {
+          return u.id === s.solicitanteId || String(u.usuario || "").toLowerCase() === String(s.solicitanteEmail || "").toLowerCase();
+        });
+        if (!dono) return;
+        const r = responsavelDe(dono);
+        if (r.email) {
+          s.solicitanteEmailLider = r.email;
+          s.aprovadorOrigem = r.origem;
+          s.aprovadorGrupo = r.grupo;
+        }
+        s.aprovadorResolvido = true;
+      });
+    } catch (e) { console.warn("[BIOTROP] resolução do aprovador:", e); }
+    return anterior(list);
+  };
+})();
+
+/* ====================================================================
+   INTEGRAÇÃO DOS AJUSTES DA REUNIÃO
+
+   - almoxarifado num único grupo de menu, com "Minhas solicitações";
+   - "Apontar horímetros" virou "Apontar consumo" em todo lugar;
+   - utilidades em abas (novo apontamento / apontamentos / medidores);
+   - treinamento atribuível a GRUPO, não só a pessoa;
+   - "Conformidade" virou "Visão geral de treinamentos", restrita a quem
+     é responsável de grupo, com filtro por colaborador, time e cargo.
+   ==================================================================== */
+
+/* ---------- migrações de dados ---------- */
+
+sciMigrate();
+loadGrupos();
+
+// Medidor sem a marca de ativo é medidor ativo: o campo nasceu depois.
+(function () {
+  const meters = getUtilityData();
+  let mudou = false;
+  meters.forEach(function (m) { if (m.ativo === undefined) { m.ativo = true; mudou = true; } });
+  if (mudou) saveUtilityData(meters);
+})();
+
+/* ---------- treinamento por grupo ---------- */
+
+const _lmsPrevEnsure = lmsEnsureEnrollments;
+lmsEnsureEnrollments = function () {
+  const db = lmsLoad();
+  const users = loadUsers().filter(function (u) { return u.ativo !== false; });
+  let changed = false;
+
+  db.trainings.filter(function (t) { return t.active !== false && t.mandatory; }).forEach(function (t) {
+    const v = lmsVersionOf(t.id);
+    if (!v) return;
+    // Treinamento com grupos definidos obriga só quem está nesses grupos.
+    // Sem grupos, segue valendo para todo usuário ativo.
+    const alvo = (Array.isArray(t.grupoIds) && t.grupoIds.length)
+      ? users.filter(function (u) { return t.grupoIds.indexOf(u.grupoId) >= 0; })
+      : users;
+    alvo.forEach(function (u) {
+      const uid = lmsUserId(u);
+      const has = db.enrollments.some(function (e) {
+        return e.user_id === uid && e.training_id === t.id && e.version_id === v.id;
+      });
+      if (has) return;
+      db.enrollments.push({
+        id: lmsUid("en"), user_id: uid, user_name: u.nome, training_id: t.id, version_id: v.id,
+        mandatory: true, status: "nao_iniciado", started_at: null,
+        due_at: new Date(Date.now() + (t.deadline_days || 30) * 864e5).toISOString(),
+        assigned_at: lmsNow(), origem: (t.grupoIds && t.grupoIds.length) ? "grupo" : "todos"
+      });
+      changed = true;
+    });
+  });
+  if (changed) lmsSave();
+};
+
+/** Chamada quando alguém troca de grupo. */
+function lmsSyncGrupos() {
+  lmsEnsureEnrollments();
+}
+
+// Na gestão do treinamento, escolher os grupos obrigados.
+const _lmsPrevTrainingForm = lmsTrainingForm;
+lmsTrainingForm = function (trainingId) {
+  _lmsPrevTrainingForm(trainingId);
+  const db = lmsLoad();
+  const t = trainingId ? lmsTraining(trainingId) : null;
+  const grupos = loadGrupos().filter(function (g) { return g.ativo !== false; });
+  const marcados = (t && Array.isArray(t.grupoIds)) ? t.grupoIds : [];
+
+  const alvo = document.getElementById("tf-mandatory");
+  if (!alvo) return;
+  const campo = alvo.closest(".bt-field") || alvo.parentElement;
+
+  const wrap = document.createElement("div");
+  wrap.className = "bt-field";
+  wrap.style.gridColumn = "1/-1";
+  wrap.innerHTML = '<label>Obrigatório para quais grupos</label>' +
+    '<div class="bt-small bt-muted" style="margin-bottom:8px">Sem nenhum marcado, o treinamento obrigatório vale para todos os usuários ativos.</div>' +
+    '<div class="bt-stack" style="gap:6px;max-height:190px;overflow:auto">' +
+    grupos.map(function (g) {
+      return '<label class="bt-row" style="gap:9px;cursor:pointer;padding:7px 10px;border:1px solid var(--border);border-radius:10px">' +
+        '<input type="checkbox" class="tf-grupo" value="' + esc(g.id) + '"' +
+        (marcados.indexOf(g.id) >= 0 ? " checked" : "") + ">" +
+        '<span class="bt-small">' + esc(g.nome) + ' <span class="bt-muted">· ' + grupoMembros(g.id).length + " pessoa(s)</span></span></label>";
+    }).join("") + "</div>";
+  campo.insertAdjacentElement("afterend", wrap);
+
+  const salvar = document.getElementById("tf-save");
+  if (salvar) {
+    const anterior = salvar.onclick;
+    salvar.onclick = function () {
+      const ids = Array.prototype.slice.call(document.querySelectorAll(".tf-grupo:checked"))
+        .map(function (i) { return i.value; });
+      anterior.call(this);
+      const base = lmsLoad();
+      const alvoTr = t
+        ? base.trainings.find(function (x) { return x.id === t.id; })
+        : base.trainings[base.trainings.length - 1];
+      if (alvoTr) {
+        alvoTr.grupoIds = ids;
+        lmsSave();
+        lmsEnsureEnrollments();
+      }
+    };
+  }
+  void db;
+};
+
+/* ---------- visão geral de treinamentos ---------- */
+
+const VGT_FILTER = { colaborador: "", grupo: "", time: "", situacao: "" };
+
+/** Quem pode ver a equipe: responsável de grupo, gestor, PCM e administração. */
+function podeVerVisaoGeral(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return false;
+  if (lmsCanManage()) return true;
+  if (ehResponsavelDeGrupo(u)) return true;
+  return u.perfilId === "pcm" || u.perfilId === "lider";
+}
+
+function renderVisaoGeralTreinamentos() {
+  if (!podeVerVisaoGeral()) {
+    return '<div class="bt-state"><strong>Sem acesso</strong>A visão geral de treinamentos é de quem responde por um grupo, da gestão e da administração.</div>';
+  }
+  lmsEnsureEnrollments();
+  const db = lmsLoad();
+  const mandatory = db.trainings.filter(function (t) { return t.active !== false && t.mandatory; });
+  const grupos = loadGrupos();
+  const u = STATE.currentUser;
+
+  // Responsável de grupo vê o próprio grupo; gestão vê todos.
+  let linhas = lmsComplianceRows();
+  if (!lmsCanManage()) {
+    const meus = meusGrupos(u).map(function (g) { return g.id; });
+    const meuMail = String(u.usuario || "").toLowerCase();
+    linhas = linhas.filter(function (r) {
+      return meus.indexOf(r.user.grupoId) >= 0 ||
+        String(r.user.emailLider || "").toLowerCase() === meuMail ||
+        r.user.id === u.id;
+    });
+  }
+
+  const f = VGT_FILTER;
+  const times = [];
+  linhas.forEach(function (r) { const t = (r.user.time || "").trim(); if (t && times.indexOf(t) < 0) times.push(t); });
+
+  const filtradas = linhas.filter(function (r) {
+    if (f.grupo && r.user.grupoId !== f.grupo) return false;
+    if (f.time && (r.user.time || "") !== f.time) return false;
+    if (f.colaborador) {
+      const alvo = (r.user.nome + " " + r.user.usuario).toLowerCase();
+      if (alvo.indexOf(f.colaborador.toLowerCase()) < 0) return false;
+    }
+    if (f.situacao === "pendente" && r.pct === 100) return false;
+    if (f.situacao === "em_dia" && r.pct !== 100) return false;
+    if (f.situacao === "atrasado" && !r.items.some(function (i) { return i.situacao === "atrasado" || i.situacao === "vencido"; })) return false;
+    return true;
+  });
+
+  const totalItens = filtradas.reduce(function (s, r) { return s + r.items.length; }, 0);
+  const okItens = filtradas.reduce(function (s, r) { return s + r.okCount; }, 0);
+  const atrasados = filtradas.reduce(function (s, r) {
+    return s + r.items.filter(function (i) { return i.situacao === "atrasado" || i.situacao === "vencido"; }).length;
+  }, 0);
+  const geral = totalItens ? Math.round((okItens / totalItens) * 100) : 100;
+
+  const sit = {
+    em_dia: '<span class="bt-badge bt-badge--ok">em dia</span>',
+    pendente: '<span class="bt-badge">pendente</span>',
+    atrasado: '<span class="bt-badge bt-badge--danger">atrasado</span>',
+    vencido: '<span class="bt-badge bt-badge--danger">vencido</span>',
+    reprovado: '<span class="bt-badge bt-badge--warn">bloqueado</span>'
+  };
+
+  return `
+  <div class="page-title-row">
+    <div class="page-icon">${icon("users", 22)}</div>
+    <div>
+      <h1>Visão geral de treinamentos</h1>
+      <p>Situação de cada pessoa nos treinamentos obrigatórios${lmsCanManage() ? "" : " da sua equipe"}.</p>
+    </div>
+  </div>
+
+  <div class="bt-grid--kpi" style="margin-bottom:18px">
+    <div class="bt-kpi ${geral >= 80 ? "bt-kpi--ok" : geral >= 50 ? "bt-kpi--warn" : "bt-kpi--alert"}">
+      <div class="bt-kpi__label">Conformidade</div><div class="bt-kpi__value">${geral}<span class="bt-kpi__unit">%</span></div>
+      <div class="bt-kpi__hint">${okItens} de ${totalItens} obrigações em dia</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Pessoas</div><div class="bt-kpi__value">${filtradas.length}</div><div class="bt-kpi__hint">de ${linhas.length} no seu escopo</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Obrigatórios</div><div class="bt-kpi__value">${mandatory.length}</div><div class="bt-kpi__hint">treinamentos exigidos</div></div>
+    <div class="bt-kpi ${atrasados ? "bt-kpi--alert" : "bt-kpi--ok"}"><div class="bt-kpi__label">Atrasados ou vencidos</div><div class="bt-kpi__value">${atrasados}</div><div class="bt-kpi__hint">${atrasados ? "exigem ação" : "nada vencido"}</div></div>
+  </div>
+
+  <div class="bt-card" style="margin-bottom:16px">
+    <div class="bt-card__body">
+      <div class="bt-fields2">
+        <div class="bt-field"><label>Colaborador</label><input id="vgt-colab" value="${esc(f.colaborador)}" placeholder="nome ou e-mail"></div>
+        <div class="bt-field"><label>Grupo / cargo</label><select id="vgt-grupo">
+          <option value="">Todos</option>
+          ${grupos.map(function (g) { return '<option value="' + esc(g.id) + '"' + (f.grupo === g.id ? " selected" : "") + ">" + esc(g.nome) + "</option>"; }).join("")}
+        </select></div>
+        <div class="bt-field"><label>Time</label><select id="vgt-time">
+          <option value="">Todos</option>
+          ${times.map(function (t) { return '<option value="' + esc(t) + '"' + (f.time === t ? " selected" : "") + ">" + esc(t) + "</option>"; }).join("")}
+        </select></div>
+        <div class="bt-field"><label>Situação</label><select id="vgt-sit">
+          <option value="">Todas</option>
+          <option value="pendente"${f.situacao === "pendente" ? " selected" : ""}>Com pendência</option>
+          <option value="atrasado"${f.situacao === "atrasado" ? " selected" : ""}>Atrasado ou vencido</option>
+          <option value="em_dia"${f.situacao === "em_dia" ? " selected" : ""}>Tudo em dia</option>
+        </select></div>
+      </div>
+      <div class="bt-row"><button class="bt-btn bt-btn--sm bt-right" id="vgt-limpar">Limpar filtros</button>
+        <button class="bt-btn bt-btn--sm" id="vgt-csv">Exportar CSV</button></div>
+    </div>
+  </div>
+
+  <div class="bt-card">
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table">
+        <thead><tr><th>Colaborador</th><th>Grupo / cargo</th>
+          ${mandatory.map(function (t) { return '<th title="' + esc(t.title) + '">' + esc(t.code) + "</th>"; }).join("")}
+          <th class="bt-num">Em dia</th></tr></thead>
+        <tbody>
+          ${filtradas.map(function (r) {
+            const g = grupoPor(r.user.grupoId);
+            return "<tr><td><b>" + esc(r.user.nome) + '</b><div class="bt-small bt-muted">' + esc(r.user.usuario) + "</div></td>" +
+              "<td>" + (g ? esc(g.nome) : '<span class="bt-badge">sem grupo</span>') +
+              (r.user.time ? '<div class="bt-small bt-muted">' + esc(r.user.time) + "</div>" : "") + "</td>" +
+              mandatory.map(function (t) {
+                const item = r.items.find(function (i) { return i.training.id === t.id; });
+                return "<td>" + (item ? (sit[item.situacao] || sit.pendente) : '<span class="bt-small bt-muted">não exigido</span>') + "</td>";
+              }).join("") +
+              '<td class="bt-num"><b>' + r.pct + "%</b></td></tr>";
+          }).join("") || '<tr><td colspan="' + (mandatory.length + 3) + '"><div class="bt-state"><strong>Ninguém com esses filtros</strong>Limpe os filtros para ver todo o escopo.</div></td></tr>'}
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <div class="bt-card" style="margin-top:16px">
+    <div class="bt-card__head"><div><h3>Legenda dos códigos</h3></div></div>
+    <div class="bt-card__body">
+      <div class="bt-stack" style="gap:7px">
+        ${mandatory.map(function (t) {
+          const gs = (t.grupoIds || []).map(function (id) { const g = grupoPor(id); return g ? g.nome : id; });
+          return '<div class="bt-small"><b class="bt-mono">' + esc(t.code) + "</b> — " + esc(t.title) +
+            " · validade " + (t.validity_months ? t.validity_months + " meses" : "indeterminada") +
+            " · prazo " + t.deadline_days + " dias · " +
+            (gs.length ? "grupos: " + esc(gs.join(", ")) : "todos os usuários ativos") + "</div>";
+        }).join("") || '<div class="bt-small bt-muted">Nenhum treinamento obrigatório cadastrado.</div>'}
+      </div>
+    </div>
+  </div>`;
+}
+
+function attachVisaoGeralEvents() {
+  const liga = function (id, campo, tipo) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(tipo === "text" ? "input" : "change", function () {
+      VGT_FILTER[campo] = this.value;
+      navigateTo("lms_compliance");
+    });
+  };
+  liga("vgt-colab", "colaborador", "text");
+  liga("vgt-grupo", "grupo");
+  liga("vgt-time", "time");
+  liga("vgt-sit", "situacao");
+
+  const limpar = document.getElementById("vgt-limpar");
+  if (limpar) limpar.onclick = function () {
+    VGT_FILTER.colaborador = ""; VGT_FILTER.grupo = ""; VGT_FILTER.time = ""; VGT_FILTER.situacao = "";
+    navigateTo("lms_compliance");
+  };
+
+  const csv = document.getElementById("vgt-csv");
+  if (csv) csv.onclick = function () {
+    const db = lmsLoad();
+    const mandatory = db.trainings.filter(function (t) { return t.active !== false && t.mandatory; });
+    const linhas = [["Colaborador", "Email", "Grupo", "Time"].concat(mandatory.map(function (t) { return t.code; })).concat(["Em dia %"]).map(csvEscape).join(";")];
+    lmsComplianceRows().forEach(function (r) {
+      const g = grupoPor(r.user.grupoId);
+      linhas.push([r.user.nome, r.user.usuario, g ? g.nome : "", r.user.time || ""]
+        .concat(mandatory.map(function (t) {
+          const i = r.items.find(function (x) { return x.training.id === t.id; });
+          return i ? i.situacao : "nao exigido";
+        }))
+        .concat([r.pct]).map(csvEscape).join(";"));
+    });
+    downloadCsv(linhas.join("\r\n"), "visao-geral-treinamentos.csv");
+  };
+}
+
+/* ---------- menu: almoxarifado unificado e nomes novos ---------- */
+
+const _reuPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const u = user || STATE.currentUser;
+  const c = btCounts();
+
+  // Visão do técnico: os quatro itens do v7 mais "Minhas solicitações",
+  // pedida na reunião para o técnico acompanhar o que devolveram para ele.
+  if (btIsTechOnly(u)) {
+    return [{
+      label: "Operação",
+      items: [
+        { id: "home", icon: "⌂", label: "Início" },
+        { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
+        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
+        { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },
+        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
+      ]
+    }];
+  }
+
+  const admin = isAdminUser(u);
+  const perms = getPerms(u);
+  const almox = perms.almoxarifado || {};
+  const has = function (flag) { return admin || Boolean(flag); };
+  const i = function (id, icon, label, allowed, badge) {
+    return allowed ? { id: id, icon: icon, label: label, badge: badge } : null;
+  };
+
+  // Um grupo só para o almoxarifado, como o Plinio pediu, em vez de dois.
+  const grupos = [
+    { label: "Meu dia", items: [i("home", "⌂", "Início", true)] },
+    {
+      label: "Utilidades",
+      items: [
+        i("utilidades", "⏱", "Apontar consumo", has(perms.utilidades && perms.utilidades.acesso))
+      ]
+    },
+    {
+      label: "Almoxarifado",
+      items: [
+        i("almoxarifado", "+", "Nova solicitação", has(almox.acesso)),
+        i("almox_minhas", "⊟", "Minhas solicitações", true, c.minhasPendencias),
+        i("almox_solicitacoes", "⊞", "Solicitações (SCI)", has(almox.solicitacoes), c.sci),
+        i("almox_scm_form", "⊕", "Nova compra (SCM)", has(almox.scm_acesso)),
+        i("almox_scm_gestao", "▤", "Gestão de SCM", has(almox.scm_gestao), c.scmQueue),
+        i("almox_scm_aprovacao", "✓", "Aprovações SCM", has(almox.scm_aprovacao) || ehResponsavelDeGrupo(u), c.approvals),
+        i("familias", "◫", "Famílias de itens", has(almox.familias))
+      ]
+    },
+    { label: "PCM", items: [i("pcm", "◱", "PCM", has(perms.pcm && perms.pcm.acesso))] },
+    {
+      label: "Treinamentos",
+      items: [
+        i("lms_my", "▷", "Meus treinamentos", true, c.trainings),
+        i("lms_cert", "⎙", "Comprovantes", true),
+        i("lms_compliance", "⚑", "Visão geral de treinamentos", podeVerVisaoGeral(u)),
+        i("lms_admin", "✎", "Gestão de treinamentos", lmsCanManage())
+      ]
+    },
+    { label: "Administração", items: [i("admin", "☺", "Usuários, perfis e grupos", admin)] }
+  ];
+
+  return grupos
+    .map(function (g) { return { label: g.label, items: g.items.filter(Boolean) }; })
+    .filter(function (g) { return g.items.length; });
+};
+
+// Contador de pendências do próprio solicitante.
+const _reuPrevCounts = btCounts;
+btCounts = function () {
+  const c = _reuPrevCounts();
+  try {
+    const u = STATE.currentUser;
+    if (u) {
+      c.minhasPendencias = loadSci().filter(function (s) {
+        return s.solicitanteId === u.id && s.status === "revisao_solicitante";
+      }).length;
+    }
+  } catch (e) { c.minhasPendencias = 0; }
+  return c;
+};
+
+/* ---------- rotas novas ---------- */
+
+BT_PAGE_TITLES.utilidades = "Apontar consumo";
+BT_PAGE_TITLES.utilidades_pcm = "Apontamentos de utilidades";
+BT_PAGE_TITLES.almox_minhas = "Minhas solicitações";
+BT_PAGE_TITLES.lms_compliance = "Visão geral de treinamentos";
+BT_PAGE_TITLES.admin = "Usuários, perfis e grupos";
+
+const _reuPrevNavigate = navigateTo;
+navigateTo = function (areaId) {
+  const box = document.getElementById("main-content");
+  if (!box) return _reuPrevNavigate(areaId);
+
+  if (areaId === "almox_minhas") {
+    STATE.activeArea = areaId;
+    box.innerHTML = renderMinhasSolicitacoes();
+    attachMinhasSolicitacoesEvents();
+    btSetPageTitle(areaId);
+    btRefreshNav();
+    return;
+  }
+
+  // Utilidades passa a ser a casca com abas; o assistente é a primeira aba.
+  if (areaId === "utilidades" || areaId === "utilidades_pcm") {
+    const perms = getPerms(STATE.currentUser);
+    if (!isAdminUser(STATE.currentUser) && !(perms.utilidades && perms.utilidades.acesso)) {
+      return _reuPrevNavigate(areaId);
+    }
+    STATE.activeArea = "utilidades";
+    const aba = areaId === "utilidades_pcm" ? "lista" : "novo";
+    box.innerHTML = renderUtilidades(aba);
+    attachUtilidadesEvents();
+    btSetPageTitle("utilidades");
+    btRefreshNav();
+    return;
+  }
+
+  if (areaId === "lms_compliance") {
+    STATE.activeArea = areaId;
+    box.innerHTML = renderVisaoGeralTreinamentos();
+    attachVisaoGeralEvents();
+    btSetPageTitle(areaId);
+    btRefreshNav();
+    return;
+  }
+
+  return _reuPrevNavigate(areaId);
+};
+
+/* ---------- cartão do técnico com o nome novo ---------- */
+
+const _reuPrevTechHome = renderTechHome;
+renderTechHome = function () {
+  return _reuPrevTechHome()
+    .replace(/Apontar Horímetros/g, "Apontar consumo")
+    .replace(
+      "Água, gás, energia e horímetros. Escolha o medidor e faça a leitura.",
+      "Água, gás, energia e horímetro. Escolha o CAMM e registre a leitura."
+    );
+};
+
+
+/* ====================================================================
+   UTILIDADES: as abas viraram itens de menu
+
+   Antes as três telas viviam em abas dentro de "Apontar consumo". Agora
+   ficam no menu, abaixo dele, do mesmo jeito que o almoxarifado:
+
+     Apontar consumo
+       Apontamentos
+       Gestão de medidores
+
+   Cada tela abre direto, sem barra de abas — o item do menu já diz onde
+   você está, e a barra repetia essa informação ocupando altura.
+   ==================================================================== */
+
+/* ---------- telas separadas, sem barra de abas ---------- */
+
+function renderUtilTela(qual) {
+  const cabecalho = function (titulo, sub, ic) {
+    return `
+    <div class="page-title-row" style="margin-bottom:18px;">
+      <div class="page-icon">${icon(ic, 22)}</div>
+      <div><h1>${esc(titulo)}</h1><p>${esc(sub)}</p></div>
+    </div>`;
+  };
+
+  if (qual === "lista") {
+    return cabecalho("Apontamentos", "Todos os registros de consumo, com filtros e verificação de desvio.", "activity") +
+      '<div id="util-tab-content">' + renderUtilLista() + "</div>";
+  }
+  if (qual === "medidores") {
+    return cabecalho("Gestão de medidores", "Cadastrar, editar e inativar medidores de água, gás, energia e horímetro.", "gauge") +
+      '<div id="util-tab-content">' + renderUtilMedidores() + "</div>";
+  }
+  return '<div id="util-tab-content">' + renderApontar() + "</div>";
+}
+
+function attachUtilTela(qual) {
+  if (qual === "lista") { attachUtilListaEvents(); return; }
+  if (qual === "medidores") { attachUtilMedidoresEvents(); return; }
+  attachApontarEvents();
+}
+
+/**
+ * renderUtilTabContent é chamada de dentro das telas quando algo muda
+ * (salvou leitura, inativou medidor, mexeu no filtro). Sem abas, ela
+ * passa a redesenhar a tela da área em que você está.
+ */
+renderUtilTabContent = function () {
+  const box = document.getElementById("util-tab-content");
+  if (!box) return;
+  const qual = STATE.activeArea === "utilidades_lista" ? "lista"
+    : STATE.activeArea === "utilidades_medidores" ? "medidores" : "novo";
+  if (qual === "lista") { box.innerHTML = renderUtilLista(); attachUtilListaEvents(); return; }
+  if (qual === "medidores") { box.innerHTML = renderUtilMedidores(); attachUtilMedidoresEvents(); return; }
+  box.innerHTML = renderApontar();
+  attachApontarEvents();
+};
+
+/* ---------- menu ---------- */
+
+const _utmPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const grupos = _utmPrevNavGroups(user);
+  const u = user || STATE.currentUser;
+  const gestor = btPodeVerSalaControle(u);
+
+  grupos.forEach(function (g) {
+    if (g.label !== "Utilidades" && g.label !== "Operação") return;
+    // Tira o item antigo da sala de controle, que virou duas telas.
+    g.items = g.items.filter(function (it) { return it.id !== "utilidades_pcm"; });
+    if (!gestor) return;
+    const idx = g.items.findIndex(function (it) { return it.id === "utilidades"; });
+    if (idx < 0) return;
+    g.items.splice(idx + 1, 0,
+      { id: "utilidades_lista", icon: "◉", label: "Apontamentos", sub: true },
+      { id: "utilidades_medidores", icon: "◫", label: "Gestão de medidores", sub: true }
+    );
+  });
+  return grupos;
+};
+
+BT_PAGE_TITLES.utilidades = "Apontar consumo";
+BT_PAGE_TITLES.utilidades_lista = "Apontamentos de utilidades";
+BT_PAGE_TITLES.utilidades_medidores = "Gestão de medidores";
+
+const _utmPrevNavigate = navigateTo;
+navigateTo = function (areaId) {
+  const box = document.getElementById("main-content");
+  if (!box) return _utmPrevNavigate(areaId);
+
+  const mapa = {
+    utilidades: "novo",
+    utilidades_lista: "lista",
+    utilidades_medidores: "medidores",
+    // rota antiga continua funcionando, caindo na lista
+    utilidades_pcm: "lista"
+  };
+  const qual = mapa[areaId];
+  if (!qual) return _utmPrevNavigate(areaId);
+
+  const perms = getPerms(STATE.currentUser);
+  const podeApontar = isAdminUser(STATE.currentUser) || (perms.utilidades && perms.utilidades.acesso);
+  if (!podeApontar) return _utmPrevNavigate("home");
+
+  // Apontamentos e gestão de medidores são do PCM: o menu esconde e a
+  // rota barra, porque esconder no menu não é controle de acesso.
+  if (qual !== "novo" && !btPodeVerSalaControle()) {
+    STATE.activeArea = "utilidades";
+    box.innerHTML = '<div class="bt-state"><strong>Sem acesso a esta tela</strong>' +
+      'Apontamentos e gestão de medidores são do PCM e da administração. Para registrar leitura, use <b>Apontar consumo</b>.</div>';
+    btSetPageTitle("utilidades");
+    btRefreshNav();
+    return;
+  }
+
+  STATE.activeArea = areaId === "utilidades_pcm" ? "utilidades_lista" : areaId;
+  box.innerHTML = renderUtilTela(qual);
+  attachUtilTela(qual);
+  btSetPageTitle(STATE.activeArea);
+  btRefreshNav();
+};
+
+/* ====================================================================
+   ÍCONES DO MENU — SVG no lugar dos caracteres unicode
+
+   O menu usava ⌂ ▣ ⏱ ▤ ⊞ ⊕ ✓ ◫ ◱ ▷ ⎙ ⚑ ✎ ☺. Cada um vem de uma
+   família diferente, com peso e altura próprios: um fica grande, outro
+   sobe, outro é quase invisível. Não é possível organizar o que não
+   compartilha grade.
+
+   Aqui todos passam a ser SVG na mesma grade de 24, traço de 1.6 com
+   ponta redonda, desenhados para ler bem a 18px. É o que faz um
+   conjunto parecer conjunto.
+   ==================================================================== */
+
+const BT_SVG = {
+  inicio: '<path d="M4 10.5 12 4l8 6.5"/><path d="M6 9.8V19a1 1 0 0 0 1 1h3.5v-4.5h3V20H17a1 1 0 0 0 1-1V9.8"/>',
+  consumo: '<circle cx="12" cy="12" r="8.2"/><path d="M12 12l3.4-2.6"/><path d="M12 4.4v1.6M19.6 12H18M12 19.6V18M4.4 12H6"/>',
+  registros: '<path d="M4 6.5h16M4 12h16M4 17.5h16"/><circle cx="7.2" cy="6.5" r="1.4"/><circle cx="12.8" cy="12" r="1.4"/><circle cx="9.4" cy="17.5" r="1.4"/>',
+  medidores: '<rect x="3.4" y="4.6" width="17.2" height="14.8" rx="3"/><path d="M3.4 9.4h17.2"/><path d="M8 14.2h8"/><path d="M8 16.8h4.5"/>',
+  solicitacao: '<path d="M14.5 3.6H7a2 2 0 0 0-2 2v12.8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.1z"/><path d="M14.3 3.6v4.3h4.5"/><path d="M9.2 13h5.6M9.2 16.2h3.4"/>',
+  minhas: '<path d="M14.5 3.6H7a2 2 0 0 0-2 2v12.8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.1z"/><path d="M14.3 3.6v4.3h4.5"/><path d="m8.8 13.6 1.8 1.8 3.6-3.6"/>',
+  fila: '<rect x="3.4" y="4.2" width="17.2" height="6" rx="2"/><rect x="3.4" y="13.8" width="17.2" height="6" rx="2"/><path d="M7.2 7.2h.02M7.2 16.8h.02"/>',
+  compra: '<circle cx="9.4" cy="19.4" r="1.5"/><circle cx="17.4" cy="19.4" r="1.5"/><path d="M3 4h2.2l2.4 10.2a1.6 1.6 0 0 0 1.6 1.3h8.4a1.6 1.6 0 0 0 1.6-1.3L21 7.6H6.1"/>',
+  aprovar: '<path d="M20.4 6.6 9.6 17.4l-6-6"/>',
+  familias: '<rect x="3.6" y="3.6" width="7" height="7" rx="2"/><rect x="13.4" y="3.6" width="7" height="7" rx="2"/><rect x="3.6" y="13.4" width="7" height="7" rx="2"/><rect x="13.4" y="13.4" width="7" height="7" rx="2"/>',
+  pcm: '<path d="M14.9 6.3a3.6 3.6 0 0 0 4.9 4.9l-8.4 8.4a2.3 2.3 0 0 1-3.3-3.3z"/><path d="M6.4 4.3l1.9 1.9M4.3 6.4l1.9 1.9"/>',
+  treinar: '<path d="M12 6.2 3.6 9.8 12 13.4l8.4-3.6z"/><path d="M6.6 11.5v4c0 1.6 2.4 2.8 5.4 2.8s5.4-1.2 5.4-2.8v-4"/><path d="M20.4 9.8v5.2"/>',
+  comprovante: '<rect x="4.4" y="3.6" width="15.2" height="16.8" rx="2.5"/><path d="M8.4 8.2h7.2M8.4 11.6h7.2M8.4 15h4"/><circle cx="15.8" cy="16.4" r="2.4"/>',
+  visaogeral: '<circle cx="9" cy="8.2" r="3.1"/><path d="M3.6 19.4c0-3 2.4-5.4 5.4-5.4s5.4 2.4 5.4 5.4"/><path d="M16.4 6.6a3 3 0 0 1 0 5.6"/><path d="M17.6 14.6c1.7.8 2.8 2.5 2.8 4.8"/>',
+  gestao: '<path d="M17.3 3.4 20.6 6.7 9.4 17.9l-4.2 1 1-4.2z"/><path d="M15.6 5.1l3.3 3.3"/>',
+  admin: '<circle cx="12" cy="8" r="3.4"/><path d="M5.2 20c0-3.8 3-6.6 6.8-6.6s6.8 2.8 6.8 6.6"/>',
+  grupos: '<circle cx="8.2" cy="8.4" r="2.9"/><circle cx="16.4" cy="9.6" r="2.4"/><path d="M3 19.2c0-2.9 2.3-5.2 5.2-5.2s5.2 2.3 5.2 5.2"/><path d="M15 14.4c2.5.2 4.4 2.3 4.4 4.8"/>',
+  buscar: '<circle cx="10.6" cy="10.6" r="6.2"/><path d="m15.2 15.2 4.4 4.4"/>'
+};
+
+/** Mapa de área do menu para ícone. Um lugar só, fácil de conferir. */
+const BT_NAV_ICON = {
+  home: "inicio",
+  utilidades: "consumo",
+  utilidades_lista: "registros",
+  utilidades_medidores: "medidores",
+  utilidades_pcm: "registros",
+  almoxarifado: "solicitacao",
+  almox_minhas: "minhas",
+  almox_solicitacoes: "fila",
+  almox_scm_form: "compra",
+  almox_scm_minhas: "minhas",
+  almox_scm_gestao: "fila",
+  almox_scm_aprovacao: "aprovar",
+  familias: "familias",
+  pcm: "pcm",
+  lms_my: "treinar",
+  lms_cert: "comprovante",
+  lms_compliance: "visaogeral",
+  lms_admin: "gestao",
+  admin: "admin"
+};
+
+function btIcon(nome, tamanho) {
+  const d = BT_SVG[nome];
+  if (!d) return "";
+  const s = tamanho || 18;
+  return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" ' +
+    'aria-hidden="true">' + d + "</svg>";
+}
+
+function btNavIcon(areaId, fallback) {
+  const chave = BT_NAV_ICON[areaId];
+  return chave ? btIcon(chave) : (fallback || "");
+}
+
+/* ---------- o menu passa a desenhar SVG ---------- */
+
+const _icoPrevRenderNav = btRenderNav;
+btRenderNav = function () {
+  const html = _icoPrevRenderNav();
+  // Troca o caractere pelo SVG dentro de cada span de ícone, pelo
+  // data-nav do botão. Substituir no HTML já montado evita reescrever
+  // btRenderNav inteiro, que é longo e tem a lógica de busca e grupos.
+  const molde = document.createElement("div");
+  molde.innerHTML = html;
+  molde.querySelectorAll("[data-nav]").forEach(function (btn) {
+    const area = btn.getAttribute("data-nav");
+    const svg = btNavIcon(area);
+    if (!svg) return;
+    const caixa = btn.querySelector(".bt-nav__icon, .bt-tabbar__ic");
+    if (caixa) caixa.innerHTML = svg;
+  });
+  return molde.innerHTML;
+};
+
+const _icoPrevRenderTabbar = btRenderTabbar;
+btRenderTabbar = function () {
+  const molde = document.createElement("div");
+  molde.innerHTML = _icoPrevRenderTabbar();
+  molde.querySelectorAll("[data-nav]").forEach(function (btn) {
+    const svg = btNavIcon(btn.getAttribute("data-nav"));
+    const caixa = btn.querySelector(".bt-tabbar__ic");
+    if (svg && caixa) caixa.innerHTML = svg;
+  });
+  return molde.innerHTML;
+};
+
+/* ---------- submenu recuado: marca o item para o CSS ---------- */
+
+const _icoPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const grupos = _icoPrevNavGroups(user);
+  grupos.forEach(function (g) {
+    g.items.forEach(function (it) {
+      if (it.id === "utilidades_lista" || it.id === "utilidades_medidores") it.sub = true;
+    });
+  });
+  return grupos;
+};
+
+// O atributo data-sub é o que o CSS usa para recuar. btRenderNav monta o
+// botão sem ele, então marcamos depois de montar.
+const _icoPrevRenderNav2 = btRenderNav;
+btRenderNav = function () {
+  const molde = document.createElement("div");
+  molde.innerHTML = _icoPrevRenderNav2();
+  ["utilidades_lista", "utilidades_medidores"].forEach(function (id) {
+    const b = molde.querySelector('[data-nav="' + id + '"]');
+    if (b) b.setAttribute("data-sub", "1");
+  });
+  return molde.innerHTML;
+};
+
+/* ---------- busca do menu com ícone SVG ---------- */
+
+(function () {
+  const aplicar = function () {
+    const ic = document.querySelector(".bt-navsearch__ic");
+    if (ic && ic.textContent.trim() === "⌕") ic.innerHTML = btIcon("buscar", 14);
+  };
+  const anterior = attachShellEvents;
+  attachShellEvents = function () {
+    anterior();
+    aplicar();
+  };
+})();
+
+/* ---------- ícones das telas: o icon() antigo ganha os desenhos novos ---------- */
+
+(function () {
+  // Onde o arquivo antigo desenha ícone por nome, passamos a usar o
+  // desenho novo quando existir equivalente. Mantém o resto igual.
+  const equivalencia = {
+    home: "inicio", gauge: "consumo", activity: "registros", clipboard: "solicitacao",
+    "clipboard-check": "minhas", cart: "compra", check: "aprovar", users: "admin",
+    "graduation-cap": "treinar", bookopen: "treinar", pencil: "gestao", package: "fila",
+    zap: "consumo"
+  };
+  const anterior = icon;
+  icon = function (nome, tamanho, cor) {
+    const chave = equivalencia[nome];
+    if (chave && BT_SVG[chave]) {
+      const s = tamanho || 18;
+      return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="' + (cor || "currentColor") + '" stroke-width="1.6" stroke-linecap="round" ' +
+        'stroke-linejoin="round" aria-hidden="true">' + BT_SVG[chave] + "</svg>";
+    }
+    return anterior(nome, tamanho, cor);
+  };
+})();
+
+
+/* ====================================================================
+   Correções de navegação
+
+   A barra de abas dentro do almoxarifado ficou sobrando quando o menu
+   passou a ter os itens: a mesma navegação em dois lugares. Pior no
+   técnico, que via "Minhas SCM" ao lado de "Nova Solicitação" — e ele
+   já tem "Minhas solicitações" no menu, que mostra SCI e SCM juntas.
+
+   A barra sai. O menu é a navegação; a tela mostra uma coisa só.
+   ==================================================================== */
+
+const _corPrevRenderAlmox = renderAlmoxarifado;
+renderAlmoxarifado = function (initialTab) {
+  const html = _corPrevRenderAlmox(initialTab);
+  // Remove a barra de abas mantendo o resto intacto.
+  return html.replace(/<div class="tabs-row">[\s\S]*?<\/div>\s*(?=<div id="almox-tab-content")/, "");
+};
+
+/** Título da área do almoxarifado por tela, já que a aba não diz mais. */
+const ALMOX_TITULOS = {
+  form: ["Nova solicitação de cadastro", "Peça o cadastro de um item que ainda não tem código."],
+  list: ["Solicitações de cadastro (SCI)", "Fila do almoxarifado: analisar, devolver para revisão e concluir."],
+  scm_form: ["Nova compra de material (SCM)", "Solicite a compra de itens já cadastrados."],
+  scm_minhas: ["Minhas SCM", "Compras que você abriu."],
+  scm_gestao: ["Gestão de SCM", "Atendimento das compras aprovadas."],
+  scm_aprovacao: ["Aprovações SCM", "Compras da sua equipe esperando a sua decisão."]
+};
+
+const _corPrevRenderAlmox2 = renderAlmoxarifado;
+renderAlmoxarifado = function (initialTab) {
+  const html = _corPrevRenderAlmox2(initialTab);
+  const t = ALMOX_TITULOS[ALMOX_STATE.tab];
+  if (!t) return html;
+  // Troca o cabeçalho genérico "Almoxarifado" pelo da tela aberta: com o
+  // menu fazendo a navegação, o título precisa dizer onde você está.
+  return html
+    .replace("<h1>Almoxarifado</h1>", "<h1>" + esc(t[0]) + "</h1>")
+    .replace(
+      "<p>Solicitação de Cadastro de Itens (SCI) e Solicitação de Compra de Materiais (SCM).</p>",
+      "<p>" + esc(t[1]) + "</p>"
+    );
+};
+
+/* ---------- modal sempre começa no topo ---------- */
+
+(function () {
+  // Chrome rola o container até o primeiro campo focado, e o detalhe da
+  // SCI abria no meio por causa disso.
+  const observador = new MutationObserver(function (mudancas) {
+    mudancas.forEach(function (m) {
+      Array.prototype.forEach.call(m.addedNodes, function (n) {
+        if (!n || n.nodeType !== 1) return;
+        if (n.classList && (n.classList.contains("modal-backdrop") || n.classList.contains("training-modal"))) {
+          n.scrollTop = 0;
+          const caixa = n.querySelector(".modal, .training-dialog");
+          if (caixa) caixa.scrollTop = 0;
+        }
+      });
+    });
+  });
+  observador.observe(document.body, { childList: true, subtree: true });
+})();
+
+
+/* ====================================================================
+   E-MAIL — fila e caixa de saída
+
+   Aqui não existe servidor, então nada sai sozinho. O que dá para fazer
+   com honestidade é o que o backend vai fazer de todo jeito: ENFILEIRAR
+   a mensagem com destinatário, assunto e corpo prontos, e deixar a fila
+   visível.
+
+   Isso não é enfeite. A fila é a peça que falta no desenho: se o Graph
+   estiver fora do ar, o aviso não pode se perder. A mesma tabela existe
+   no banco (core.email_fila) e o worker do servidor consome dela. Aqui
+   a fila é local e quem envia é uma pessoa, com dois caminhos:
+     - "Abrir no e-mail": monta mailto: e o cliente abre já preenchido;
+     - "Baixar .eml": arquivo que abre no Outlook como rascunho pronto.
+
+   Gatilhos, conforme a reunião decidiu:
+     LIGADO   SCI entra em "Aguardando Revisão do Solicitante" -> avisa
+              o solicitante. Foi o único que o Plinio quis no começo,
+              porque o almoxarifado olha o sistema todo dia e o
+              solicitante não.
+     DESLIGADO (prontos, é só ligar) SCM na aprovação -> avisa o
+              responsável do grupo. Conclusão de treinamento -> avisa o
+              colaborador e o responsável.
+   ==================================================================== */
+
+const EMAIL_FILA_KEY = "btlocal.email_fila_v1";
+const EMAIL_CONFIG_KEY = "btlocal.email_config_v1";
+
+const EMAIL_CONFIG_PADRAO = {
+  remetente: "manutencao@biotrop.com.br",
+  remetenteNome: "Biotrop · Manutenção",
+  assinatura: "Plataforma de Manutenção · Biotrop\nEsta mensagem foi gerada pelo sistema.",
+  gatilhos: {
+    sci_revisao_solicitante: true,
+    scm_aprovacao_lider: false,
+    treinamento_concluido: false
+  }
+};
+
+const EMAIL_GATILHOS = [
+  {
+    id: "sci_revisao_solicitante",
+    nome: "SCI devolvida para revisão",
+    quem: "o solicitante",
+    porque: "É o único caso em que a pendência é da pessoa e ela não vai descobrir sozinha."
+  },
+  {
+    id: "scm_aprovacao_lider",
+    nome: "SCM aguardando aprovação",
+    quem: "o responsável direto do grupo",
+    porque: "Fica desligado por decisão da reunião: quem aprova acompanha a fila no sistema."
+  },
+  {
+    id: "treinamento_concluido",
+    nome: "Treinamento concluído",
+    quem: "o colaborador e o responsável do grupo",
+    porque: "Pedido na reunião, mas depende de definir se o comprovante vai anexado."
+  }
+];
+
+function emailConfig() {
+  const c = readStore(EMAIL_CONFIG_KEY, null);
+  if (!c || typeof c !== "object") return JSON.parse(JSON.stringify(EMAIL_CONFIG_PADRAO));
+  return {
+    remetente: c.remetente || EMAIL_CONFIG_PADRAO.remetente,
+    remetenteNome: c.remetenteNome || EMAIL_CONFIG_PADRAO.remetenteNome,
+    assinatura: c.assinatura || EMAIL_CONFIG_PADRAO.assinatura,
+    gatilhos: Object.assign({}, EMAIL_CONFIG_PADRAO.gatilhos, c.gatilhos || {})
+  };
+}
+function emailSalvarConfig(c) { return writeStore(EMAIL_CONFIG_KEY, c); }
+
+function emailFila() {
+  const f = readStore(EMAIL_FILA_KEY, []);
+  return Array.isArray(f) ? f : [];
+}
+function emailSalvarFila(f) { return writeStore(EMAIL_FILA_KEY, f); }
+
+/**
+ * Coloca a mensagem na fila.
+ *
+ * Devolve o registro ou null quando o gatilho está desligado ou não há
+ * destinatário — e nesse caso registra o motivo, porque "não chegou
+ * e-mail" sem explicação é o pior tipo de defeito para investigar.
+ */
+function emailEnfileirar(dados) {
+  const cfg = emailConfig();
+  if (dados.gatilho && cfg.gatilhos[dados.gatilho] === false) {
+    console.info("[BIOTROP] e-mail não enfileirado: gatilho " + dados.gatilho + " está desligado.");
+    return null;
+  }
+  const para = String(dados.para || "").trim().toLowerCase();
+  const fila = emailFila();
+  if (!para || para.indexOf("@") < 0) {
+    fila.unshift({
+      id: "em" + Date.now() + Math.random().toString(36).slice(2, 5),
+      gatilho: dados.gatilho, para: para, assunto: dados.assunto,
+      corpo: dados.corpo, refTipo: dados.refTipo, refCodigo: dados.refCodigo,
+      criadoEm: new Date().toISOString(), status: "sem_destinatario",
+      erro: "Sem e-mail de destino. " + (dados.motivoSemDestino || "Confira o cadastro do usuário ou o responsável do grupo.")
+    });
+    emailSalvarFila(fila);
+    return null;
+  }
+
+  const reg = {
+    id: "em" + Date.now() + Math.random().toString(36).slice(2, 5),
+    gatilho: dados.gatilho,
+    para: para,
+    cc: (dados.cc || []).map(function (x) { return String(x).trim().toLowerCase(); }).filter(Boolean),
+    assunto: dados.assunto,
+    corpo: dados.corpo,
+    refTipo: dados.refTipo || "",
+    refCodigo: dados.refCodigo || "",
+    criadoEm: new Date().toISOString(),
+    status: "pendente",
+    enviadoEm: null,
+    enviadoPor: null,
+    erro: null
+  };
+  fila.unshift(reg);
+  emailSalvarFila(fila);
+  return reg;
+}
+
+/* ---------- textos ---------- */
+
+function emailAssinatura() {
+  const c = emailConfig();
+  return "\n\n—\n" + c.assinatura;
+}
+
+function emailTextoSciRevisao(s, motivo) {
+  const campos = (s.camposDefs || []).map(function (c) {
+    return "  " + c.label + ": " + ((s.campos || {})[c.id] || "—");
+  }).join("\n");
+  return "Olá, " + (s.solicitanteNome || "") + ".\n\n" +
+    "A sua solicitação de cadastro de item " + s.codigo + " foi devolvida para revisão pelo almoxarifado.\n\n" +
+    "O que precisa ser corrigido:\n" + (motivo || "—") + "\n\n" +
+    "Dados enviados:\n" +
+    "  Família: " + (s.familiaNome || "—") + "\n" + campos + "\n" +
+    "  Marcas homologadas: " + (s.marcas || "—") + "\n" +
+    "  Observações: " + (s.observacoes || "—") + "\n\n" +
+    "Para corrigir, entre na plataforma, abra \"Minhas solicitações\" e use o botão " +
+    "\"Corrigir e reenviar\" na linha da " + s.codigo + ".\n\n" +
+    "Enquanto a solicitação estiver neste status, ela não avança no almoxarifado." +
+    emailAssinatura();
+}
+
+function emailTextoScmAprovacao(s, aprovadorNome) {
+  const itens = (s.itens || []).map(function (i, n) {
+    return "  " + (n + 1) + ". " + (i.codigoSistema || "sem código") + " — " +
+      (i.descricaoItem || "sem descrição") + " · qtd " + (i.quantidade || "—") +
+      (i.marcaModeloSerie ? " · " + i.marcaModeloSerie : "");
+  }).join("\n");
+  return "Olá, " + (aprovadorNome || "") + ".\n\n" +
+    "Existe uma solicitação de compra de materiais esperando a sua aprovação.\n\n" +
+    "  Código: " + s.codigo + "\n" +
+    "  Solicitante: " + (s.solicitanteNome || "—") + " (" + (s.solicitanteEmail || "—") + ")\n" +
+    "  Time: " + (s.timeSolicitante || "—") + "\n" +
+    "  CAMM: " + (s.camm || "—") + "\n" +
+    "  Urgência: " + (s.urgencia || "—") + "\n" +
+    "  Centro de custo: " + (s.centroCusto || "—") + "\n" +
+    "  Nº OM: " + (s.numeroOM || "—") + "\n\n" +
+    "Itens:\n" + (itens || "  (sem itens)") + "\n\n" +
+    "Uso: " + (s.descricaoUso || "—") + "\n\n" +
+    "A aprovação é feita DENTRO da plataforma, em \"Aprovações SCM\" — é lá que fica o " +
+    "registro de quem autorizou e quando. Responder este e-mail não aprova a solicitação." +
+    emailAssinatura();
+}
+
+function emailTextoTreinamentoConcluido(c, t, nomeColaborador) {
+  return "Olá.\n\n" +
+    (nomeColaborador || "O colaborador") + " concluiu o treinamento \"" + (t ? t.title : "—") + "\".\n\n" +
+    "  Comprovante: " + c.certificate_code + "\n" +
+    "  Conclusão: " + new Date(c.completed_at).toLocaleDateString("pt-BR") + "\n" +
+    "  Aproveitamento: " + c.score + "%\n" +
+    "  Validade: " + (c.expires_at ? new Date(c.expires_at).toLocaleDateString("pt-BR") : "indeterminada") + "\n\n" +
+    "O comprovante fica disponível na plataforma, em \"Comprovantes\".\n" +
+    "Este documento é evidência interna de treinamento e não substitui certificado legal de NR." +
+    emailAssinatura();
+}
+
+/* ---------- gatilhos ligados ao fluxo ---------- */
+
+// SCI devolvida para revisão: o único ligado por decisão da reunião.
+(function () {
+  const anterior = setSciStatus;
+  setSciStatus = function (sciId, status, numeroSolicitacao, observacaoAlmoxarife, codigoItem) {
+    const antes = (SCI_LIST.find(function (x) { return x.id === sciId; }) || {}).status;
+    anterior(sciId, status, numeroSolicitacao, observacaoAlmoxarife, codigoItem);
+    const s = loadSci().find(function (x) { return x.id === sciId; });
+    if (!s || s.status !== "revisao_solicitante" || antes === "revisao_solicitante") return;
+    const dono = loadUsers().find(function (u) { return u.id === s.solicitanteId; });
+    emailEnfileirar({
+      gatilho: "sci_revisao_solicitante",
+      para: dono ? dono.usuario : "",
+      assunto: "[Manutenção] " + s.codigo + " precisa da sua revisão",
+      corpo: emailTextoSciRevisao(s, s.observacaoAlmoxarife),
+      refTipo: "SCI",
+      refCodigo: s.codigo,
+      motivoSemDestino: "O solicitante da " + s.codigo + " não tem e-mail no cadastro."
+    });
+  };
+})();
+
+// SCM na aprovação: preparado, desligado.
+(function () {
+  const anterior = saveScm;
+  saveScm = function (list) {
+    const out = anterior(list);
+    try {
+      const users = loadUsers();
+      (list || []).forEach(function (s) {
+        if (s.status !== "pendente_aprovacao_lider" || s.emailAprovadorEnfileirado) return;
+        const aprovador = users.find(function (u) {
+          return String(u.usuario || "").toLowerCase() === String(s.solicitanteEmailLider || "").toLowerCase();
+        });
+        const reg = emailEnfileirar({
+          gatilho: "scm_aprovacao_lider",
+          para: s.solicitanteEmailLider || "",
+          assunto: "[Manutenção] " + s.codigo + " aguarda sua aprovação",
+          corpo: emailTextoScmAprovacao(s, aprovador ? aprovador.nome : ""),
+          refTipo: "SCM",
+          refCodigo: s.codigo,
+          motivoSemDestino: "O grupo do solicitante não tem responsável direto definido."
+        });
+        // Marca mesmo quando o gatilho está desligado, para não reprocessar
+        // a cada gravação da lista.
+        s.emailAprovadorEnfileirado = true;
+        void reg;
+      });
+    } catch (e) { console.warn("[BIOTROP] fila de e-mail da SCM:", e); }
+    return out;
+  };
+})();
+
+// Treinamento concluído: preparado, desligado.
+(function () {
+  const anterior = lmsSubmitQuiz;
+  lmsSubmitQuiz = function (enrollmentId, answers) {
+    const res = anterior(enrollmentId, answers);
+    try {
+      if (res && res.completion) {
+        const c = res.completion;
+        const t = lmsTraining(c.training_id);
+        const dono = loadUsers().find(function (u) { return lmsUserId(u) === c.user_id; });
+        const resp = dono ? responsavelDe(dono) : { email: "" };
+        emailEnfileirar({
+          gatilho: "treinamento_concluido",
+          para: dono ? dono.usuario : "",
+          cc: resp.email ? [resp.email] : [],
+          assunto: "[Manutenção] Treinamento concluído — " + (t ? t.title : ""),
+          corpo: emailTextoTreinamentoConcluido(c, t, dono ? dono.nome : ""),
+          refTipo: "Treinamento",
+          refCodigo: c.certificate_code,
+          motivoSemDestino: "O colaborador não tem e-mail no cadastro."
+        });
+      }
+    } catch (e) { console.warn("[BIOTROP] fila de e-mail do treinamento:", e); }
+    return res;
+  };
+})();
+
+/* ---------- envio manual: mailto e .eml ---------- */
+
+function emailAbrirNoCliente(id) {
+  const reg = emailFila().find(function (x) { return x.id === id; });
+  if (!reg) return;
+  // mailto tem limite prático de ~2000 caracteres de URL. Corpo longo é
+  // truncado com aviso, e o botão "Copiar" existe justamente para isso.
+  const limite = 1500;
+  let corpo = reg.corpo;
+  let truncado = false;
+  if (corpo.length > limite) { corpo = corpo.slice(0, limite); truncado = true; }
+  const url = "mailto:" + encodeURIComponent(reg.para) +
+    "?subject=" + encodeURIComponent(reg.assunto) +
+    (reg.cc && reg.cc.length ? "&cc=" + encodeURIComponent(reg.cc.join(",")) : "") +
+    "&body=" + encodeURIComponent(corpo + (truncado ? "\n\n[texto cortado pelo limite do mailto — use Copiar para o conteúdo completo]" : ""));
+  window.location.href = url;
+}
+
+function emailBaixarEml(id) {
+  const reg = emailFila().find(function (x) { return x.id === id; });
+  if (!reg) return;
+  const cfg = emailConfig();
+  // RFC 822 mínimo. Codifico o corpo em quoted-printable simplificado
+  // (só o essencial: acento vira =XX) para não quebrar no Outlook.
+  const qp = function (txt) {
+    return txt.replace(/[^\x20-\x3C\x3E-\x7E\r\n]/g, function (ch) {
+      const bytes = new TextEncoder().encode(ch);
+      let out = "";
+      bytes.forEach(function (b) { out += "=" + b.toString(16).toUpperCase().padStart(2, "0"); });
+      return out;
+    }).replace(/(.{1,72})(\s|$)/g, "$1$2");
+  };
+  const linhas = [
+    "From: " + cfg.remetenteNome + " <" + cfg.remetente + ">",
+    "To: " + reg.para,
+    reg.cc && reg.cc.length ? "Cc: " + reg.cc.join(", ") : null,
+    "Subject: " + reg.assunto,
+    "Date: " + new Date(reg.criadoEm).toUTCString(),
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: quoted-printable",
+    "X-Unsent: 1",
+    "",
+    qp(reg.corpo)
+  ].filter(function (x) { return x !== null; });
+
+  const blob = new Blob([linhas.join("\r\n")], { type: "message/rfc822" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = (reg.refCodigo || reg.id) + ".eml";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+function emailMarcar(id, status, erro) {
+  const fila = emailFila();
+  const reg = fila.find(function (x) { return x.id === id; });
+  if (!reg) return;
+  reg.status = status;
+  reg.enviadoEm = status === "enviado" ? new Date().toISOString() : null;
+  reg.enviadoPor = status === "enviado" ? ((STATE.currentUser || {}).usuario || "local") : null;
+  reg.erro = erro || null;
+  emailSalvarFila(fila);
+  navigateTo("email_fila");
+}
+
+/* ---------- tela: caixa de saída ---------- */
+
+const EMAIL_FILTRO = { status: "", gatilho: "" };
+
+function podeVerCaixaSaida(user) {
+  const u = user || STATE.currentUser;
+  if (!u) return false;
+  return isAdminUser(u) || u.perfilId === "gestor" || u.perfilId === "almoxarife" || u.perfilId === "pcm";
+}
+
+function emailStatusBadge(st) {
+  const m = {
+    pendente: ['<span class="bt-badge bt-badge--warn">na fila</span>'],
+    enviado: ['<span class="bt-badge bt-badge--ok">enviado</span>'],
+    erro: ['<span class="bt-badge bt-badge--danger">erro</span>'],
+    sem_destinatario: ['<span class="bt-badge bt-badge--danger">sem destinatário</span>'],
+    cancelado: ['<span class="bt-badge">cancelado</span>']
+  };
+  return (m[st] || m.pendente)[0];
+}
+
+function renderEmailFila() {
+  if (!podeVerCaixaSaida()) {
+    return '<div class="bt-state"><strong>Sem acesso</strong>A caixa de saída é da administração, da gestão, do almoxarifado e do PCM.</div>';
+  }
+  const cfg = emailConfig();
+  const fila = emailFila();
+  const f = EMAIL_FILTRO;
+  const filtrada = fila.filter(function (r) {
+    if (f.status && r.status !== f.status) return false;
+    if (f.gatilho && r.gatilho !== f.gatilho) return false;
+    return true;
+  });
+  const pendentes = fila.filter(function (r) { return r.status === "pendente"; }).length;
+  const semDest = fila.filter(function (r) { return r.status === "sem_destinatario"; }).length;
+
+  const linhas = filtrada.map(function (r) {
+    const g = EMAIL_GATILHOS.find(function (x) { return x.id === r.gatilho; });
+    return `<tr>
+      <td>${new Date(r.criadoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
+      <td><b>${esc(r.assunto)}</b><div class="bt-small bt-muted">${esc(g ? g.nome : r.gatilho || "—")}${r.refCodigo ? " · " + esc(r.refCodigo) : ""}</div></td>
+      <td>${esc(r.para || "—")}${r.cc && r.cc.length ? '<div class="bt-small bt-muted">cc ' + esc(r.cc.join(", ")) + "</div>" : ""}</td>
+      <td>${emailStatusBadge(r.status)}${r.erro ? '<div class="bt-small bt-muted">' + esc(r.erro) + "</div>" : ""}</td>
+      <td>
+        <div class="bt-row" style="gap:6px;flex-wrap:nowrap">
+          <button class="bt-btn bt-btn--sm" data-em-ver="${esc(r.id)}">Ver</button>
+          ${r.status === "pendente" ? '<button class="bt-btn bt-btn--sm bt-btn--primary" data-em-abrir="' + esc(r.id) + '">Abrir no e-mail</button>' : ""}
+          ${r.status === "pendente" ? '<button class="bt-btn bt-btn--sm" data-em-eml="' + esc(r.id) + '">.eml</button>' : ""}
+        </div>
+      </td>
+    </tr>`;
+  }).join("");
+
+  return `
+  <div class="page-title-row">
+    <div class="page-icon">${icon("send", 22)}</div>
+    <div>
+      <h1>Caixa de saída</h1>
+      <p>Avisos que o sistema gerou, com destinatário, assunto e corpo prontos.</p>
+    </div>
+  </div>
+
+  <div class="bt-notice bt-notice--warn" style="margin-bottom:18px">
+    <span class="bt-notice__ic">!</span>
+    <div><b>Nesta instalação local nada é enviado sozinho.</b> Não há servidor: a mensagem fica
+      na fila e você despacha por "Abrir no e-mail" ou baixando o <b>.eml</b>, que abre no Outlook
+      como rascunho pronto. No servidor, esta mesma fila é a tabela <b>core.email_fila</b> e quem
+      consome é o worker do Microsoft Graph.</div>
+  </div>
+
+  <div class="bt-grid--kpi" style="margin-bottom:16px">
+    <div class="bt-kpi ${pendentes ? "bt-kpi--warn" : "bt-kpi--ok"}"><div class="bt-kpi__label">Na fila</div><div class="bt-kpi__value">${pendentes}</div><div class="bt-kpi__hint">esperando despacho</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Enviados</div><div class="bt-kpi__value">${fila.filter(function (r) { return r.status === "enviado"; }).length}</div><div class="bt-kpi__hint">marcados manualmente</div></div>
+    <div class="bt-kpi ${semDest ? "bt-kpi--alert" : "bt-kpi--ok"}"><div class="bt-kpi__label">Sem destinatário</div><div class="bt-kpi__value">${semDest}</div><div class="bt-kpi__hint">${semDest ? "cadastro incompleto" : "nenhum"}</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Remetente</div><div class="bt-kpi__value" style="font-size:14px;line-height:1.4">${esc(cfg.remetente)}</div><div class="bt-kpi__hint">conta de comunicação</div></div>
+  </div>
+
+  <div class="bt-card" style="margin-bottom:16px">
+    <div class="bt-card__body">
+      <div class="bt-fields2">
+        <div class="bt-field"><label>Situação</label><select id="em-f-status">
+          <option value="">Todas</option>
+          <option value="pendente"${f.status === "pendente" ? " selected" : ""}>Na fila</option>
+          <option value="enviado"${f.status === "enviado" ? " selected" : ""}>Enviado</option>
+          <option value="sem_destinatario"${f.status === "sem_destinatario" ? " selected" : ""}>Sem destinatário</option>
+          <option value="cancelado"${f.status === "cancelado" ? " selected" : ""}>Cancelado</option>
+        </select></div>
+        <div class="bt-field"><label>Gatilho</label><select id="em-f-gatilho">
+          <option value="">Todos</option>
+          ${EMAIL_GATILHOS.map(function (g) { return '<option value="' + g.id + '"' + (f.gatilho === g.id ? " selected" : "") + ">" + esc(g.nome) + "</option>"; }).join("")}
+        </select></div>
+      </div>
+      <div class="bt-row"><button class="bt-btn bt-btn--sm bt-right" id="em-config">Gatilhos e remetente</button></div>
+    </div>
+  </div>
+
+  <div class="bt-card">
+    <div class="bt-card__body--flush">
+      <div class="bt-tablewrap"><table class="bt-table">
+        <thead><tr><th>Quando</th><th>Assunto</th><th>Para</th><th>Situação</th><th></th></tr></thead>
+        <tbody>${linhas || '<tr><td colspan="5"><div class="bt-state"><strong>Fila vazia</strong>Devolva uma SCI para revisão do solicitante e o aviso aparece aqui.</div></td></tr>'}</tbody>
+      </table></div>
+    </div>
+  </div>
+  <div id="email-modal-root"></div>`;
+}
+
+function emailVerModal(id) {
+  const reg = emailFila().find(function (x) { return x.id === id; });
+  if (!reg) return;
+  const cfg = emailConfig();
+  const root = document.getElementById("email-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="em-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>${esc(reg.assunto)}</h3>
+        <button class="icon-btn" id="em-close">${icon("x", 18)}</button>
+      </div>
+      <div class="bt-row" style="margin-bottom:12px">${emailStatusBadge(reg.status)}
+        ${reg.refCodigo ? '<span class="bt-badge">' + esc(reg.refCodigo) + "</span>" : ""}</div>
+      <div class="sci-detail-row"><span class="sci-detail-label">De</span><span class="sci-detail-value">${esc(cfg.remetenteNome)} &lt;${esc(cfg.remetente)}&gt;</span></div>
+      <div class="sci-detail-row"><span class="sci-detail-label">Para</span><span class="sci-detail-value">${esc(reg.para || "—")}</span></div>
+      ${reg.cc && reg.cc.length ? '<div class="sci-detail-row"><span class="sci-detail-label">Cc</span><span class="sci-detail-value">' + esc(reg.cc.join(", ")) + "</span></div>" : ""}
+      <div class="sci-detail-row"><span class="sci-detail-label">Gerado em</span><span class="sci-detail-value">${new Date(reg.criadoEm).toLocaleString("pt-BR")}</span></div>
+      ${reg.enviadoEm ? '<div class="sci-detail-row"><span class="sci-detail-label">Despachado</span><span class="sci-detail-value">' + new Date(reg.enviadoEm).toLocaleString("pt-BR") + " por " + esc(reg.enviadoPor || "—") + "</span></div>" : ""}
+      ${reg.erro ? '<div class="bt-notice bt-notice--danger" style="margin-top:12px"><span class="bt-notice__ic">!</span><div>' + esc(reg.erro) + "</div></div>" : ""}
+      <div class="sci-section-title" style="margin-top:14px;">Corpo da mensagem</div>
+      <pre id="em-corpo" style="white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.6;background:var(--surface-soft);border:1px solid var(--border);border-radius:12px;padding:14px;margin:10px 0 0;max-height:320px;overflow:auto">${esc(reg.corpo)}</pre>
+      <div class="modal-actions" style="flex-wrap:wrap">
+        <button class="ghost-btn" id="em-copiar">Copiar</button>
+        <button class="ghost-btn" id="em-eml2">Baixar .eml</button>
+        ${reg.status === "pendente" ? '<button class="ghost-btn" id="em-cancelar">Cancelar</button>' : ""}
+        ${reg.status === "pendente" ? '<button class="primary-btn" id="em-enviado">Marcar como enviado</button>' : '<button class="primary-btn" id="em-ok">Fechar</button>'}
+      </div>
+    </div>
+  </div>`;
+  const fechar = function () { root.innerHTML = ""; };
+  document.getElementById("em-backdrop").onclick = fechar;
+  document.getElementById("em-close").onclick = fechar;
+  const ok = document.getElementById("em-ok");
+  if (ok) ok.onclick = fechar;
+  document.getElementById("em-copiar").onclick = function () {
+    const txt = "Para: " + reg.para + "\nAssunto: " + reg.assunto + "\n\n" + reg.corpo;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(txt).then(function () { alert("Mensagem copiada."); },
+        function () { alert("Não foi possível copiar. Selecione o texto na tela."); });
+    } else { alert("Não foi possível copiar. Selecione o texto na tela."); }
+  };
+  document.getElementById("em-eml2").onclick = function () { emailBaixarEml(reg.id); };
+  const canc = document.getElementById("em-cancelar");
+  if (canc) canc.onclick = function () {
+    if (!confirm("Cancelar este aviso? Ele deixa de aparecer como pendente.")) return;
+    fechar(); emailMarcar(reg.id, "cancelado");
+  };
+  const env = document.getElementById("em-enviado");
+  if (env) env.onclick = function () { fechar(); emailMarcar(reg.id, "enviado"); };
+}
+
+function emailConfigModal() {
+  const cfg = emailConfig();
+  const root = document.getElementById("email-modal-root");
+  root.innerHTML = `
+  <div class="modal-backdrop" id="emc-backdrop">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Gatilhos e remetente</h3>
+        <button class="icon-btn" id="emc-close">${icon("x", 18)}</button>
+      </div>
+      <label class="field-label">Conta de comunicação (remetente)</label>
+      <input class="modal-input" id="emc-remetente" value="${esc(cfg.remetente)}">
+      <div class="bt-field__hint">No servidor, é a caixa que o Microsoft Graph usa para enviar. Precisa existir e ter a permissão de aplicativo concedida.</div>
+      <label class="field-label" style="margin-top:12px;">Nome exibido</label>
+      <input class="modal-input" id="emc-nome" value="${esc(cfg.remetenteNome)}">
+      <label class="field-label" style="margin-top:12px;">Assinatura</label>
+      <textarea class="modal-input" id="emc-assinatura" rows="3">${esc(cfg.assinatura)}</textarea>
+
+      <div class="sci-section-title" style="margin-top:16px;">Quando avisar</div>
+      <div class="bt-stack" style="gap:10px;margin-top:10px">
+        ${EMAIL_GATILHOS.map(function (g) {
+          return `<label class="bt-row" style="gap:11px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:14px;cursor:pointer">
+            <input type="checkbox" class="emc-gatilho" value="${g.id}" ${cfg.gatilhos[g.id] ? "checked" : ""} style="margin-top:3px">
+            <span><b>${esc(g.nome)}</b>
+              <div class="bt-small bt-muted">Avisa ${esc(g.quem)}. ${esc(g.porque)}</div></span>
+          </label>`;
+        }).join("")}
+      </div>
+      <div class="modal-actions">
+        <button class="ghost-btn" id="emc-cancel">Cancelar</button>
+        <button class="primary-btn" id="emc-save">Salvar</button>
+      </div>
+    </div>
+  </div>`;
+  const fechar = function () { root.innerHTML = ""; };
+  document.getElementById("emc-backdrop").onclick = fechar;
+  document.getElementById("emc-close").onclick = fechar;
+  document.getElementById("emc-cancel").onclick = fechar;
+  document.getElementById("emc-save").onclick = function () {
+    const g = {};
+    EMAIL_GATILHOS.forEach(function (x) { g[x.id] = false; });
+    document.querySelectorAll(".emc-gatilho:checked").forEach(function (i) { g[i.value] = true; });
+    emailSalvarConfig({
+      remetente: document.getElementById("emc-remetente").value.trim(),
+      remetenteNome: document.getElementById("emc-nome").value.trim(),
+      assinatura: document.getElementById("emc-assinatura").value,
+      gatilhos: g
+    });
+    fechar();
+    navigateTo("email_fila");
+  };
+}
+
+function attachEmailFilaEvents() {
+  const liga = function (id, campo) {
+    const el = document.getElementById(id);
+    if (el) el.onchange = function () { EMAIL_FILTRO[campo] = this.value; navigateTo("email_fila"); };
+  };
+  liga("em-f-status", "status");
+  liga("em-f-gatilho", "gatilho");
+  const cfg = document.getElementById("em-config");
+  if (cfg) cfg.onclick = emailConfigModal;
+  document.querySelectorAll("[data-em-ver]").forEach(function (b) {
+    b.onclick = function () { emailVerModal(this.getAttribute("data-em-ver")); };
+  });
+  document.querySelectorAll("[data-em-abrir]").forEach(function (b) {
+    b.onclick = function () { emailAbrirNoCliente(this.getAttribute("data-em-abrir")); };
+  });
+  document.querySelectorAll("[data-em-eml]").forEach(function (b) {
+    b.onclick = function () { emailBaixarEml(this.getAttribute("data-em-eml")); };
+  });
+}
+
+/* ---------- menu e rota ---------- */
+
+BT_PAGE_TITLES.email_fila = "Caixa de saída";
+
+const _emPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const grupos = _emPrevNavGroups(user);
+  if (!podeVerCaixaSaida(user)) return grupos;
+  const c = btCounts();
+  const item = { id: "email_fila", icon: "◎", label: "Caixa de saída", badge: c.emailPendentes };
+  const adm = grupos.find(function (g) { return g.label === "Administração"; });
+  if (adm) adm.items.push(item);
+  else grupos.push({ label: "Comunicação", items: [item] });
+  return grupos;
+};
+
+const _emPrevCounts = btCounts;
+btCounts = function () {
+  const c = _emPrevCounts();
+  try {
+    c.emailPendentes = emailFila().filter(function (r) {
+      return r.status === "pendente" || r.status === "sem_destinatario";
+    }).length;
+  } catch (e) { c.emailPendentes = 0; }
+  return c;
+};
+
+BT_NAV_ICON.email_fila = "comprovante";
+
+const _emPrevNavigate = navigateTo;
+navigateTo = function (areaId) {
+  const box = document.getElementById("main-content");
+  if (!box) return _emPrevNavigate(areaId);
+  if (areaId !== "email_fila") return _emPrevNavigate(areaId);
+  STATE.activeArea = "email_fila";
+  box.innerHTML = renderEmailFila();
+  attachEmailFilaEvents();
+  btSetPageTitle("email_fila");
+  btRefreshNav();
+};
 
 </script>
 </body>
