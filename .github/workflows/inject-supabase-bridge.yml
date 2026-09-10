@@ -1,4 +1,4 @@
-name: Inject Supabase bridge
+name: Maintain Supabase bridge
 
 on:
   push:
@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  inject:
+  clean:
     if: ${{ !contains(github.event.head_commit.message, '[skip bridge]') }}
     runs-on: ubuntu-latest
     steps:
@@ -16,138 +16,54 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Inject bridge and fix technician navigation
+      - name: Clean legacy technician patches
         shell: python
         run: |
           from pathlib import Path
+          import re
+
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
 
+          # Remove every temporary menu injection previously added by this workflow.
+          markers = [
+              'BIOTROP TECH SCI SCM NAV V3',
+              'BIOTROP TECH SCI SCM SIDEBAR V2',
+              'BIOTROP TECH SCM FORCE',
+              'BIOTROP TECH SCI SCM SIDEBAR'
+          ]
+          for marker in markers:
+              text = re.sub(
+                  r'<script>\s*/\*\s*' + re.escape(marker) + r'\s*\*/[\s\S]*?</script>\s*',
+                  '', text, flags=re.I
+              )
+
+          # Remove the old override that hid SCI/SCM tabs from the shared Almox screen.
+          text = re.sub(
+              r'\nconst _corPrevRenderAlmox = renderAlmoxarifado;\s*\n'
+              r'renderAlmoxarifado = function \(initialTab\) \{[\s\S]*?\n\};\s*\n',
+              '\n', text, count=1
+          )
+
+          # The official technician menu is defined by btNavGroups() in index.html.
+          # Normalize technician detection so "tecnico - teste" is also recognized.
+          old = '''function btIsTechOnly(user) {\n  const u = user || STATE.currentUser;\n  if (!u) return false;\n  if (isAdminUser(u)) return false;\n  return u.perfilId === "tecnico";\n}'''
+          new = '''function btIsTechOnly(user) {\n  const u = user || STATE.currentUser;\n  if (!u) return false;\n  if (isAdminUser(u)) return false;\n  const perfil = String(u.perfilId || u.perfil || u.role || u.cargo || u.funcao || "").trim().toLowerCase();\n  const nomePerfil = String(u.perfilNome || u.nomePerfil || "").trim().toLowerCase();\n  return perfil === "tecnico" || perfil.includes("tecnico") || perfil.includes("técnico") ||\n         nomePerfil.includes("tecnico") || nomePerfil.includes("técnico");\n}'''
+          if old in text:
+              text = text.replace(old, new, 1)
+
+          # Keep one, and only one, Supabase bridge tag.
           tag = '<script src="/supabase-bridge.js"></script>'
-          if tag not in text:
-              text = text.replace('</body>', tag + '\n</body>', 1)
-
-          marker = '/* BIOTROP TECH SCI SCM NAV V3 */'
-          if marker not in text:
-              patch = r'''<script>
-/* BIOTROP TECH SCI SCM NAV V3 */
-(function () {
-  'use strict';
-
-  function technician() {
-    try {
-      var u = window.STATE && window.STATE.currentUser;
-      if (!u) return /técnico|tecnico/i.test(document.body ? document.body.innerText : '');
-      var p = String(u.perfilId || u.perfil || u.role || '').toLowerCase();
-      var n = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').toLowerCase();
-      return /tecnico|técnico/.test(p) || /tecnico|técnico/.test(n) || /técnico|tecnico/.test(document.body ? document.body.innerText : '');
-    } catch (e) { return false; }
-  }
-
-  function grantTechnicianPermissions() {
-    try {
-      var u = window.STATE && window.STATE.currentUser;
-      if (!u || !technician() || typeof window.getProfile !== 'function') return;
-      var p = window.getProfile(u);
-      if (!p) return;
-      p.permissoes = p.permissoes || {};
-      p.permissoes.almoxarifado = p.permissoes.almoxarifado || {};
-      p.permissoes.almoxarifado.acesso = true;
-      p.permissoes.almoxarifado.solicitacoes = true;
-      p.permissoes.almoxarifado.scm_acesso = true;
-      p.permissoes.almoxarifado.scm_gestao = true;
-    } catch (e) {}
-  }
-
-  function go(id) {
-    try {
-      grantTechnicianPermissions();
-      if (typeof window.navigateTo === 'function') {
-        window.navigateTo(id);
-        return;
-      }
-      var el = document.querySelector('[data-nav="' + id + '"]');
-      if (el) el.click();
-    } catch (e) {}
-  }
-
-  function ensureMenu() {
-    if (!technician()) return;
-    grantTechnicianPermissions();
-    var nav = document.querySelector('.sidebar-nav, .bt-nav, #sidebar-nav, #bt-nav');
-    if (!nav) return;
-    var wanted = [
-      ['almox_solicitacoes', '📋', 'Solicitações (SCI)'],
-      ['almox_scm_form', '🛒', 'Nova compra (SCM)'],
-      ['almox_scm_gestao', '▤', 'Gestão de SCM']
-    ];
-    var anchor = nav.querySelector('[data-nav="almox_minhas"]') || nav.querySelector('[data-nav="almoxarifado"]');
-    wanted.forEach(function (item) {
-      if (nav.querySelector('[data-bt-tech-menu-v3="' + item[0] + '"]')) return;
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'nav-item bt-nav__item';
-      b.setAttribute('data-nav', item[0]);
-      b.setAttribute('data-bt-tech-menu-v3', item[0]);
-      b.innerHTML = '<span style="width:18px;display:inline-flex;justify-content:center">' + item[1] + '</span><span>' + item[2] + '</span>';
-      b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(item[0]); };
-      if (anchor && anchor.parentNode) {
-        anchor.parentNode.insertBefore(b, anchor.nextSibling);
-        anchor = b;
-      } else nav.appendChild(b);
-    });
-  }
-
-  function bindExistingSci() {
-    if (!technician()) return;
-    var buttons = document.querySelectorAll('.sidebar-nav [data-nav], .bt-nav [data-nav], #sidebar-nav [data-nav], #bt-nav [data-nav]');
-    buttons.forEach(function (b) {
-      var id = b.getAttribute('data-nav');
-      var label = String(b.textContent || '').trim().toLowerCase();
-      if (id === 'almoxarifado' || /nova solicitação/.test(label) || /nova solicitacao/.test(label)) {
-        if (b.getAttribute('data-bt-sci-bound') === '1') return;
-        b.setAttribute('data-bt-sci-bound', '1');
-        b.addEventListener('click', function (e) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          go('almoxarifado');
-        }, true);
-      }
-    });
-  }
-
-  function start() {
-    grantTechnicianPermissions();
-    ensureMenu();
-    bindExistingSci();
-    var timer = null;
-    var obs = new MutationObserver(function () {
-      if (timer) return;
-      timer = setTimeout(function () {
-        timer = null;
-        ensureMenu();
-        bindExistingSci();
-      }, 80);
-    });
-    if (document.body) obs.observe(document.body, { childList: true, subtree: true });
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
-})();
-</script>
-'''
-              if tag in text:
-                  text = text.replace(tag, patch + tag, 1)
-              else:
-                  text = text.replace('</body>', patch + '</body>', 1)
-
+          text = text.replace(tag, '')
+          text = text.replace('</body>', tag + '\n</body>', 1)
           p.write_text(text, encoding='utf-8')
+          print('Legacy technician patches removed')
 
-      - name: Commit changes
+      - name: Commit cleanup
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Corrigir navegação SCI e SCM do técnico [skip bridge]"
+          git commit -m "Restaurar menu oficial do técnico [skip bridge]"
           git push
