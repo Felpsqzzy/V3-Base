@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Inject bridge and technician SCM/SCI sidebar
+      - name: Inject bridge and fix technician navigation
         shell: python
         run: |
           from pathlib import Path
@@ -27,70 +27,111 @@ jobs:
           if tag not in text:
               text = text.replace('</body>', tag + '\n</body>', 1)
 
-          marker = '/* BIOTROP TECH SCI SCM SIDEBAR V2 */'
+          marker = '/* BIOTROP TECH SCI SCM NAV V3 */'
           if marker not in text:
               patch = r'''<script>
-/* BIOTROP TECH SCI SCM SIDEBAR V2 */
+/* BIOTROP TECH SCI SCM NAV V3 */
 (function () {
   'use strict';
-  function isTechnician() {
+
+  function technician() {
     try {
       var u = window.STATE && window.STATE.currentUser;
-      if (u) {
-        var p = String(u.perfilId || u.perfil || '').toLowerCase();
-        var n = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').toLowerCase();
-        if (p.indexOf('tecnico') >= 0 || p.indexOf('técnico') >= 0 || n.indexOf('tecnico') >= 0 || n.indexOf('técnico') >= 0) return true;
-      }
-      var role = document.querySelector('.bt-rolepill__role, .user-role, .role, [class*="role"]');
-      var rt = String(role && role.textContent || '').toLowerCase();
-      if (rt.indexOf('tecnico') >= 0 || rt.indexOf('técnico') >= 0) return true;
-      var body = String(document.body && document.body.innerText || '').toLowerCase();
-      return /técnico\s*-|tecnico\s*-/.test(body);
+      if (!u) return /técnico|tecnico/i.test(document.body ? document.body.innerText : '');
+      var p = String(u.perfilId || u.perfil || u.role || '').toLowerCase();
+      var n = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').toLowerCase();
+      return /tecnico|técnico/.test(p) || /tecnico|técnico/.test(n) || /técnico|tecnico/.test(document.body ? document.body.innerText : '');
     } catch (e) { return false; }
   }
+
+  function grantTechnicianPermissions() {
+    try {
+      var u = window.STATE && window.STATE.currentUser;
+      if (!u || !technician() || typeof window.getProfile !== 'function') return;
+      var p = window.getProfile(u);
+      if (!p) return;
+      p.permissoes = p.permissoes || {};
+      p.permissoes.almoxarifado = p.permissoes.almoxarifado || {};
+      p.permissoes.almoxarifado.acesso = true;
+      p.permissoes.almoxarifado.solicitacoes = true;
+      p.permissoes.almoxarifado.scm_acesso = true;
+      p.permissoes.almoxarifado.scm_gestao = true;
+    } catch (e) {}
+  }
+
   function go(id) {
     try {
-      if (typeof window.navigateTo === 'function') { window.navigateTo(id); return; }
+      grantTechnicianPermissions();
+      if (typeof window.navigateTo === 'function') {
+        window.navigateTo(id);
+        return;
+      }
       var el = document.querySelector('[data-nav="' + id + '"]');
       if (el) el.click();
     } catch (e) {}
   }
-  function make(id, icon, label) {
-    var b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'nav-item bt-nav__item';
-    b.setAttribute('data-nav', id);
-    b.setAttribute('data-bt-tech-menu', id);
-    b.innerHTML = '<span class="bt-nav__icon">' + icon + '</span><span class="bt-nav__label">' + label + '</span>';
-    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(id); };
-    return b;
-  }
-  function ensure() {
-    if (!isTechnician()) return;
+
+  function ensureMenu() {
+    if (!technician()) return;
+    grantTechnicianPermissions();
     var nav = document.querySelector('.sidebar-nav, .bt-nav, #sidebar-nav, #bt-nav');
     if (!nav) return;
-    var items = [
+    var wanted = [
       ['almox_solicitacoes', '📋', 'Solicitações (SCI)'],
       ['almox_scm_form', '🛒', 'Nova compra (SCM)'],
       ['almox_scm_gestao', '▤', 'Gestão de SCM']
     ];
-    var anchor = nav.querySelector('[data-nav="almox_minhas"], [data-nav="almox_solicitacoes"], [data-nav="almoxarifado"]');
-    items.forEach(function (item) {
-      if (!nav.querySelector('[data-bt-tech-menu="' + item[0] + '"]')) {
-        var b = make(item[0], item[1], item[2]);
-        if (anchor && anchor.parentNode) {
-          anchor.parentNode.insertBefore(b, anchor.nextSibling);
-          anchor = b;
-        } else nav.appendChild(b);
+    var anchor = nav.querySelector('[data-nav="almox_minhas"]') || nav.querySelector('[data-nav="almoxarifado"]');
+    wanted.forEach(function (item) {
+      if (nav.querySelector('[data-bt-tech-menu-v3="' + item[0] + '"]')) return;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'nav-item bt-nav__item';
+      b.setAttribute('data-nav', item[0]);
+      b.setAttribute('data-bt-tech-menu-v3', item[0]);
+      b.innerHTML = '<span style="width:18px;display:inline-flex;justify-content:center">' + item[1] + '</span><span>' + item[2] + '</span>';
+      b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); go(item[0]); };
+      if (anchor && anchor.parentNode) {
+        anchor.parentNode.insertBefore(b, anchor.nextSibling);
+        anchor = b;
+      } else nav.appendChild(b);
+    });
+  }
+
+  function bindExistingSci() {
+    if (!technician()) return;
+    var buttons = document.querySelectorAll('.sidebar-nav [data-nav], .bt-nav [data-nav], #sidebar-nav [data-nav], #bt-nav [data-nav]');
+    buttons.forEach(function (b) {
+      var id = b.getAttribute('data-nav');
+      var label = String(b.textContent || '').trim().toLowerCase();
+      if (id === 'almoxarifado' || /nova solicitação/.test(label) || /nova solicitacao/.test(label)) {
+        if (b.getAttribute('data-bt-sci-bound') === '1') return;
+        b.setAttribute('data-bt-sci-bound', '1');
+        b.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          go('almoxarifado');
+        }, true);
       }
     });
   }
-  function run() { ensure(); }
-  var obs = new MutationObserver(run);
+
   function start() {
-    if (document.body) obs.observe(document.body, {childList:true, subtree:true});
-    [0,100,300,700,1500,3000,5000].forEach(function(ms){ setTimeout(run, ms); });
+    grantTechnicianPermissions();
+    ensureMenu();
+    bindExistingSci();
+    var timer = null;
+    var obs = new MutationObserver(function () {
+      if (timer) return;
+      timer = setTimeout(function () {
+        timer = null;
+        ensureMenu();
+        bindExistingSci();
+      }, 80);
+    });
+    if (document.body) obs.observe(document.body, { childList: true, subtree: true });
   }
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 </script>
@@ -101,7 +142,6 @@ jobs:
                   text = text.replace('</body>', patch + '</body>', 1)
 
           p.write_text(text, encoding='utf-8')
-          print('Menu técnico SCI/SCM aplicado')
 
       - name: Commit changes
         run: |
@@ -109,5 +149,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Corrigir menu lateral do técnico SCI SCM [skip bridge]"
+          git commit -m "Corrigir navegação SCI e SCM do técnico [skip bridge]"
           git push
