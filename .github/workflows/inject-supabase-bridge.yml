@@ -16,30 +16,83 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Inject bridge and technician SCM shortcut
+      - name: Inject bridge and force technician SCM
         shell: python
         run: |
           from pathlib import Path
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
 
-          # Ponte Supabase
           tag = '<script src="/supabase-bridge.js"></script>'
           if tag not in text:
-              marker = '</body>'
-              if marker not in text:
-                  raise SystemExit('index.html sem </body>')
-              text = text.replace(marker, tag + '\n' + marker, 1)
+              text = text.replace('</body>', tag + '\n</body>', 1)
 
-          # Visão do técnico: manter a operação enxuta, mas com acesso direto à SCM.
-          old = '''        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },\n        { id: "almoxarifado", icon: "▤", label: "Almoxarifado" }'''
-          new = '''        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },\n        { id: "almoxarifado", icon: "▤", label: "Almoxarifado" },\n        { id: "almox_scm_form", icon: "🛒", label: "Nova SCM" }'''
-
-          if old in text and 'label: "Nova SCM"' not in text[text.find('if (btIsTechOnly(u)) {'):text.find('if (btIsTechOnly(u)) {') + 1800]:
-              text = text.replace(old, new, 1)
+          marker = '/* BIOTROP TECH SCM FORCE */'
+          if marker not in text:
+              patch = r'''<script>
+/* BIOTROP TECH SCM FORCE */
+(function () {
+  'use strict';
+  function tecnico() {
+    try {
+      var u = window.STATE && window.STATE.currentUser;
+      if (!u) return false;
+      var perfil = String(u.perfilId || '').trim().toLowerCase();
+      var papel = String(u.perfilNome || u.nomePerfil || u.cargo || u.funcao || '').trim().toLowerCase();
+      return perfil === 'tecnico' || papel === 'tecnico' || papel === 'técnico';
+    } catch (e) { return false; }
+  }
+  function abrir() {
+    try {
+      if (typeof window.navigateTo === 'function') return window.navigateTo('almox_scm_form');
+      var alvo = document.querySelector('[data-nav="almox_scm_form"]');
+      if (alvo) alvo.click();
+    } catch (e) {}
+  }
+  function garantir() {
+    if (!tecnico()) return;
+    var nav = document.getElementById('bt-nav') || document.querySelector('.bt-nav');
+    if (!nav || nav.querySelector('[data-bt-tech-scm-force]')) return;
+    var referencia = nav.querySelector('[data-nav="almoxarifado"]') || nav.querySelector('[data-label="Nova solicitação"]');
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'bt-nav__item';
+    b.setAttribute('data-nav', 'almox_scm_form');
+    b.setAttribute('data-label', 'Nova SCM');
+    b.setAttribute('data-bt-tech-scm-force', '1');
+    b.innerHTML = '<span class="bt-nav__icon">🛒</span><span class="bt-nav__label">Nova SCM</span>';
+    b.onclick = function (ev) { ev.preventDefault(); ev.stopPropagation(); abrir(); };
+    if (referencia && referencia.parentNode) referencia.parentNode.insertBefore(b, referencia.nextSibling);
+    else nav.appendChild(b);
+  }
+  function instalar() {
+    garantir();
+    if (typeof window.btRefreshNav === 'function' && !window.btRefreshNav.__techScmForce) {
+      var original = window.btRefreshNav;
+      window.btRefreshNav = function () {
+        var r = original.apply(this, arguments);
+        setTimeout(garantir, 0);
+        return r;
+      };
+      window.btRefreshNav.__techScmForce = true;
+    }
+  }
+  var obs = new MutationObserver(instalar);
+  if (document.body) obs.observe(document.body, { childList: true, subtree: true });
+  setTimeout(instalar, 50);
+  setTimeout(instalar, 300);
+  setTimeout(instalar, 1000);
+  setTimeout(instalar, 2500);
+})();
+</script>
+'''
+              if tag in text:
+                  text = text.replace(tag, patch + tag, 1)
+              else:
+                  text = text.replace('</body>', patch + '</body>', 1)
 
           p.write_text(text, encoding='utf-8')
-          print('index ok')
+          print('SCM técnico forçado no index.html')
 
       - name: Commit changes
         run: |
@@ -47,5 +100,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Garantir SCM no menu do tecnico [skip bridge]"
+          git commit -m "Forçar Nova SCM na visão do técnico [skip bridge]"
           git push
