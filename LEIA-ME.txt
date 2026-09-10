@@ -1,0 +1,522 @@
+BIOTROP - Plataforma de Manutenção (versão LOCAL, sem Supabase)
+================================================================
+
+COMO USAR
+---------
+1. Dê dois cliques em "BIOTROP-Manutencao-LOCAL.html".
+2. Faça login com:
+      E-mail: admin@biotrop.com
+      Senha:  admin123
+3. Troque essa senha em "Configurações" (botão flutuante no canto inferior direito).
+
+É um arquivo único. Não precisa de internet, servidor, Node, Python nem banco de dados.
+
+
+ONDE FICAM OS DADOS
+-------------------
+Tudo é gravado no localStorage do navegador que você usou para abrir o arquivo.
+Consequências práticas:
+ - Os dados NÃO estão dentro do arquivo HTML: se você copiar o arquivo para outro PC,
+   ele abre vazio (só com os cadastros iniciais).
+ - Cada navegador tem seus próprios dados (Chrome e Edge não compartilham).
+ - Limpar "dados de navegação / cookies e dados de sites" apaga os cadastros.
+ - Não há acesso multiusuário simultâneo: cada máquina é uma base separada.
+
+BACKUP: abra o Console do navegador (F12) e rode:
+      exportLocalBackup()
+Isso baixa um .json com usuários, perfis, famílias, SCI, SCM, medidores,
+leituras e treinamentos.
+
+
+O QUE ESTÁ FUNCIONANDO
+----------------------
+ - Login local, sessão que persiste ao recarregar, logout.
+ - Perfis de acesso (Administrador, Gestor, Almoxarife, Líder, Técnico) com
+   permissões editáveis em Administração > Perfis de Acesso.
+ - Administração > Usuários: criar, editar, redefinir senha, excluir, bloquear.
+ - Almoxarifado / SCI: nova solicitação, lista, detalhe, mudança de status,
+   exportação CSV, famílias de itens (9 famílias já cadastradas).
+ - Almoxarifado / SCM: nova compra, minhas SCM, gestão, aprovação pelo líder,
+   exportação CSV. A aprovação aparece para quem estiver no campo
+   "E-mail do líder" do usuário solicitante.
+ - Utilidades: os 18 medidores oficiais (CAMM 1, CAMM 2, CAMM 3, C. LOG) já
+   cadastrados, registro de leitura com data/hora, foto, cálculo de consumo
+   (atual - anterior), histórico e cadastro de novos medidores/horímetros.
+ - Treinamentos (BIOSEG): cadastro de treinamento, vídeo do YouTube, progresso.
+ - Tema claro/escuro.
+
+Fotos: imagens de até ~500 KB são guardadas junto com a leitura. Acima disso,
+a leitura registra apenas "evidência confirmada", sem guardar a imagem
+(para não estourar o limite de armazenamento do navegador).
+
+
+O QUE FOI REMOVIDO DO PROJETO ORIGINAL
+--------------------------------------
+ - Cliente e autenticação do Supabase (@supabase/supabase-js, config.js).
+ - Scripts que dependiam do banco: biotrop-production-v2.js,
+   technician-simple-mode-v1.js, training-module-v2*.js, utility-tech-ui.js.
+ - Backend Express (server/), funções Edge, e-mails automáticos e
+   recuperação de senha por e-mail (agora a senha é redefinida pelo admin).
+ - PCM continua como módulo placeholder, igual ao original.
+
+
+SE NÃO CONSEGUIR ENTRAR
+-----------------------
+1. Confira o e-mail: admin@biotrop.com (é ".com", NÃO ".com.br").
+   A senha é admin123, tudo minúsculo e sem espaço.
+   Cuidado com o preenchimento automático do navegador em cima do campo.
+2. A mensagem de erro agora diz exatamente o problema: se o e-mail não existe,
+   ela lista quais estão cadastrados; se a senha está errada, ela avisa.
+3. Se ainda assim não entrar, clique em "Não consigo entrar · recriar acesso
+   padrão" logo abaixo do formulário. Isso recria admin@biotrop.com/admin123
+   e mantém solicitações, leituras e treinamentos.
+4. Se aparecer uma faixa laranja no pé da tela, o navegador bloqueou o
+   armazenamento local para arquivos abertos direto do disco. O sistema
+   funciona, mas nada é gravado ao fechar. Nesse caso, sirva a pasta por HTTP
+   ou use outro navegador / janela normal (não privada).
+
+
+====================================================================
+ATUALIZAÇÃO — interface nova e treinamentos completos
+====================================================================
+
+INTERFACE
+Camada visual refeita com os tokens do biotrop-plataforma_7.html
+(teal #0d5f64, raio 20px, sombra difusa). Os botões de tema e
+configurações saíram do canto flutuante e foram para uma topbar com
+relógio e identificação do usuário. Tema escuro continua funcionando.
+
+TREINAMENTOS (substituíram o BIOSEG antigo)
+O antigo era cartão com vídeo e uma porcentagem solta. Agora é o modelo
+do v7, com as mesmas regras:
+ - versão publicada por treinamento, com nota de corte e limite de
+   tentativas;
+ - aula com tempo mínimo; texto pede confirmação de leitura, vídeo não;
+ - progresso monotônico com teto de 120 s por gravação — a tela não
+   "pula" para o fim;
+ - avaliação recusada enquanto houver aula obrigatória pendente;
+ - correção fora da tela: a revisão mostra acertou/errou, o gabarito
+   nunca é enviado ao navegador antes do envio;
+ - tentativas contadas; refazer treinamento concluído é recusado;
+ - ninguém registra progresso de outra pessoa;
+ - comprovante com código, nota, data e validade em meses;
+ - conformidade por pessoa, com atrasado, vencido e em dia;
+ - gestão: cadastrar treinamento, aulas, questões e matricular.
+
+Três treinamentos já vêm cadastrados, escritos sobre os procedimentos
+deste sistema: LOTO (bloqueio e etiquetagem), Apontamento de utilidades
+e horímetros, e Solicitação de materiais (SCI e SCM). Os obrigatórios
+matriculam automaticamente todo usuário ativo.
+
+Menu: Treinamentos > Meus treinamentos, Comprovantes, Conformidade
+(gestor, líder e admin) e Gestão de treinamentos (gestor e admin).
+
+AINDA NÃO ENTREGUE
+ - PCM: ordens de serviço e planos preventivos
+ - Cadastro de ativos/equipamentos
+ - Estoque de materiais com saldo, mínimo, entrada e saída
+ - Dashboard com indicadores reais
+
+
+====================================================================
+ATUALIZAÇÃO — casca v7, visão do técnico e aulas com mídia
+====================================================================
+
+MENU LATERAL
+Refeito no padrão do biotrop-plataforma_7.html: 290 px, gradiente teal,
+grupos com rótulo (Meu dia, Utilidades, Almoxarifado SCI, Almoxarifado
+SCM, PCM, Treinamentos, Administração), ícone alinhado e contador
+vermelho de pendências à direita. A árvore expansível antiga saiu.
+Os contadores são reais: treinamentos pendentes, SCI pendentes, fila do
+almoxarifado e SCM esperando a sua aprovação.
+No celular o menu virou gaveta e apareceu barra inferior com até cinco
+atalhos.
+
+VISÃO DO TÉCNICO — igual à do v7
+Quando o perfil é Técnico (e não é administrador), o menu tem quatro
+itens: Início, Treinamentos, Apontar Horímetros e Almoxarifado. O início
+é saudação por horário mais três cartões grandes, sem indicador nenhum —
+o recorte é por papel, não por permissão; a permissão continua sendo a
+barreira de acesso.
+
+AULAS COM VÍDEO, PDF E O QUE MAIS PRECISAR
+Um mesmo treinamento mistura os tipos livremente. Seis tipos:
+  Texto · Vídeo do YouTube · Vídeo (arquivo ou endereço) ·
+  PDF (arquivo ou endereço) · Imagem · Link externo
+Cada aula tem o SEU tempo mínimo de visualização, em segundos, editável
+depois de criada. Também dá para editar título, tipo e conteúdo, e
+reordenar as aulas com as setas.
+
+Vídeo não pede confirmação de leitura, porque o tempo já é a evidência.
+PDF, imagem, texto e link pedem: o navegador não sabe dizer se a pessoa
+passou da primeira página.
+
+Anexo: até 1,5 MB o arquivo fica embutido no navegador. Acima disso o
+sistema recusa e pede um endereço — inclusive caminho file:///C:/... do
+disco ou da rede, que funciona com o HTML aberto localmente. Esse limite
+existe porque o navegador guarda poucos megabytes no total.
+
+O almoxarifado (SCI, SCM, famílias, medidores, usuários) continua
+intacto: as 15 telas foram verificadas depois da troca da casca.
+
+AINDA NÃO ENTREGUE
+ - PCM: ordens de serviço e planos preventivos
+ - Cadastro de ativos/equipamentos
+ - Estoque de materiais com saldo, mínimo, entrada e saída
+ - Dashboard com indicadores reais
+
+
+====================================================================
+ATUALIZAÇÃO — apontamento em 4 passos e comprovante novo
+====================================================================
+
+APONTAR HORÍMETROS (como no V2-MANUT)
+O fluxo virou o assistente de technician-simple-mode-v1.js, um passo por
+tela, com "Voltar" em todos:
+  1. CAMM — cada unidade com a contagem de medidores
+  2. Tipo de medição — Água, Gás, Energia, Horímetro
+  3. Medidor — nome, código e local
+  4. Leitura — caixa da ÚLTIMA LEITURA, leitura atual, data e hora,
+     observação opcional e foto
+Regras mantidas: leitura menor que a anterior é recusada com explicação
+(medidor é acumulativo); horímetro exige foto; consumo é calculado, não
+digitado; o GPS é tentado mas nunca bloqueia o registro — se o navegador
+negar ou demorar mais de 5 s, salva sem coordenada e diz isso.
+
+A sala de controle (painel de medidores, histórico e cadastro) saiu
+dessa tela e virou "Apontamentos de utilidades", no mesmo grupo do menu,
+visível para PCM, gestor e administração. O técnico não a alcança nem
+digitando a rota: o menu esconde e a permissão barra.
+
+COMPROVANTE DE TREINAMENTO
+Refeito como comprovante de verdade: moldura dupla, selo, nome em
+destaque, treinamento com categoria e carga mínima, quatro dados
+(conclusão, aproveitamento, nota de corte, validade), código em etiqueta,
+linha de assinatura da Gestão de Manutenção e a ressalva de que não
+substitui certificado legal de NR. Comprovante vencido aparece marcado.
+"Imprimir ou salvar em PDF" imprime só o comprovante, em A4 retrato, sem
+o menu nem os botões.
+
+Todas as 16 telas foram verificadas depois dessas mudanças.
+
+AINDA NÃO ENTREGUE
+ - PCM: ordens de serviço e planos preventivos
+ - Cadastro de ativos/equipamentos
+ - Estoque de materiais com saldo, mínimo, entrada e saída
+ - Dashboard com indicadores reais
+
+
+====================================================================
+ATUALIZAÇÃO — painéis por perfil
+====================================================================
+
+Cada perfil abre no painel do seu trabalho. O recorte fica na PERMISSÃO,
+não numa segunda regra de menu, então tela e rota concordam sozinhas e o
+que a administração mudar em Perfis de Acesso passa a valer na hora.
+
+PERFIL PCM (novo)
+Não existia perfil PCM. Foi criado com: utilidades, PCM, solicitações SCI
+e aprovação de SCM. Painel: apontamentos em 30 dias, medidores sem
+leitura, leituras sem foto, fila para aprovar, consumo de água/gás/
+energia/horas, apontamentos por CAMM, quem apontou, medidores parados e
+conformidade de treinamento.
+
+ALMOXARIFE — só almoxarifado e treinamento
+Painel: fila de atendimento, urgência alta, SCI para cadastrar,
+concluídas no mês, fila por urgência, SCM por situação, próximas da fila,
+SCI aguardando cadastro e os treinamentos dele. Menu sem utilidades e
+sem PCM.
+
+LÍDER — mesma coisa do almoxarife, com as aprovações
+Painel: o que aguarda a aprovação dele (marcando o que está parado há 3
+dias ou mais), decididas no mês, as SCM próprias e a conformidade da
+equipe. Menu sem utilidades e sem PCM.
+Atenção: a equipe do líder é definida pelo campo "E-mail do líder" no
+cadastro do usuário, em Administração.
+
+ADMINISTRAÇÃO
+Painel: usuários ativos, SCI pendentes, SCM na aprovação, conformidade,
+SCI e SCM por situação, apontamentos por CAMM, usuários por perfil e um
+bloco de pontos de atenção — inclusive usuários sem e-mail de líder,
+cuja SCM não chega a ninguém para aprovar.
+
+TÉCNICO — inalterado
+Quatro itens de menu, três cartões, nenhum indicador. Sidebar fixa.
+
+Sobre os gráficos: barras de magnitude usam uma cor só, porque comparam
+a mesma medida entre categorias. Cores de status são reservadas e sempre
+vêm com o texto escrito, nunca só a cor. Consumo de água, gás e energia
+aparece em blocos separados, não num gráfico único: m³, Nm³ e kWh não
+compartilham escala e sobrepor os três num eixo só daria comparação
+falsa.
+
+MTTR, MTBF e disponibilidade ficam de fora por enquanto, e o painel do
+PCM diz isso na tela: o cálculo é simples, mas a definição de falha,
+parada e tempo de reparo desta planta precisa ser fechada antes — e
+ainda não existe ordem de serviço no sistema.
+
+AINDA NÃO ENTREGUE
+ - PCM: ordens de serviço e planos preventivos
+ - Cadastro de ativos/equipamentos
+ - Estoque de materiais com saldo, mínimo, entrada e saída
+
+
+====================================================================
+ATUALIZAÇÃO — menu lateral v4
+====================================================================
+
+A barra de rolagem feia era sintoma: dezesseis itens abertos ao mesmo
+tempo numa coluna de altura fixa. Três mudanças atacam a causa.
+
+1. GRUPOS RECOLHÍVEIS
+O grupo da tela onde você está abre sempre; os demais vão abrindo de
+cima para baixo enquanto couberem em oito itens. Grupo fechado mostra no
+próprio cabeçalho a soma das pendências (em vermelho) ou um ponto quando
+contém a tela atual. O que você abrir ou fechar na mão fica gravado e
+tem preferência sobre esse padrão.
+
+Resultado medido: administrador 16 telas, PCM 11, almoxarife 9, líder 8,
+técnico 4 — nenhum perfil precisa rolar.
+
+2. BUSCA NO MENU
+Campo no topo do menu. Ignora acento: "utilidade" acha Utilidades,
+"aprova" acha Aprovações SCM. Enter vai para o primeiro resultado, Esc
+limpa.
+
+3. MODO COMPACTO
+O botão « no cabeçalho recolhe o menu para uma faixa de 76 px só com
+ícones, e o nome de cada item aparece flutuando ao passar o ponteiro.
+Nesse modo todos os itens ficam visíveis de uma vez. A escolha é
+gravada. No celular o botão não aparece: lá o menu é gaveta.
+
+E a rolagem, quando sobra: fina, no tom do menu, e só aparece com o
+ponteiro em cima. Vale para as tabelas e os modais também.
+
+Também melhorado: indicador da tela atual virou uma barra vertical clara
+à esquerda do item, em vez de fundo chapado.
+
+
+====================================================================
+ATUALIZAÇÃO — ajustes das reuniões (Plinio) e grupos com responsável
+====================================================================
+
+GRUPOS COM RESPONSÁVEL DIRETO (novo)
+Antes o aprovador da SCM vinha de um campo de texto solto no cadastro do
+usuário. Um erro de digitação e a solicitação não chegava a ninguém.
+Agora a pessoa pertence a um GRUPO e o grupo tem um RESPONSÁVEL DIRETO.
+Os onze grupos informados já vêm cadastrados:
+  Mecânica · Soldador · Técnico Utilidades · Elétrica/Automação ·
+  Predial · Predial Elétrica · Eletromecânica · PCM · Almoxarifado ·
+  Coordenador ADM · Coordenador Elétrica
+Administração > Grupos e Responsáveis: criar, editar, definir o
+responsável, ver e mover membros, inativar. A tela avisa quantos grupos
+estão sem responsável — a SCM dessas pessoas não chega a ninguém.
+O campo "e-mail do líder" do usuário continua existindo apenas como
+EXCEÇÃO, para quem aprova fora da estrutura do grupo.
+
+ALMOXARIFADO — SCI
+Status conforme o Forms, com o laço de volta ao solicitante:
+  Pendente de aprovação · Aguardando revisão do solicitante ·
+  Em compra · Aguardando o cadastro de item · Cadastrado · Reprovada
+Os status antigos são convertidos automaticamente (pendente ->
+pendente de aprovação, aprovado -> em compra, solicitado cadastro ->
+aguardando o cadastro de item, recusado -> reprovada).
+
+"Nº do Processo (ME)" virou "Número da solicitação de cadastro", com a
+observação na tela de que é o número gerado na 4MDG e não o processo ME
+de compra.
+
+Campo novo "Código do item", OBRIGATÓRIO para concluir em Cadastrado —
+o sistema recusa e explica.
+
+Devolver para revisão exige escrever o que falta: sem observação o
+sistema recusa. O solicitante vê a pendência no menu (contador), no
+aviso da tela e no botão "Corrigir e reenviar", que exige dizer o que
+foi corrigido. Cada transição fica no histórico da solicitação, com
+quem, quando e a nota.
+
+E-mail: aqui não há servidor de e-mail. O aviso do status "Aguardando
+revisão do solicitante" fica registrado na solicitação e aparece para o
+solicitante. O disparo real entra junto com o backend (ver
+BIOTROP-BASE/EMAIL-MICROSOFT-GRAPH.md).
+
+MENU DO ALMOXARIFADO UNIFICADO
+Um grupo só, em vez de dois: Nova solicitação, Minhas solicitações,
+Solicitações (SCI), Nova compra (SCM), Gestão de SCM, Aprovações SCM e
+Famílias de itens — cada item aparecendo conforme a permissão do perfil.
+
+PERFIL TÉCNICO
+Cinco itens: Início, Treinamentos, Apontar consumo, Nova solicitação e
+MINHAS SOLICITAÇÕES (pedida na reunião), que mostra SCI e SCM dele com o
+que voltou para revisão em destaque.
+
+UTILIDADES EM ABAS
+  Novo apontamento · Apontamentos · Gestão de medidores
+"Apontar horímetros" virou "Apontar consumo" em todas as telas e no
+cartão do técnico.
+
+O painel saiu da primeira versão. "Apontamentos" é lista mestre: uma
+linha por registro, com Data, CAMM, Tipo de energia, Medidor, Anterior,
+Leitura, Consumo, Evidência, Responsável, Observações e Verificação.
+Filtros por CAMM, tipo, medidor, período e texto, mais "mostrar só
+possíveis desvios" e exportação CSV.
+
+VERIFICAÇÃO DE DESVIOS
+Compara cada leitura com a anterior e a seguinte do mesmo medidor e
+sinaliza: consumo negativo, leitura seguinte menor que a atual, salto de
+consumo, consumo zero e horímetro sem foto.
+Detalhe importante: o salto usa a MEDIANA das outras leituras do medidor,
+não a média. Com média, o próprio salto puxava a referência para cima e
+se escondia — um consumo de 790 entre 10 e 10 passava por normal.
+Sinalizar não é bloquear: quem decide é o PCM.
+
+GESTÃO DE MEDIDORES
+Lista com adicionar, editar e inativar. Medidor inativo sai da lista de
+quem aponta e o histórico dele continua nos apontamentos.
+
+TREINAMENTOS
+Treinamento obrigatório agora pode ser atribuído a GRUPOS. Entrar ou
+sair do grupo atualiza a matrícula sozinho. Sem grupo marcado, o
+obrigatório continua valendo para todos os usuários ativos.
+"Conformidade" virou "Visão geral de treinamentos", restrita a quem
+responde por um grupo, à gestão e à administração, com filtros por
+colaborador, grupo/cargo, time e situação, coluna de grupo e exportação
+CSV. Responsável de grupo vê a equipe dele; a gestão vê todos.
+
+TESTADO (perfil por perfil, como o Plinio pediu)
+Administrador 15 telas, PCM 11, Almoxarife 9, Líder 8, Técnico 5 —
+nenhuma tela vazia, nenhum erro de console, nenhum perfil rolando o menu
+em tela de 1440x900.
+Ciclo completo da SCI verificado: criada como Pendente de aprovação,
+devolvida com motivo, técnico avisado e corrigindo, reenviada, concluída
+em Cadastrado com o código do item, três transições no histórico.
+SCM do técnico do grupo Mecânica foi para o responsável do grupo, com
+origem registrada como "grupo", e apareceu na fila de aprovação dele.
+
+AINDA NÃO ENTREGUE
+ - PCM: ordens de serviço e planos preventivos
+ - Cadastro de ativos/equipamentos
+ - Estoque de materiais com saldo, mínimo, entrada e saída
+
+
+====================================================================
+ATUALIZAÇÃO — visual Apple, submenu de utilidades e status definitivos
+====================================================================
+
+STATUS DA SCI — lista fechada na transcrição
+Corrigi a lista que eu havia implementado. Agora são sete, na ordem que
+o Plinio ditou:
+  Aberto · Pendente de Aprovação · Aguardando Revisão do Solicitante ·
+  Aguardando Cadastro de Item · Em Compra · Cadastrado · Rejeitada
+Duas diferenças em relação à versão anterior:
+ - a solicitação NASCE como "Aberto". "Pendente de Aprovação" é a etapa
+   da aprovação do líder, não a entrada.
+ - "Reprovada" virou "Rejeitada", que é a palavra do processo.
+Os status antigos continuam sendo convertidos (pendente -> Aberto,
+aprovado -> Em Compra, solicitado cadastro -> Aguardando Cadastro de
+Item, recusado/reprovada -> Rejeitada).
+Os painéis e contadores foram ajustados junto: eles filtravam pelo
+status antigo "pendente" e teriam zerado depois da troca.
+
+UTILIDADES — as abas viraram submenu
+"Apontamentos" e "Gestão de medidores" saíram das abas e agora ficam no
+menu, recuados abaixo de "Apontar consumo", igual ao almoxarifado. Cada
+tela abre direto, sem barra de abas. A rota antiga continua funcionando.
+O técnico não alcança as duas telas do PCM nem digitando a rota.
+
+TÉCNICO VÊ AS SUAS SCI E SCM
+"Minhas solicitações" mostra as duas em seções separadas: "Cadastro de
+itens · SCI" e "Compra de materiais · SCM", com o que voltou para
+revisão em destaque e o botão de corrigir e reenviar.
+
+VISUAL ESTILO APPLE
+ - Vidro fosco real: fundo translúcido com backdrop-filter usando blur E
+   saturate. Sem o saturate o vidro fica cinza; é o saturate que faz a
+   cor de baixo vazar.
+ - Sombra em duas camadas (uma curta que assenta, uma longa que dá
+   profundidade). Sombra única sempre parece adesivo.
+ - Curva de animação cubic-bezier(.32,.72,0,1), a padrão da Apple: sai
+   rápido e assenta devagar. Para o que aparece na tela, um leve
+   overshoot.
+ - Tudo que é clicável encolhe no :active. É o que faz a interface
+   parecer material em vez de desenho.
+ - Entrada em escada nos indicadores (40 ms entre cada) e pop com mola
+   nos modais.
+ - Fonte do sistema (SF Pro no Mac, Segoe UI Variable no Windows).
+ - Tudo respeita prefers-reduced-motion: quem pediu menos movimento no
+   sistema operacional não recebe animação nenhuma.
+
+ÍCONES
+Os caracteres unicode do menu (⌂ ▣ ⏱ ▤ ⊞ ⊕ ✓ ◫ ◱ ▷ ⎙ ⚑ ✎ ☺) saíram.
+Cada um vinha de uma família diferente, com peso e altura próprios — não
+é possível organizar o que não compartilha grade. Agora são 18 ícones
+SVG desenhados na mesma grade de 24, traço 1.6 com ponta redonda, todos
+numa caixa de 20px alinhada. Zero unicode no menu.
+
+TESTADO
+Administrador 17 telas, PCM 13, Almoxarife 9, Líder 8, Técnico 5 —
+nenhuma falha, console limpo, tema escuro com o vidro funcionando.
+
+
+====================================================================
+ATUALIZAÇÃO — correções visuais e envio de e-mail
+====================================================================
+
+O QUE ESTAVA BUGADO, E POR QUÊ
+1. Modal virava uma coluna estreita flutuando, com o fundo não cobrindo
+   a tela. Causa: o fundo do modal tinha backdrop-filter e o modal
+   dentro dele também. backdrop-filter cria um bloco de contenção novo,
+   e um position:fixed dentro dele deixa de se ancorar na janela e passa
+   a se ancorar no ancestral. Como eu havia posto backdrop-filter nos
+   cartões e transform na animação do conteúdo, o modal ficou preso
+   dentro deles.
+   Corrigido: vidro só nas barras que ficam sobre o conteúdo (menu,
+   topbar, barra do celular). Cartão e modal com fundo sólido. Medido
+   depois: fundo cobrindo 1440px, modal com 620px, zero ancestrais
+   criando bloco de contenção.
+2. Abas duplicando o menu. Com o menu tendo os itens, a barra de abas
+   dentro do almoxarifado era a mesma navegação em dois lugares — e no
+   técnico mostrava "Minhas SCM" ao lado de "Nova Solicitação", que é
+   justamente o que "Minhas solicitações" já cobre. A barra saiu e cada
+   tela ganhou título próprio.
+3. Animações estranhas. Os contadores piscavam para sempre (animação
+   infinita) e os indicadores entravam em escada, o que dava impressão
+   de tela carregando errado. Sobrou um fade curto. Hover e resposta ao
+   clique continuam.
+
+E-MAIL
+Dentro do app: Administração > Caixa de saída.
+Nada sai sozinho aqui, porque não existe servidor. A mensagem é gerada
+com destinatário, assunto e corpo prontos e fica na fila; você despacha
+por "Abrir no e-mail" (monta mailto:) ou baixando o .eml, que abre no
+Outlook como rascunho preenchido. Dá para ver, copiar, cancelar e marcar
+como enviado.
+
+Gatilhos, como a reunião decidiu:
+  LIGADO    SCI entra em "Aguardando Revisão do Solicitante" -> avisa o
+            solicitante. Único ligado: o almoxarifado olha o sistema
+            todo dia, o solicitante não.
+  DESLIGADO SCM na aprovação -> avisa o responsável do grupo.
+  DESLIGADO Treinamento concluído -> avisa colaborador e responsável.
+Liga e desliga em "Gatilhos e remetente", na própria tela.
+
+Quando o destinatário não existe, a mensagem entra como "sem
+destinatário" com o motivo ("o grupo do solicitante não tem responsável
+direto definido"), e a tela tem indicador próprio para isso — "não
+chegou e-mail" sem rastro é o pior defeito para investigar.
+
+No servidor: pasta BIOTROP-BASE/servidor-email/
+  graph.js               token de aplicativo e sendMail
+  worker.js              consome core.email_fila, com retry e SKIP LOCKED
+  enfileirar.sql         gatilhos no banco + core.parametro (liga/desliga
+                         por UPDATE, sem deploy)
+  teste.js               testa token e envio antes de ligar o worker
+  biotrop-email.service  unit do systemd
+  .env.example           variáveis
+  README.md              o que pedir para a TI, instalar, testar, operar
+
+Um ponto de segurança que vale insistir: Mail.Send de aplicativo permite
+enviar como QUALQUER caixa do tenant. O README traz o comando da
+Application Access Policy que limita o aplicativo à caixa de
+comunicação. Sem ela, vazar o secret é vazar a capacidade de mandar
+e-mail como qualquer pessoa da empresa.

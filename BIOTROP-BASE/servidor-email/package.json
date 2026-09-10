@@ -1,0 +1,19 @@
+{
+  "name": "biotrop-email-worker",
+  "version": "1.0.0",
+  "description": "Worker que consome core.email_fila e envia pelo Microsoft Graph",
+  "private": true,
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js",
+    "uma-vez": "node worker.js --uma-vez",
+    "teste-token": "node teste.js token",
+    "teste-envio": "node teste.js envio"
+  },
+  "dependencies": {
+    "pg": "^8.11.5"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
