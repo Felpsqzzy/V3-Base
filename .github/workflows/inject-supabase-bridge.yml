@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Apply official technician navigation
+      - name: Clean legacy patches and fix technician menu
         shell: python
         run: |
           from pathlib import Path
@@ -25,50 +25,44 @@ jobs:
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
 
-          # Remove every temporary technician menu injection from previous fixes.
-          for marker in [
+          markers = [
               'BIOTROP TECH SCI SCM NAV V3',
               'BIOTROP TECH SCI SCM SIDEBAR V2',
               'BIOTROP TECH SCM FORCE',
               'BIOTROP TECH SCI SCM SIDEBAR'
-          ]:
+          ]
+          for marker in markers:
               text = re.sub(
                   r'<script>\s*/\*\s*' + re.escape(marker) + r'\s*\*/[\s\S]*?</script>\s*',
                   '', text, flags=re.I
               )
 
-          # Normalize technician detection.
-          text = re.sub(
-              r'function btIsTechOnly\(user\) \{[\s\S]*?\n\}',
-              '''function btIsTechOnly(user) {\n  const u = user || STATE.currentUser;\n  if (!u) return false;\n  if (isAdminUser(u)) return false;\n  const perfil = String(u.perfilId || u.perfil || u.role || u.cargo || u.funcao || "").trim().toLowerCase();\n  const nomePerfil = String(u.perfilNome || u.nomePerfil || "").trim().toLowerCase();\n  const tela = String(document.body && document.body.innerText || "").trim().toLowerCase();\n  return perfil === "tecnico" || perfil.includes("tecnico") || perfil.includes("técnico") ||\n         nomePerfil.includes("tecnico") || nomePerfil.includes("técnico") ||\n         /(^|\\n)t[eé]cnico\\s*(?:-|$)/i.test(tela);\n}''',
-              text, count=1
-          )
+          # Make the technician detector robust to the actual account labels.
+          old_detector = '''function btIsTechOnly(user) {\n  const u = user || STATE.currentUser;\n  if (!u) return false;\n  if (isAdminUser(u)) return false;\n  return u.perfilId === "tecnico";\n}'''
+          new_detector = '''function btIsTechOnly(user) {\n  const u = user || STATE.currentUser;\n  if (!u) return false;\n  if (isAdminUser(u)) return false;\n  const perfil = String(u.perfilId || u.perfil || u.role || u.cargo || u.funcao || "").trim().toLowerCase();\n  const nomePerfil = String(u.perfilNome || u.nomePerfil || "").trim().toLowerCase();\n  const tela = String(document.body && document.body.innerText || "").trim().toLowerCase();\n  return perfil === "tecnico" || perfil.includes("tecnico") || perfil.includes("técnico") ||\n         nomePerfil.includes("tecnico") || nomePerfil.includes("técnico") ||\n         /(^|\\n)t[eé]cnico\\s*(?:-|$)/i.test(tela);\n}'''
+          if old_detector in text:
+              text = text.replace(old_detector, new_detector, 1)
 
-          # Replace the technician branch regardless of its old label/count.
-          tech_pattern = re.compile(
-              r'  if \(btIsTechOnly\(u\)\) \{[\s\S]*?\n  \}\n\n  const admin = isAdminUser\(u\);',
-              re.M
-          )
-          tech_branch = '''  if (btIsTechOnly(u)) {\n    return [{\n      label: "Operação",\n      items: [\n        { id: "home", icon: "⌂", label: "Início" },\n        { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },\n        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },\n        { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },\n        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }\n      ]\n    }];\n  }\n\n  const admin = isAdminUser(u);'''
-          text, replaced = tech_pattern.subn(tech_branch, text, count=1)
-          if replaced != 1:
-              raise SystemExit('Não foi possível localizar o bloco do menu do técnico')
+          # Replace the whole technician branch using a callable replacement so backslashes are literal.
+          pat = re.compile(r'  if \(btIsTechOnly\(u\)\) \{[\s\S]*?\n  \}\n\n  const admin = isAdminUser\(u\);', re.M)
+          def replacement(_m):
+              return '''  if (btIsTechOnly(u)) {\n    return [{\n      label: "Operação",\n      items: [\n        { id: "home", icon: "⌂", label: "Início" },\n        { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },\n        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },\n        { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },\n        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }\n      ]\n    }];\n  }\n\n  const admin = isAdminUser(u);'''
+          text, count = pat.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit('Bloco btIsTechOnly/btNavGroups do técnico não encontrado')
 
-          # The approved design keeps SCI + SCM as tabs in the shared "Nova solicitação" screen.
-          # Remove the old override that stripped those tabs.
-          text = re.sub(
-              r'\nconst _corPrevRenderAlmox = renderAlmoxarifado;\s*\n'
-              r'renderAlmoxarifado = function \(initialTab\) \{[\s\S]*?\n\};\s*\n',
-              '\n', text, count=1
-          )
+          # Remove only the old override that hid the shared SCI/SCM tabs.
+          old_override = '''const _corPrevRenderAlmox = renderAlmoxarifado;\nrenderAlmoxarifado = function (initialTab) {\n  const html = _corPrevRenderAlmox(initialTab);\n  // Remove a barra de abas mantendo o resto intacto.\n  return html.replace(/<div class="tabs-row">[\\s\\S]*?<\\/div>\\s*(?=<div id="almox-tab-content")/, "");\n};\n'''
+          text = text.replace(old_override, '', 1)
 
-          # Keep one Supabase bridge tag.
           tag = '<script src="/supabase-bridge.js"></script>'
-          text = text.replace(tag, '')
-          text = text.replace('</body>', tag + '\n</body>', 1)
+          while text.count(tag) > 1:
+              text = text.replace(tag, '', 1)
+          if tag not in text:
+              text = text.replace('</body>', tag + '\n</body>', 1)
 
           p.write_text(text, encoding='utf-8')
-          print('Menu do técnico corrigido: 5 itens, sem Gestão SCM; SCI + SCM nas abas da tela Nova solicitação')
+          print('OK: técnico = 5 itens; sem Gestão SCM; abas SCI/SCM preservadas')
 
       - name: Commit cleanup
         run: |
@@ -76,5 +70,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m "Fixar menu correto do técnico [skip bridge]"
+          git commit -m "Corrigir menu do técnico e abas SCI SCM [skip bridge]"
           git push
