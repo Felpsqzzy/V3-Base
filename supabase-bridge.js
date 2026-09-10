@@ -165,6 +165,61 @@
     }
   }
 
+  /*
+     Técnico: SCI e SCM ficam somente no menu lateral.
+     Não dependemos de um segundo btNavGroups para evitar que patches
+     antigos do HTML voltem a exibir as opções de gestão.
+  */
+  function tecnicoSomenteMenuLateral(){
+    try {
+      const u=currentUser();
+      if(!u || isAdmin()) return;
+      const perfil=String(u.perfilId||u.perfil||u.role||u.cargo||u.funcao||'').trim().toLowerCase();
+      const nome=String(u.perfilNome||u.nomePerfil||'').trim().toLowerCase();
+      const tecnico=perfil==='tecnico'||perfil.includes('tecnico')||perfil.includes('técnico')||nome.includes('tecnico')||nome.includes('técnico');
+      if(!tecnico) return;
+
+      const manter={home:true,lms_my:true,utilidades:true,almoxarifado:true,almox_scm_form:true,almox_minhas:true};
+      document.querySelectorAll('[data-nav]').forEach(function(btn){
+        const id=btn.getAttribute('data-nav');
+        if(id==='almox_scm_form'){
+          const texto=Array.from(btn.querySelectorAll('span')).pop()||btn;
+          texto.textContent='Nova ordem de compra';
+          btn.title='Nova ordem de compra';
+        }
+        if(id==='almoxarifado'){
+          const texto=Array.from(btn.querySelectorAll('span')).pop()||btn;
+          texto.textContent='Nova solicitação';
+          btn.title='Nova solicitação';
+        }
+        if(!manter[id]){
+          btn.style.display='none';
+          const pai=btn.parentElement;
+          if(pai && pai !== document.body && pai.children.length<=1) pai.style.display='none';
+        }
+      });
+
+      // Remove títulos de grupos vazios que ficaram de patches antigos.
+      document.querySelectorAll('.bt-navgroup, .bt-nav__group, .nav-group, .nav-section').forEach(function(g){
+        const visiveis=Array.from(g.querySelectorAll('[data-nav]')).filter(function(b){return getComputedStyle(b).display!=='none';});
+        if(!visiveis.length) g.style.display='none';
+      });
+
+      // SCI/SCM não usam mais abas internas.
+      document.querySelectorAll('.tabs-row').forEach(function(row){
+        const t=(row.textContent||'').toLowerCase();
+        if(t.includes('sci')||t.includes('scm')||t.includes('nova solicitação')||t.includes('nova compra')) row.remove();
+      });
+    } catch (_) {}
+  }
+
+  function iniciarPatchTecnico(){
+    tecnicoSomenteMenuLateral();
+    const obs=new MutationObserver(function(){ tecnicoSomenteMenuLateral(); });
+    if(document.body) obs.observe(document.body,{childList:true,subtree:true});
+    setInterval(tecnicoSomenteMenuLateral,700);
+  }
+
   async function start(){
     if(BRIDGE.started) return; BRIDGE.started=true;
     try{
@@ -181,5 +236,7 @@
     }catch(e){ console.warn('[BIOTROP] ponte Supabase indisponível:',e); }
   }
 
+  // O patch visual roda independentemente do login do Supabase.
+  setTimeout(iniciarPatchTecnico,200);
   setTimeout(start,250);
 })();
