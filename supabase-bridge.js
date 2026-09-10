@@ -5,13 +5,9 @@
   const SUPABASE_KEY = 'sb_publishable_PeiXiPCMENjp9ajwW-EbJw_IohMAt1h';
   const BRIDGE = { ready:false, syncing:false, session:null, client:null };
   window.BIOTROP_DB = BRIDGE;
-
   function loadSdk(){return new Promise(function(resolve,reject){if(window.supabase&&window.supabase.createClient)return resolve();const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);});}
   function currentUser(){try{return window.STATE&&STATE.currentUser?STATE.currentUser:null;}catch(_){return null;}}
   function isAdmin(){try{const u=currentUser();return !!(u&&typeof isAdminUser==='function'&&isAdminUser(u));}catch(_){return false;}}
-
-  /* Reconhece o Técnico tanto pelo estado da aplicação quanto pelo texto
-     que a própria troca de visão coloca na sidebar. */
   function isTechnician(){
     const u=currentUser();
     if(u&&!isAdmin()){
@@ -25,7 +21,6 @@
     }
     return false;
   }
-
   function metadataOf(o){return Object.assign({},o,{_biotrop_source:'v3-base-local',_biotrop_local_id:o&&o.id?String(o.id):null});}
   async function signInLocalUser(){const u=currentUser();if(!u||!u.usuario||!u.senha)return null;const email=String(u.usuario).trim().toLowerCase();if(!email||email.indexOf('@')<0)return null;const r=await BRIDGE.client.auth.signInWithPassword({email:email,password:String(u.senha)});if(r.error)return null;BRIDGE.session=r.data.session||null;return BRIDGE.session;}
   function localFromService(row){const m=row&&row.metadata&&typeof row.metadata==='object'?row.metadata:{};const x=Object.assign({},m);x.id=x.id||row.request_number;x.codigo=x.codigo||row.request_number;x.status=x.status||row.status||'aberto';x.solicitanteId=x.solicitanteId||row.requester_id;x.dataCriacao=x.dataCriacao||row.created_at;x._dbId=row.id;x._dbTable='service_requests';return x;}
@@ -37,63 +32,17 @@
   async function softDelete(table,id){if(!BRIDGE.session||!id)return false;const r=await BRIDGE.client.from(table).update({active:false,deleted_at:new Date().toISOString()}).eq('id',id);if(r.error){alert('Não foi possível excluir no banco: '+r.error.message);return false;}return true;}
   function localDelete(kind,id){if(!isAdmin()){alert('A exclusão é exclusiva do Administrador.');return;}const list=kind==='sci'?(window.SCI_LIST||[]):(window.SCM_LIST||[]),item=list.find(x=>String(x.id)===String(id));if(!item)return;if(!confirm('Excluir definitivamente a solicitação '+(item.codigo||id)+'? Ela será removida da operação e marcada como excluída no banco.'))return;(async function(){if(item._dbId){const ok=await softDelete(kind==='sci'?'service_requests':'purchase_requests',item._dbId);if(!ok)return;}if(kind==='sci'){window.SCI_LIST=list.filter(x=>String(x.id)!==String(id));if(typeof saveSci==='function')saveSci(window.SCI_LIST);}else{window.SCM_LIST=list.filter(x=>String(x.id)!==String(id));if(typeof saveScm==='function')saveScm(window.SCM_LIST);}if(typeof renderAlmoxTabContent==='function')renderAlmoxTabContent();else if(typeof navigateTo==='function')navigateTo(kind==='sci'?'almox_solicitacoes':'almox_scm_gestao');})();}
   function injectDeleteButtons(){if(!isAdmin())return;document.querySelectorAll('[data-sci-view]').forEach(function(btn){const id=btn.getAttribute('data-sci-view');if(btn.parentElement&&!btn.parentElement.querySelector('[data-bt-db-delete="sci-'+id+'"]')){const b=document.createElement('button');b.className='icon-btn danger';b.title='Excluir SCI';b.setAttribute('data-bt-db-delete','sci-'+id);b.innerHTML='🗑';b.onclick=function(e){e.stopPropagation();localDelete('sci',id);};btn.parentElement.appendChild(b);}});document.querySelectorAll('[data-scm-manage]').forEach(function(btn){const id=btn.getAttribute('data-scm-manage');if(btn.parentElement&&!btn.parentElement.querySelector('[data-bt-db-delete="scm-'+id+'"]')){const b=document.createElement('button');b.className='icon-btn danger';b.title='Excluir SCM';b.setAttribute('data-bt-db-delete','scm-'+id);b.innerHTML='🗑';b.onclick=function(e){e.stopPropagation();localDelete('scm',id);};btn.parentElement.appendChild(b);}});}
-
-  function navButton(id,label,icon){
-    const b=document.createElement('button');
-    b.type='button';
-    b.className='nav-item bt-tech-added-nav';
-    b.setAttribute('data-nav',id);
-    b.setAttribute('data-bt-tech-nav',id);
-    b.innerHTML='<span style="width:18px;display:inline-flex;justify-content:center" aria-hidden="true">'+icon+'</span><span>'+label+'</span>';
-    b.onclick=function(e){e.preventDefault();e.stopPropagation();if(typeof navigateTo==='function')navigateTo(id);};
-    return b;
-  }
-
-  /* A troca de visão recria a sidebar. Em vez de tentar alterar a função
-     interna de renderização, este bloco reaplica o menu do Técnico toda vez
-     que a aba/perfil muda. */
+  function navButton(id,label,icon){const b=document.createElement('button');b.type='button';b.className='nav-item bt-tech-added-nav';b.setAttribute('data-nav',id);b.setAttribute('data-bt-tech-nav',id);b.innerHTML='<span style="width:18px;display:inline-flex;justify-content:center" aria-hidden="true">'+icon+'</span><span>'+label+'</span>';b.onclick=function(e){e.preventDefault();e.stopPropagation();if(typeof navigateTo==='function')navigateTo(id);};return b;}
   function injectTechnicianMenu(){
     if(!isTechnician())return;
     const nav=document.querySelector('.sidebar-nav')||document.querySelector('.bt-nav')||document.getElementById('sidebar-nav');
     if(!nav)return;
-
     nav.querySelectorAll('[data-bt-tech-nav]').forEach(function(x){x.remove();});
-
-    const all=Array.from(nav.querySelectorAll('button.nav-item,button.bt-nav__item,button'));
-    const anchor=all.find(function(x){return /minhas solicitações/i.test(String(x.textContent||''));})||all.find(function(x){return /nova solicitação/i.test(String(x.textContent||''));});
-
-    const items=[
-      navButton('almox_solicitacoes','Solicitações (SCI)','▤'),
-      navButton('almox_scm_form','Nova compra (SCM)','🛒'),
-      navButton('almox_scm_gestao','Gestão de SCM','▤')
-    ];
-    items.forEach(function(b){
-      if(anchor&&anchor.parentElement)anchor.insertAdjacentElement('afterend',b);
-      else nav.appendChild(b);
-      anchor=anchor;
-    });
+    let anchor=Array.from(nav.querySelectorAll('button.nav-item,button.bt-nav__item,button')).find(function(x){return /minhas solicitações/i.test(String(x.textContent||''));})||Array.from(nav.querySelectorAll('button.nav-item,button.bt-nav__item,button')).find(function(x){return /nova solicitação/i.test(String(x.textContent||''));});
+    const items=[navButton('almox_solicitacoes','Solicitações (SCI)','▤'),navButton('almox_scm_form','Nova compra (SCM)','🛒'),navButton('almox_scm_gestao','Gestão de SCM','▤')];
+    items.forEach(function(b){if(anchor&&anchor.parentElement){anchor.insertAdjacentElement('afterend',b);anchor=b;}else{nav.appendChild(b);}});
   }
-
-  function wrapSaveFunctions(){if(typeof window.saveSci==='function'&&!window.saveSci.__btWrapped){const old=window.saveSci;window.saveSci=function(list){const r=old(list);if(!BRIDGE.syncing)pushSci(list);return r;};window.saveSci.__btWrapped=true;}if(typeof window.saveScm==='function'&&!window.saveScm.__btWrapped){const old=window.saveScm;window.saveScm=function(list){const r=old(list);if(!BRIDGE.syncing)pushScm(list);return r;}}}
-
-  async function start(){
-    try{
-      const observer=new MutationObserver(function(){wrapSaveFunctions();injectDeleteButtons();injectTechnicianMenu();});
-      observer.observe(document.body,{childList:true,subtree:true});
-      injectTechnicianMenu();
-      await loadSdk();
-      BRIDGE.client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-      const ses=await signInLocalUser();
-      if(!ses){injectTechnicianMenu();return;}
-      BRIDGE.ready=true;
-      await pullDatabase();
-      wrapSaveFunctions();
-      await pushSci(window.SCI_LIST||[]);
-      await pushScm(window.SCM_LIST||[]);
-      injectDeleteButtons();
-      injectTechnicianMenu();
-      console.info('[BIOTROP] Supabase conectado:',SUPABASE_URL);
-    }catch(e){injectTechnicianMenu();console.warn('[BIOTROP] ponte Supabase indisponível:',e);}
-  }
+  function wrapSaveFunctions(){if(typeof window.saveSci==='function'&&!window.saveSci.__btWrapped){const old=window.saveSci;window.saveSci=function(list){const r=old(list);if(!BRIDGE.syncing)pushSci(list);return r;};window.saveSci.__btWrapped=true;}if(typeof window.saveScm==='function'&&!window.saveScm.__btWrapped){const old=window.saveScm;window.saveScm=function(list){const r=old(list);if(!BRIDGE.syncing)pushScm(list);return r;};window.saveScm.__btWrapped=true;}}
+  async function start(){try{const observer=new MutationObserver(function(){wrapSaveFunctions();injectDeleteButtons();injectTechnicianMenu();});observer.observe(document.body,{childList:true,subtree:true});injectTechnicianMenu();await loadSdk();BRIDGE.client=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});const ses=await signInLocalUser();if(!ses){injectTechnicianMenu();return;}BRIDGE.ready=true;await pullDatabase();wrapSaveFunctions();await pushSci(window.SCI_LIST||[]);await pushScm(window.SCM_LIST||[]);injectDeleteButtons();injectTechnicianMenu();console.info('[BIOTROP] Supabase conectado:',SUPABASE_URL);}catch(e){injectTechnicianMenu();console.warn('[BIOTROP] ponte Supabase indisponível:',e);}}
   setTimeout(start,250);
 })();
