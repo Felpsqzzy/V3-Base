@@ -1,45 +1,44 @@
 name: Maintain Supabase bridge
 
-on:
-  push:
-    branches: [main]
+on: [push]
 
 permissions:
   contents: write
 
 jobs:
-  inject:
+  fix-menu:
     if: ${{ !contains(github.event.head_commit.message, '[skip bridge]') }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Corrigir navegação e remover abas
-        shell: python
+      - name: Corrigir menu do tecnico
         run: |
+          python3 - <<'PY'
           from pathlib import Path
           import re
 
           p = Path('index.html')
           text = p.read_text(encoding='utf-8')
 
-          # Limpa patches antigos de menu que estavam sobrescrevendo o menu final.
-          markers = [
+          # Remove patches antigos de navegacao.
+          for marker in [
               'BIOTROP TECH SCI SCM NAV V3',
               'BIOTROP TECH SCI SCM SIDEBAR V2',
               'BIOTROP TECH SCM FORCE',
               'BIOTROP TECH SCI SCM SIDEBAR',
-              'BIOTROP TECH MENU FINAL V1'
-          ]
-          for marker in markers:
+              'BIOTROP TECH MENU FINAL V1',
+              'BIOTROP ALMOX NO TABS V1'
+          ]:
               text = re.sub(
                   r'<script>\s*/\*\s*' + re.escape(marker) + r'\s*\*/[\s\S]*?</script>\s*',
                   '', text, flags=re.I
               )
 
-          # O menu efetivo do técnico é o último btNavGroups. Troca somente o bloco dele.
+          # Atualiza o bloco efetivo do tecnico no ultimo btNavGroups.
           old = '''  if (btIsTechOnly(u)) {
     return [{
       label: "Operação",
@@ -65,24 +64,18 @@ jobs:
       ]
     }];
   }'''
+
           if old in text:
-              text = text.replace(old, new, 1)
+              # Substitui somente a ocorrencia do ultimo btNavGroups.
+              pos = text.rfind(old)
+              if pos < 0:
+                  raise SystemExit('Bloco do tecnico nao encontrado')
+              text = text[:pos] + new + text[pos + len(old):]
           else:
-              # Fallback: substitui o último bloco técnico existente dentro do último btNavGroups.
-              matches = list(re.finditer(r'if \(btIsTechOnly\(u\)\) \{[\s\S]*?\n  \}', text))
-              if not matches:
-                  raise SystemExit('Bloco do técnico não encontrado')
-              m = matches[-1]
-              text = text[:m.start()] + new[2:] + text[m.end():]
+              raise SystemExit('Bloco esperado do tecnico nao encontrado')
 
-          # Remove qualquer wrapper anterior para não acumular overrides.
-          text = re.sub(
-              r'<script>\s*/\*\s*BIOTROP ALMOX NO TABS V1\s*\*/[\s\S]*?</script>\s*',
-              '', text, flags=re.I
-          )
-
-          # Remove as abas internas de Almoxarifado; SCI e SCM ficam somente no menu lateral.
-          no_tabs = '''<script>
+          # Remove tabs internas geradas por renderAlmoxarifado.
+          wrapper = '''<script>
 /* BIOTROP ALMOX NO TABS V1 */
 (function(){
   var _btRenderAlmox = window.renderAlmoxarifado || null;
@@ -93,17 +86,18 @@ jobs:
   };
 })();
 </script>'''
-          text = text.replace('</body>', no_tabs + '\n</body>', 1)
+          text = text.replace('</body>', wrapper + '\n</body>', 1)
 
-          # Mantém exatamente uma ponte com Supabase.
+          # Mantem uma unica ponte Supabase.
           tag = '<script src="/supabase-bridge.js"></script>'
           text = text.replace(tag, '')
           text = text.replace('</body>', tag + '\n</body>', 1)
 
           p.write_text(text, encoding='utf-8')
-          print('OK: Técnico com SCI e SCM separados no menu lateral; abas removidas')
+          print('OK: menu lateral do tecnico separado em SCI e SCM; abas removidas')
+          PY
 
-      - name: Commit changes
+      - name: Commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
