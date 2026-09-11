@@ -172,6 +172,19 @@ REVOKE UPDATE, DELETE ON core.login_evento FROM biotrop_app;
 -- O schema mig fica fora da aplicacao: a importacao roda pelo dono do banco, uma vez.
 REVOKE ALL ON SCHEMA mig FROM biotrop_app;
 
+-- CORRECAO DO FURO 6 (parte 1 de 2) - REVOGAR O SCHEMA NAO REVOGA AS TABELAS.
+--   O REVOKE acima tira o USAGE do schema, o que hoje ja basta para "SELECT * FROM
+--   mig.dump" falhar. Mas o privilegio de TABELA concedido pela secao 18 de
+--   01-base.sql (GRANT SELECT ON ALL TABLES IN SCHEMA ... mig) CONTINUA na ACL de cada
+--   tabela: ele nao foi apagado, so ficou inutilizavel enquanto falta o USAGE. Um
+--   unico "GRANT USAGE ON SCHEMA mig" futuro - num script de suporte, num deploy
+--   apressado - devolve a leitura do export inteiro do localStorage sem que ninguem
+--   escreva uma linha nova de GRANT em tabela e sem deixar rastro de intencao.
+--   Privilegio que sobra e armadilha: aqui ele e apagado de verdade.
+REVOKE ALL ON ALL TABLES    IN SCHEMA mig FROM biotrop_app;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA mig FROM biotrop_app;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA mig FROM biotrop_app;
+
 -- LMS tabela por tabela, porque lms.questao_opcao e a excecao
 GRANT SELECT, INSERT, UPDATE, DELETE ON lms.treinamento, lms.versao, lms.aula,
   lms.avaliacao, lms.questao, lms.atribuicao, lms.matricula, lms.progresso_aula,
@@ -373,8 +386,41 @@ GRANT  INSERT, UPDATE, DELETE ON lms.questao_opcao TO biotrop_app;
 GRANT  EXECUTE ON FUNCTION lms.corrigir_tentativa(uuid, jsonb) TO biotrop_app;
 
 -- 4.1 leitura ------------------------------------------------------------------------
-GRANT USAGE ON SCHEMA core, almox, util, lms, pcm, app, mig TO biotrop_ro;
-GRANT SELECT ON ALL TABLES IN SCHEMA core, almox, util, pcm, app, mig TO biotrop_ro;
+-- CORRECAO DO FURO 6 (parte 2 de 2) - mig SAI DA ROLE DE RELATORIO.
+--   Estas duas linhas concediam USAGE em mig e SELECT em ALL TABLES IN SCHEMA mig para
+--   biotrop_ro, repetindo a secao 18 de 01-base.sql. mig.dump guarda o export bruto do
+--   localStorage: usuarios com e-mail e cargo, todas as SCI e SCM, leituras e o modulo
+--   de treinamentos inteiro - nota e reprovacao de cada pessoa - em jsonb, numa tabela
+--   sem policy nenhuma. Quem recebia a role de relatorio para "ver indicadores" lia,
+--   por essa porta, o banco antigo completo, sem passar por uma linha de RLS: o dado
+--   que 02b a 02e passam cinco arquivos protegendo na forma normalizada estava aberto
+--   na forma crua, no mesmo cluster.
+--   Nao ha meio-termo aqui (um "SELECT so em vw_conferencia", por exemplo): a view le
+--   mig.dump e core.usuario como DONA (ver 02f e 02g) justamente para o confronto de
+--   quantidade sair certo, entao concede-la a biotrop_ro seria conceder o conteudo por
+--   tabela interposta. Relatorio nao tem nada a fazer no schema da virada: mig existe
+--   por semanas, e conferido pelo dono do banco e cai inteiro depois do aceite
+--   (DROP SCHEMA mig CASCADE, passo 7 de 01-base).
+GRANT USAGE ON SCHEMA core, almox, util, lms, pcm, app TO biotrop_ro;
+GRANT SELECT ON ALL TABLES IN SCHEMA core, almox, util, pcm, app TO biotrop_ro;
+
+-- REVOKE explicito, e nao apenas a ausencia do GRANT acima: 01-base.sql JA foi
+-- aplicada e 02a se declara idempotente. Num banco que ja rodou a versao anterior
+-- destas linhas, tirar mig da lista nao desfaz nada - o privilegio esta gravado na ACL
+-- e continuaria valendo em silencio. Estes REVOKEs sao o que efetivamente fecha o
+-- schema, em banco novo e em banco existente.
+REVOKE ALL ON ALL TABLES    IN SCHEMA mig FROM biotrop_ro;
+REVOKE ALL ON ALL SEQUENCES IN SCHEMA mig FROM biotrop_ro;
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA mig FROM biotrop_ro;
+REVOKE ALL ON SCHEMA mig FROM biotrop_ro;
+-- PUBLIC tambem: EXECUTE de funcao nasce concedido a PUBLIC no PostgreSQL, e as
+-- funcoes mig.importar_* escrevem em core, almox, util e lms. Elas nao sao SECURITY
+-- DEFINER (rodam com o direito de quem chama), entao PUBLIC executando-as nao ganha
+-- poder novo - mas sem USAGE no schema nem da para chama-las, e deixar o EXECUTE
+-- pendurado em PUBLIC e o tipo de sobra que a proxima concessao de USAGE transforma em
+-- furo. A porta legitima da importacao passa a ser app.mig_importar_dump (02g).
+REVOKE ALL ON ALL FUNCTIONS IN SCHEMA mig FROM PUBLIC;
+REVOKE ALL ON SCHEMA mig FROM PUBLIC;
 GRANT SELECT ON lms.treinamento, lms.versao, lms.aula, lms.avaliacao, lms.questao,
   lms.atribuicao, lms.matricula, lms.progresso_aula, lms.tentativa,
   lms.tentativa_resposta, lms.liberacao, lms.conclusao TO biotrop_ro;
@@ -386,19 +432,95 @@ GRANT  EXECUTE ON FUNCTION app.usuario_atual(), app.tem_perfil(text[]), app.eh_a
 -- 4.2 objetos futuros ----------------------------------------------------------------
 -- Para ninguem descobrir tabela sem GRANT depois do proximo deploy. lms fica de fora
 -- de proposito: tabela nova de avaliacao entra na mao, decidindo coluna por coluna.
-ALTER DEFAULT PRIVILEGES IN SCHEMA core, almox, util, pcm
+--
+-- CORRECAO DO FURO 12 - pcm SAI DA LISTA DE TABELAS FUTURAS, PELO MESMO MOTIVO DE lms.
+--   ALTER DEFAULT PRIVILEGES e uma promessa feita a uma tabela que ainda nao existe:
+--   ela nasce concedida. Numa tabela de core/almox/util isso e seguro porque aquelas
+--   migrations trazem policy junto e as conferencias de 02b a 02e param o deploy se
+--   faltar RLS. pcm e o oposto: o modulo e etapa posterior, ninguem escreveu a regra
+--   dele ainda, e a promessa fazia com que a primeira tabela criada por quem for
+--   especificar o modulo (pcm.apontamento_hora, pcm.checklist, o que vier) chegasse
+--   com CRUD completo para a aplicacao e RLS desligado - gravavel por QUALQUER usuario
+--   logado, inclusive viewer, no dia em que a tabela nasce. Tabela de modulo nao
+--   especificado entra na mao, com a policy escrita na mesma migration.
+--   O corte e o remedio principal; a checagem de RLS em 4.3 e a rede de seguranca,
+--   porque privilegio tambem chega por GRANT escrito na mao.
+ALTER DEFAULT PRIVILEGES IN SCHEMA core, almox, util
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO biotrop_app;
 ALTER DEFAULT PRIVILEGES IN SCHEMA app
   GRANT SELECT ON TABLES TO biotrop_app;
 ALTER DEFAULT PRIVILEGES IN SCHEMA core, almox, util, lms, pcm
   GRANT USAGE, SELECT ON SEQUENCES TO biotrop_app;
-ALTER DEFAULT PRIVILEGES IN SCHEMA core, almox, util, pcm, app
+ALTER DEFAULT PRIVILEGES IN SCHEMA core, almox, util, app
   GRANT SELECT ON TABLES TO biotrop_ro;
+
+-- Tirar pcm da lista acima nao desfaz a promessa que uma aplicacao anterior de 02a ja
+-- gravou em pg_default_acl - default privilege nao se apaga por omissao, exatamente
+-- como privilegio de tabela. O REVOKE abaixo e o que realmente cancela a promessa, em
+-- banco novo e em banco que ja rodou a versao anterior deste arquivo.
+-- SEQUENCES continuam concedidas: sequence nao guarda dado de ninguem, e uma tabela
+-- futura de pcm sem USAGE na propria sequence quebraria o INSERT do admin sem fechar
+-- nada. O que se corta e o acesso ao DADO.
+ALTER DEFAULT PRIVILEGES IN SCHEMA pcm
+  REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM biotrop_app;
+ALTER DEFAULT PRIVILEGES IN SCHEMA pcm
+  REVOKE SELECT ON TABLES FROM biotrop_ro;
+-- mig nunca teve default privilege e nao ganha agora: registrado para nao voltar por
+-- simetria numa leitura distraida da lista acima (FURO 6).
+
+-- 4.3 conferencia dos dois schemas que a revisao adversarial pegou abertos ------------
+-- FURO 6 e FURO 12. Os dois furos tem a mesma forma: privilegio amplo sobrevivendo ao
+-- arquivo que devia te-lo cortado. Um REVOKE que nao pegou, ou um GRANT reintroduzido
+-- em migration futura, devolve o acesso sem erro e sem rastro - e a descoberta viraria
+-- achado de auditoria, nao linha de log. O deploy para aqui.
+DO $$
+DECLARE v_erro text;
+BEGIN
+  -- 1) mig e do dono do banco, e de mais ninguem. Vale para as tres roles de cliente
+  --    de uma vez: qualquer privilegio em qualquer objeto de mig e furo.
+  SELECT string_agg(DISTINCT format('%s -> %s.%s', grantee, table_schema, table_name), ', ')
+    INTO v_erro
+    FROM information_schema.table_privileges
+   WHERE table_schema = 'mig'
+     AND grantee IN ('biotrop_app', 'biotrop_ro', 'biotrop_worker', 'PUBLIC');
+  IF v_erro IS NOT NULL THEN
+    RAISE EXCEPTION 'Role de cliente com privilegio em mig: % - mig.dump guarda o export bruto do localStorage (usuarios, solicitacoes, leituras e treinamentos de todo mundo) e o acesso e exclusivo do dono do banco', v_erro;
+  END IF;
+
+  SELECT string_agg(r.rolname, ', ')
+    INTO v_erro
+    FROM pg_roles r
+   WHERE r.rolname IN ('biotrop_app', 'biotrop_ro', 'biotrop_worker')
+     AND has_schema_privilege(r.rolname, 'mig', 'USAGE');
+  IF v_erro IS NOT NULL THEN
+    RAISE EXCEPTION 'Role de cliente com USAGE no schema mig: % - a importacao roda pelo dono, e pela aplicacao so por app.mig_importar_dump (02g)', v_erro;
+  END IF;
+
+  -- 2) pcm nao pode ter tabela sem RLS ligado. Esta e a checagem que sobrevive a
+  --    qualquer GRANT futuro: mesmo que alguem devolva o privilegio amplo, tabela sem
+  --    policy nao passa daqui. As policies estao em 02g; a ordem de aplicacao coloca
+  --    02a ANTES, entao num banco novo esta checagem so pode ser feita sobre as
+  --    tabelas que 01-base criou - e elas ainda nao tem RLS neste ponto.
+  --    Por isso ela roda condicionada: se 0002g ja foi registrada, exige RLS em tudo.
+  --    Assim o primeiro deploy passa e todo deploy posterior (inclusive a reaplicacao
+  --    isolada de 02a, que e o caminho pelo qual os furos 3 e 10 voltavam) confere.
+  IF EXISTS (SELECT 1 FROM core.migration WHERE versao = '0002g') THEN
+    SELECT string_agg(c.relname, ', ' ORDER BY c.relname)
+      INTO v_erro
+      FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+     WHERE n.nspname = 'pcm'
+       AND c.relkind IN ('r', 'p')
+       AND NOT c.relrowsecurity;
+    IF v_erro IS NOT NULL THEN
+      RAISE EXCEPTION 'Tabela de pcm sem RLS habilitado: % - o modulo e etapa posterior, mas a aplicacao ja alcanca o schema; tabela nova de pcm entra com policy na mesma migration (ver 02g, secao 3)', v_erro;
+    END IF;
+  END IF;
+END $$;
 
 -- =====================================================================================
 -- 5. REGISTRO DESTA MIGRATION
 -- =====================================================================================
 INSERT INTO core.migration (versao, nome, observacao) VALUES
   ('0002a', 'papeis',
-   'Identidade da sessao por GUC app.usuario_id, funcoes app.usuario_atual/tem_perfil/eh_admin/grupos_que_lidero/usuario_ativo, roles biotrop_app e biotrop_ro com privilegios e negacao de leitura do gabarito em lms.questao_opcao. UPDATE de tabela inteira substituido por UPDATE de coluna em core.email_fila, lms.matricula, almox.scm e almox.sci, porque RLS filtra linha e nao coluna e privilegio de tabela anula privilegio de coluna. FURO 7: app.grupos_que_lidero() passa a exigir app.usuario_ativo(), entao lider inativo ou bloqueado deixa de liderar na hora e app.eh_do_meu_grupo (02c) e app.lidero_usuario (02e) ficam falsas por consequencia; usuario_ativo foi movida para ANTES dela porque o corpo de funcao LANGUAGE sql e validado no CREATE. FURO 5: role biotrop_worker para a rotina de entrega de e-mail da VM, que roda sem usuario logado, com SELECT por coluna e UPDATE apenas das colunas de status de envio em core.email_fila e nada mais no banco. Sem policy: as policies entram em 02b.')
+   'Identidade da sessao por GUC app.usuario_id, funcoes app.usuario_atual/tem_perfil/eh_admin/grupos_que_lidero/usuario_ativo, roles biotrop_app e biotrop_ro com privilegios e negacao de leitura do gabarito em lms.questao_opcao. UPDATE de tabela inteira substituido por UPDATE de coluna em core.email_fila, lms.matricula, almox.scm e almox.sci, porque RLS filtra linha e nao coluna e privilegio de tabela anula privilegio de coluna. FURO 7: app.grupos_que_lidero() passa a exigir app.usuario_ativo(), entao lider inativo ou bloqueado deixa de liderar na hora e app.eh_do_meu_grupo (02c) e app.lidero_usuario (02e) ficam falsas por consequencia; usuario_ativo foi movida para ANTES dela porque o corpo de funcao LANGUAGE sql e validado no CREATE. FURO 5: role biotrop_worker para a rotina de entrega de e-mail da VM, que roda sem usuario logado, com SELECT por coluna e UPDATE apenas das colunas de status de envio em core.email_fila e nada mais no banco. FURO 6: o schema mig sai das duas roles de cliente - o REVOKE de SCHEMA que ja existia nao apagava o privilegio de TABELA vindo da secao 18 de 01-base, e biotrop_ro ainda tinha USAGE + SELECT em ALL TABLES, ou seja, o export bruto do localStorage (mig.dump) inteiro para quem tem perfil de relatorio; agora ha REVOKE de tabela, sequence, funcao, schema e PUBLIC, e as policies e a porta admin ficam em 02g. FURO 12: pcm sai do ALTER DEFAULT PRIVILEGES de TABLES (fica so SEQUENCES), pelo mesmo motivo de lms - tabela de modulo nao especificado nascia com CRUD para a aplicacao e sem RLS -, com ALTER DEFAULT PRIVILEGES ... REVOKE para cancelar a promessa ja gravada em pg_default_acl. Secao 4.3 nova: bloco DO que barra o deploy se qualquer role de cliente tiver privilegio ou USAGE em mig, ou se existir tabela em pcm sem RLS ligado. Sem policy: as policies entram em 02b a 02g.')
 ON CONFLICT (versao) DO NOTHING;

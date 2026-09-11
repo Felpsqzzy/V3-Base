@@ -520,3 +520,272 @@ enviar como QUALQUER caixa do tenant. O README traz o comando da
 Application Access Policy que limita o aplicativo à caixa de
 comunicação. Sem ela, vazar o secret é vazar a capacidade de mandar
 e-mail como qualquer pessoa da empresa.
+
+
+====================================================================
+ATUALIZAÇÃO — SCI e SCM como visões no menu
+====================================================================
+
+O grupo Almoxarifado continua um só, como a reunião pediu, mas por dentro
+se divide em duas visões com os itens recuados, igual às Utilidades:
+
+  ALMOXARIFADO
+    Minhas solicitações
+    ── SCI · cadastro de item ──
+      Nova solicitação
+      Gestão de SCI
+      Famílias de itens
+    ── SCM · compra de material ──
+      Nova compra
+      Gestão de SCM
+      Aprovações
+
+"Minhas solicitações" fica fora das duas de propósito: ela mostra SCI e
+SCM juntas, então pertencer a uma das visões seria mentira.
+
+Os nomes ficaram simétricos — "Gestão de SCI" e "Gestão de SCM". Antes um
+era "Solicitações (SCI)" e o outro "Gestão de SCM", e a assimetria fazia
+parecer que eram coisas de natureza diferente.
+
+O divisor só aparece se houver item embaixo dele. Verificado por perfil:
+  Almoxarife  SCI completa · SCM sem Aprovações (ele não aprova)
+  Líder       SCI só Nova solicitação · SCM com Aprovações
+  PCM         SCI com Gestão · SCM com Aprovações
+  Técnico     inalterado, lista plana de 5 itens
+
+O divisor não é clicável, não entra na busca do menu e não conta no
+orçamento de itens abertos do grupo — se contasse, fecharia um grupo que
+ainda cabia na tela. No modo compacto o rótulo desaparece e sobra só o
+fio; na gaveta do celular o rótulo volta, porque lá a largura é a mesma
+do menu expandido.
+
+TESTADO
+Administrador 18 telas, PCM 14, Almoxarife 10, Líder 8, Técnico 5 —
+nenhuma falha, console limpo, nenhum perfil rolando o menu em 1440x900.
+
+================================================================
+VISÃO DO TÉCNICO — menu final (11/09)
+================================================================
+
+O menu do técnico agora é exatamente este, nesta ordem:
+
+  OPERAÇÃO
+    Início
+    Treinamentos
+    Apontar consumo
+    Nova solicitação          (SCI · cadastro de item)
+    Nova ordem de compra      (SCM · compra de material)
+    Minhas solicitações       (as SCI e as SCM que ele abriu)
+
+O que entrou: "Nova ordem de compra". O técnico já tinha permissão de
+SCM no perfil, mas não tinha o caminho no menu — só chegava lá por rota
+direta. Agora tem.
+
+O que saiu do técnico: Solicitações (SCI), Gestão de SCM, Aprovações
+SCM, Famílias de itens e Minhas SCM.
+
+  - As quatro primeiras são filas de trabalho do almoxarifado e do
+    líder, não dele. Continuam BARRADAS por permissão, não só escondidas
+    do menu: conferido rota por rota, todas devolvem "Sem acesso".
+  - "Minhas SCM" saiu porque "Minhas solicitações" já mostra SCI e SCM
+    juntas. Dois itens para a mesma resposta era o que deixava a tela do
+    técnico com cara de cheia.
+
+Três ajustes de coerência que vieram junto:
+
+1. O painel inicial do técnico espelha o menu. Antes tinha um cartão só,
+   "Almoxarifado", que prometia "solicite materiais e acompanhe suas
+   solicitações" e caía apenas na SCI. Virou três cartões com os mesmos
+   nomes do menu: Nova solicitação, Nova ordem de compra e Minhas
+   solicitações (este com o contador de pendências).
+
+2. A tela de SCM tem um nome só em todo o sistema: "Nova ordem de
+   compra". Antes o menu dizia "Nova compra", o cabeçalho dizia "Nova
+   compra de material (SCM)" e o título da aba dizia outra coisa.
+
+3. O indicador "Minhas SCM" do painel do líder apontava para uma tela
+   que saiu de todos os menus. Passou a abrir "Minhas solicitações".
+
+Na barra inferior do celular (técnico): Início, Treinar, Apontar,
+Solicitar, Minhas. Antes ela dizia "Almox.", rótulo que não existe mais
+em nenhum lugar do sistema. A ordem de compra fica fora por espaço —
+cinco é o limite da barra, e ela está no menu e no painel.
+
+Testado a 1440x900: menu do técnico com 6 itens e sem rolagem (564 de
+564), modo compacto em 76px mantendo os 6 ícones, cartões do painel
+abrindo as telas certas. Regressão nos outros perfis: administrador 18
+telas, gestor 17, PCM 14, almoxarife 10, líder 8 — 73 telas abertas,
+nenhuma exceção, console limpo.
+
+================================================================
+CELULAR — interface refeita (11/09)
+================================================================
+
+Medi a 375x812 antes de mexer. Os defeitos, na ordem em que atrapalham:
+
+1. CAMPOS COM 13,5 px. Abaixo de 16 px o Safari do iPhone dá zoom na
+   página quando você toca no campo, e a tela inteira salta. Era a
+   principal causa da sensação de "bugado" ao digitar. Todos os campos
+   agora têm 16 px e 46 px de altura. Vale até 1050 px, porque o iPad
+   em retrato faz o mesmo.
+
+2. COLUNA DE AÇÃO FORA DA TELA. As tabelas pedem no mínimo 560 px e
+   tinham 341 px de espaço; a de Apontamentos pede 1080 px. O botão da
+   última coluna ("Ver", "Corrigir e reenviar", "Editar") ficava fora,
+   e era preciso arrastar a tabela de lado para descobrir que existia.
+   Agora a tabela que não cabe vira uma lista de fichas: rótulo da
+   coluna à esquerda, valor à direita, código como título e o botão em
+   largura cheia no fim de cada ficha.
+
+   Quem decide é a largura que a tabela pede, não a da tela: num tablet
+   de 768 px as tabelas de 5 colunas continuam tabela, e só as quatro
+   largas (Solicitações SCI, Gestão de treinamentos, Apontamentos e
+   Gestão de medidores) viram ficha. No desktop nada muda.
+
+3. BARRA DE CIMA COM 110 px, em duas linhas, em toda tela. Virou uma
+   linha de 60 px. "Tema" e "Configurações" desceram para o rodapé da
+   gaveta, ao lado de "Sair" — na barra eles ocupavam 181 px dos 375 e
+   sobravam 104 px para o título, que virava "Minhas so...". Agora o
+   título tem 301 px. No desktop os dois botões voltam para a barra.
+
+4. TELA DA AULA EM DUAS COLUNAS. A coluna de conteúdo chegava a 65 px:
+   uma palavra por linha, e por baixo do painel de aulas. O grid estava
+   escrito direto no HTML, então nenhuma media query o alcançava.
+   Ganhou classe e agora é uma coluna no celular.
+
+5. ALVOS DE TOQUE PEQUENOS. 30 px nos ícones de editar/chave/excluir,
+   30 px nos filtros de treinamento, 21 px no campo de foto. Mínimo de
+   44 px em tudo. Abas internas e filtros viraram faixa que corre de
+   lado em vez de quebrar em duas linhas.
+
+6. MODAL MAIOR QUE A TELA. O detalhe da SCI tem 970 px de altura; sem
+   limite, o topo dele ficava inalcançável. Virou folha ancorada
+   embaixo, no máximo 92% da tela, com cabeçalho fixo e rolagem por
+   dentro.
+
+7. BARRA DE BAIXO ROUBANDO O TOQUE. Com modal aberto, tocar nos 64 px
+   de baixo da folha caía na barra de atalhos e navegava para outra
+   tela. A barra agora sai de cena enquanto há modal aberto, e o fundo
+   para de rolar atrás da folha (o mesmo com a gaveta aberta).
+
+8. CARTÕES DO INÍCIO COM 176 px CADA. Dois e meio por tela. Viraram
+   linha (ícone, título, descrição): a tela inicial do técnico passou
+   de 1157 px para 672 px, ou seja, caiu numa tela só.
+
+Área segura do iPhone respeitada na barra de baixo e nas folhas.
+
+TESTADO
+  375x812 — 73 telas, 6 perfis: nenhuma rolagem lateral, 45 de 45
+    tabelas em ficha com rótulo em toda célula, nenhum alvo abaixo de
+    36 px, nenhum campo abaixo de 16 px.
+  360x740 — limpo.
+  768x1024 — só as 4 tabelas largas viram ficha; as outras 4 seguem
+    tabela.
+  1440x900 — desktop intacto: 0 fichas, tabelas de verdade, cabeçalho
+    das colunas visível, campos de 14 px, botões de volta na barra de
+    cima com as classes originais.
+  Fluxo do técnico de ponta a ponta no celular: entrou, apontou
+    HIDRÔMETRO 02 do CAMM 1 e salvou 1.234,5 m³.
+
+O QUE FICOU MAIS ALTO, DE PROPÓSITO
+  "Minhas solicitações" passou de 706 px para 1417 px, e "Gestão de
+  medidores" tem 6200 px (18 medidores x 8 campos). Ficha é mais alta
+  que linha de tabela — a troca é rolar para baixo, que o dedo faz
+  bem, em vez de arrastar de lado para achar um botão escondido.
+
+================================================================
+TREINAMENTOS, BARRA DE CIMA E CENTRO DE CUSTO (11/09)
+================================================================
+
+1. TREINAMENTOS — AGORA DÁ PARA TIRAR, NÃO SÓ CRIAR
+
+A tela de gestão só criava e editava. Erro de cadastro ficava para
+sempre na lista de todo mundo. Agora há três saídas, que não são a
+mesma coisa:
+
+  INATIVAR  tira de circulação e devolve as matrículas em aberto.
+            Quem já concluiu mantém o comprovante. Reversível — é o
+            caminho certo para treinamento que saiu do plano.
+  DUPLICAR  cópia inativa e não obrigatória, para montar a versão nova
+            sem mexer na que está rodando. Copia aulas e questões.
+  EXCLUIR   apaga treinamento, aulas, avaliação, questões, matrículas,
+            tentativas E comprovantes. Não tem volta.
+
+O diálogo mostra, antes de qualquer botão, quantas aulas, questões,
+matrículas em aberto e COMPROVANTES estão pendurados. Para excluir é
+preciso digitar o código do treinamento (TR-001). Botão errado clicado
+por engano não apaga nada.
+
+Por que inativar devolve matrícula: "Meus treinamentos" lista as
+matrículas da pessoa sem olhar se o treinamento está ativo. Sem isso, o
+técnico continuaria vendo como pendência algo que saiu do plano.
+Conferido: das 3 matrículas de um treinamento inativado, as 2 em aberto
+saíram e a concluída ficou, com o comprovante aparecendo em
+"Comprovantes".
+
+A tela virou lista de fichas, com:
+  - 4 indicadores no topo: no ar, obrigatórios, SEM CONTEÚDO e
+    comprovantes emitidos;
+  - busca por título, código ou categoria;
+  - filtros: todos, ativos, inativos, obrigatórios, sem conteúdo;
+  - em cada ficha: código, selos (obrigatório, inativo, sem aula, sem
+    questão), versão, corte, tentativas, validade, prazo, os quatro
+    números (aulas, questões, matriculados, concluíram) e a barra de
+    quanto da turma concluiu.
+
+"Sem aula" e "sem questão" são o aviso que faltava: treinamento
+publicado sem conteúdo não pode ser feito por ninguém, e antes isso só
+aparecia abrindo o treinamento.
+
+Conferido com exclusão de verdade: um treinamento com 3 matrículas, 3
+progressos, 3 tentativas e 1 comprovante foi apagado e as 8 checagens
+de sobra (aula sem versão, questão sem avaliação, progresso sem
+matrícula, comprovante sem treinamento...) voltaram zero.
+
+2. BARRA DE CIMA — "CONFIGURAÇÕES" SAIU
+
+O botão de configurações de usuário (nome, telefone, tema,
+notificações, senha) foi retirado da barra. Sobra o relógio e "Tema".
+
+Uma consequência a saber: era ali que a pessoa trocava a própria senha.
+O sistema já dizia, na tela de login, que "a senha é redefinida pelo
+administrador em Administração > Usuários" — e lá existe o botão de
+chave para isso. Então o caminho continua existindo, só não é mais pelo
+próprio usuário. A função do modal ficou no arquivo, sem botão; se
+quiser de volta é uma linha.
+
+3. SCM — CENTRO DE CUSTO PUXADO PELO CAMM
+
+Escolhido o CAMM, a lista de centro de custo mostra só os daquele CAMM:
+
+  CAMM 1  3 centros   (empacotamento, envase, fermentadores)
+  CAMM 2  3 centros
+  CAMM 3  8 centros   (qualidade, facilities, fermentação, formulação,
+                       logística, manutenção e engenharia, segurança,
+                       utilidades)
+
+Antes de escolher o CAMM o campo fica desabilitado, dizendo "Escolha o
+CAMM primeiro". Trocar o CAMM com um centro de custo já escolhido que
+não pertence ao novo CAMM limpa o campo e avisa por quê, em vez de
+gravar a combinação errada.
+
+A RESSALVA: 30 dos 44 centros não têm CAMM no nome — COMPRAS,
+CONTABILIDADE, TI, MANUTENÇÃO, QUALIDADE, LABORATÓRIO, FROTAS e o
+resto. São corporativos ou compartilhados. Filtrar sem mais nada
+deixaria quem precisa de "MANUTENÇÃO" sem opção, e a pessoa acabaria
+escolhendo um centro errado ou "Outro" — rateio furado. Por isso existe
+a marca de seleção "Incluir centros de custo sem CAMM (corporativos e
+compartilhados)", desmarcada por padrão. O padrão atende o pedido; a
+saída existe para não travar ninguém.
+
+O CAMM é lido do próprio nome do centro, com tolerância: a lista tem
+"EMPACOTAMENTO -CAMM 2" sem espaço depois do traço, e ele é reconhecido.
+
+TESTADO
+  Criar, duplicar, inativar, reativar e excluir pela tela, com aviso de
+    rodapé em cada ação.
+  Código errado no diálogo de exclusão: não apaga e explica.
+  SCM de ponta a ponta: CAMM 3 + "MANUTENÇÃO E ENGENHARIA - CAMM 3"
+    gravou SCM-0003 com os dois campos corretos.
+  73 telas, 6 perfis, a 1440x900 e a 375x812: nenhuma falha, nenhuma
+    rolagem lateral, nenhum alvo de toque abaixo de 36 px, console limpo.
