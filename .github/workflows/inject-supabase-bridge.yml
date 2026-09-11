@@ -1,4 +1,4 @@
-name: Maintain Supabase bridge
+name: Publish correct Biotrop HTML
 
 on:
   push:
@@ -8,25 +8,23 @@ permissions:
   contents: write
 
 jobs:
-  inject:
-    if: ${{ !contains(github.event.head_commit.message, '[skip bridge]') }}
+  publish:
+    if: ${{ !contains(github.event.head_commit.message, '[skip publish]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Garantir Supabase bridge
+      - name: Publicar HTML correto como index
         shell: bash
         run: |
-          set -e
-          tag='<script src="/supabase-bridge.js"></script>'
-          sed -i "s#${tag}##g" index.html
-          sed -i "s#</body>#${tag}</body>#" index.html
-      - name: Commit changes
-        run: |
+          set -euo pipefail
+          test -f BIOTROP-Manutencao-LOCAL.html
+          cp BIOTROP-Manutencao-LOCAL.html index.html
+          rm -f BIOTROP-Manutencao-LOCAL.html
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
-          git diff --cached --quiet && exit 0
-          git commit -m 'Garantir Supabase bridge [skip bridge]'
+          git add -A
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Publicar HTML correto como index [skip publish]'
           git push
