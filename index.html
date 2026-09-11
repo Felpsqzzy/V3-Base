@@ -1958,7 +1958,130 @@ table[data-ficha] td[data-rot].bt-num { text-align: left; }
   .bt-sidefoot__acoes > button { flex: 1; min-height: 42px; }
 }
 </style>
-  <script src="./supabase-realtime-bridge.js"></script>
+<style id="biotrop-ui-treino2">
+/* ====================================================================
+   GESTÃO DE TREINAMENTOS
+
+   Era uma tabela de 7 colunas com 771 px de largura mínima: no celular
+   virava arrasta-para-o-lado e no desktop os três botões ficavam
+   presos na última coluna.
+
+   Virou lista de fichas. Cada ficha diz, na ordem em que a pergunta
+   aparece: o que é, se está no ar, se tem conteúdo para valer, quanto
+   da turma concluiu, e o que fazer com ele.
+   ==================================================================== */
+
+/* ---------- barra de busca e filtros ---------- */
+
+.tr-barra {
+  display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.tr-busca { position: relative; flex: 1 1 240px; min-width: 0; }
+.tr-busca input {
+  width: 100%; box-sizing: border-box;
+  padding: 10px 12px 10px 34px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface); color: var(--text);
+  font-family: inherit; font-size: 13.5px; outline: none;
+}
+.tr-busca input:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(13, 95, 100, .10); }
+.tr-busca__ic {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); display: grid; place-items: center; pointer-events: none;
+}
+
+/* ---------- ficha do treinamento ---------- */
+
+.tr-lista { display: grid; gap: 12px; }
+
+.tr-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 15px 17px;
+  transition: border-color .16s ease, box-shadow .16s ease;
+}
+.tr-card:hover { border-color: rgba(13, 95, 100, .30); }
+/* Inativo fica visivelmente fora de circulação, mas legível: barra à
+   esquerda e fundo levemente rebaixado — não opacidade, que faria o
+   texto perder contraste. */
+.tr-card--inativo { border-left: 3px solid var(--muted); background: var(--surface-soft); }
+.tr-card--incompleto { border-left: 3px solid var(--warning); }
+
+.tr-card__topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 7px; }
+.tr-codigo {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  font-size: 11px; font-weight: 800; letter-spacing: .02em;
+  padding: 3px 8px; border-radius: 7px;
+  background: var(--primary-soft); color: var(--primary);
+}
+.tr-card h3 {
+  margin: 0 0 3px; font-size: 15.5px; letter-spacing: -.02em; color: var(--text);
+}
+.tr-card__meta { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+
+/* ---------- números da ficha ---------- */
+
+.tr-nums {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px; margin-bottom: 12px;
+  padding: 11px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.tr-num__rot {
+  font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted);
+}
+.tr-num__val {
+  font-size: 17px; font-weight: 800; color: var(--text);
+  letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1.25;
+}
+/* Zero em aula ou em questão não é um número qualquer: é o treinamento
+   que não pode ser feito. Ganha a cor de atenção, sempre com o texto
+   "sem aula" / "sem questão" do lado, nunca só a cor. */
+.tr-num__val--falta { color: var(--warning); }
+
+/* ---------- conclusão ---------- */
+
+.tr-prog { display: flex; align-items: center; gap: 10px; margin-bottom: 13px; }
+.tr-prog__track {
+  flex: 1; height: 7px; border-radius: 999px; background: var(--border); overflow: hidden;
+}
+/* Uma cor só: a barra compara a mesma medida (quanto da turma concluiu)
+   entre treinamentos. Cor por treinamento não informaria nada. */
+.tr-prog__fill { height: 100%; border-radius: inherit; background: var(--primary); }
+.tr-prog__lbl {
+  font-size: 11.5px; font-weight: 700; color: var(--muted);
+  font-variant-numeric: tabular-nums; flex: 0 0 auto;
+}
+
+/* ---------- ações ---------- */
+
+.tr-acoes { display: flex; gap: 7px; flex-wrap: wrap; }
+.tr-acoes .bt-btn { flex: 0 0 auto; }
+.tr-acoes__dir { margin-left: auto; display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* ---------- diálogo de exclusão ---------- */
+
+.tr-perda { display: grid; gap: 7px; margin: 4px 0 14px; }
+.tr-perda__linha {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 10px;
+  background: var(--surface-soft); border: 1px solid var(--border);
+  font-size: 13px;
+}
+.tr-perda__linha b { font-variant-numeric: tabular-nums; }
+.tr-perda__linha--grave { border-color: rgba(196, 69, 76, .30); background: rgba(196, 69, 76, .07); }
+.tr-conf { margin-top: 12px; }
+.tr-conf input { font-family: "Cascadia Mono", Consolas, monospace; letter-spacing: .06em; }
+
+@media (max-width: 640px) {
+  .tr-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 10px; }
+  .tr-acoes { display: grid; grid-template-columns: 1fr 1fr; }
+  .tr-acoes .bt-btn { width: 100%; }
+  .tr-acoes__dir { margin-left: 0; display: contents; }
+  .tr-card { padding: 14px; }
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -2506,7 +2629,6 @@ function renderAppShell() {
         <div class="bt-topbar__spacer"></div>
         <div class="bt-topbar__clock" id="bt-clock"></div>
         <button class="bt-btn bt-btn--sm" id="bt-theme" title="Alternar tema claro/escuro">Tema</button>
-        <button class="bt-btn bt-btn--sm" id="bt-settings">Configurações</button>
         <div class="bt-topbar__user">
           <div class="bt-topbar__avatar">${esc(user.nome.charAt(0).toUpperCase())}</div>
           <div>
@@ -6648,7 +6770,6 @@ function renderAppShell() {
         <div class="bt-topbar__spacer"></div>
         <div class="bt-topbar__clock" id="bt-clock"></div>
         <button class="bt-btn bt-btn--sm" id="bt-theme" title="Alternar tema claro e escuro">Tema</button>
-        <button class="bt-btn bt-btn--sm" id="bt-settings">Configurações</button>
       </header>
       <main class="bt-page"><div id="main-content"></div></main>
     </div>
@@ -7984,7 +8105,6 @@ function renderAppShell() {
         <div class="bt-topbar__spacer"></div>
         <div class="bt-topbar__clock" id="bt-clock"></div>
         <button class="bt-btn bt-btn--sm" id="bt-theme" title="Alternar tema claro e escuro">Tema</button>
-        <button class="bt-btn bt-btn--sm" id="bt-settings">Configurações</button>
       </header>
       <main class="bt-page"><div id="main-content"></div></main>
     </div>
@@ -11331,14 +11451,19 @@ function btMobileMarcarModal() {
    ==================================================================== */
 
 function btMobileAjustarBarra() {
-  const tema = document.getElementById("bt-theme");
-  const cfg = document.getElementById("bt-settings");
   const topbar = document.querySelector(".bt-topbar");
   const rodape = document.querySelector(".bt-sidefoot");
-  if (!tema || !cfg || !topbar || !rodape) return;
+  if (!topbar || !rodape) return;
+
+  // "Configurações" foi retirado da barra; a função move o que existir,
+  // em vez de exigir os dois e desistir quando falta um.
+  const mover = ["bt-theme", "bt-settings"]
+    .map(function (id) { return document.getElementById(id); })
+    .filter(Boolean);
+  if (!mover.length) return;
 
   const celular = innerWidth <= 640;
-  const jaNaGaveta = rodape.contains(tema);
+  const jaNaGaveta = rodape.contains(mover[0]);
 
   if (celular && !jaNaGaveta) {
     let caixa = rodape.querySelector(".bt-sidefoot__acoes");
@@ -11352,7 +11477,7 @@ function btMobileAjustarBarra() {
     // já é feito para o fundo escuro da gaveta. Disputar a cor por
     // especificidade contra o bt-btn dava pílula clara com texto
     // claro — ilegível.
-    [tema, cfg].forEach(function (b) {
+    mover.forEach(function (b) {
       if (b.getAttribute("data-classe-barra") === null) {
         b.setAttribute("data-classe-barra", b.className);
       }
@@ -11363,8 +11488,8 @@ function btMobileAjustarBarra() {
   }
 
   if (!celular && jaNaGaveta) {
-    // Eram os dois últimos filhos da barra, nesta ordem.
-    [tema, cfg].forEach(function (b) {
+    // Eram os últimos filhos da barra, nesta ordem.
+    mover.forEach(function (b) {
       const antiga = b.getAttribute("data-classe-barra");
       if (antiga !== null) b.className = antiga;
       topbar.appendChild(b);
@@ -11392,6 +11517,658 @@ function btMobileAjustarBarra() {
     }, 120);
   });
 })();
+
+
+/* ====================================================================
+   GESTÃO DE TREINAMENTOS — excluir, duplicar, inativar e tela nova
+
+   Faltava o principal: não havia como TIRAR um treinamento. Só dava
+   para criar e editar, então erro de cadastro ficava para sempre na
+   lista de todo mundo.
+
+   Agora há três saídas, de propósito, porque não são a mesma coisa:
+
+     Inativar  — tira de circulação e devolve as matrículas não
+                 concluídas. Quem já concluiu mantém o comprovante.
+                 É reversível e é o caminho certo para treinamento que
+                 "saiu do plano deste ano".
+     Duplicar  — cópia inativa, para criar a versão nova sem mexer na
+                 que está rodando.
+     Excluir   — apaga treinamento, aulas, avaliação, questões,
+                 matrículas, tentativas E comprovantes. Não tem volta,
+                 e o diálogo diz quantos comprovantes vão embora antes
+                 de pedir o código digitado.
+   ==================================================================== */
+
+/* ---------- o que está pendurado neste treinamento ---------- */
+
+function lmsVinculos(trainingId) {
+  const db = lmsLoad();
+  const versoes = db.versions.filter(function (v) { return v.training_id === trainingId; });
+  const idsV = versoes.map(function (v) { return v.id; });
+  const aulas = db.lessons.filter(function (l) { return idsV.indexOf(l.version_id) >= 0; });
+  const avaliacoes = db.quizzes.filter(function (q) { return idsV.indexOf(q.version_id) >= 0; });
+  const idsQ = avaliacoes.map(function (q) { return q.id; });
+  const questoes = db.questions.filter(function (q) { return idsQ.indexOf(q.quiz_id) >= 0; });
+  const matriculas = db.enrollments.filter(function (e) { return e.training_id === trainingId; });
+  const idsE = matriculas.map(function (e) { return e.id; });
+  const progresso = db.progress.filter(function (p) { return idsE.indexOf(p.enrollment_id) >= 0; });
+  const tentativas = db.attempts.filter(function (a) { return idsE.indexOf(a.enrollment_id) >= 0; });
+  // Comprovante é procurado pelos dois caminhos: pelo treinamento e pela
+  // matrícula. Se um dia uma matrícula for apagada sozinha, o
+  // comprovante órfão ainda é encontrado aqui.
+  const conclusoes = db.completions.filter(function (c) {
+    return c.training_id === trainingId || idsE.indexOf(c.enrollment_id) >= 0;
+  });
+  return {
+    versoes: versoes, aulas: aulas, avaliacoes: avaliacoes, questoes: questoes,
+    matriculas: matriculas, progresso: progresso, tentativas: tentativas, conclusoes: conclusoes
+  };
+}
+
+/* ---------- excluir de verdade ---------- */
+
+function lmsExcluirTreinamento(trainingId) {
+  const db = lmsLoad();
+  const v = lmsVinculos(trainingId);
+  const fora = function (lista, achados) {
+    const ids = achados.map(function (x) { return x.id; });
+    return lista.filter(function (x) { return ids.indexOf(x.id) < 0; });
+  };
+  // De baixo para cima: filho antes da mãe, para nunca sobrar linha
+  // apontando para um pai que já não existe.
+  db.progress = fora(db.progress, v.progresso);
+  db.attempts = fora(db.attempts, v.tentativas);
+  db.completions = fora(db.completions, v.conclusoes);
+  db.enrollments = fora(db.enrollments, v.matriculas);
+  db.questions = fora(db.questions, v.questoes);
+  db.quizzes = fora(db.quizzes, v.avaliacoes);
+  db.lessons = fora(db.lessons, v.aulas);
+  db.versions = fora(db.versions, v.versoes);
+  db.trainings = db.trainings.filter(function (t) { return t.id !== trainingId; });
+  lmsSave();
+}
+
+/* ---------- inativar e reativar ---------- */
+
+/**
+ * Inativar não pode ser só um campo trocado: "Meus treinamentos" lista
+ * as matrículas da pessoa sem olhar se o treinamento ainda está ativo,
+ * então o técnico continuaria vendo como pendência algo que saiu do
+ * plano.
+ *
+ * Então inativar também devolve as matrículas NÃO concluídas. As
+ * concluídas ficam, porque o comprovante é dele e continua valendo.
+ */
+function lmsInativarTreinamento(trainingId) {
+  const db = lmsLoad();
+  const t = lmsTraining(trainingId);
+  if (!t) return 0;
+  t.active = false;
+
+  const concluidas = {};
+  db.completions.forEach(function (c) { concluidas[c.enrollment_id] = true; });
+  const antes = db.enrollments.length;
+  db.enrollments = db.enrollments.filter(function (e) {
+    if (e.training_id !== trainingId) return true;
+    return Boolean(concluidas[e.id]);
+  });
+  const retiradas = antes - db.enrollments.length;
+
+  // Progresso de matrícula que deixou de existir seria lixo com
+  // referência quebrada.
+  const idsE = {};
+  db.enrollments.forEach(function (e) { idsE[e.id] = true; });
+  db.progress = db.progress.filter(function (p) { return idsE[p.enrollment_id]; });
+  db.attempts = db.attempts.filter(function (a) { return idsE[a.enrollment_id]; });
+
+  lmsSave();
+  return retiradas;
+}
+
+function lmsReativarTreinamento(trainingId) {
+  const t = lmsTraining(trainingId);
+  if (!t) return;
+  t.active = true;
+  lmsSave();
+  // Obrigatório volta a matricular todo mundo sozinho; por grupo ou
+  // avulso é preciso matricular de novo, e o aviso diz isso.
+  lmsEnsureEnrollments();
+}
+
+/* ---------- duplicar ---------- */
+
+function lmsDuplicarTreinamento(trainingId) {
+  const db = lmsLoad();
+  const orig = lmsTraining(trainingId);
+  if (!orig) return null;
+  const vOrig = lmsVersionOf(trainingId);
+
+  const novoId = lmsUid("tr");
+  const copia = JSON.parse(JSON.stringify(orig));
+  copia.id = novoId;
+  copia.code = (orig.code || "TR") + "-C" + String(db.trainings.length + 1);
+  copia.title = orig.title + " (cópia)";
+  // Nasce fora do ar e não obrigatório: cópia existe para ser mexida,
+  // e matricular a empresa toda numa cópia inacabada seria um estrago.
+  copia.active = false;
+  copia.mandatory = false;
+  db.trainings.push(copia);
+
+  if (vOrig) {
+    const novaV = JSON.parse(JSON.stringify(vOrig));
+    novaV.id = lmsUid("tv");
+    novaV.training_id = novoId;
+    novaV.version_no = 1;
+    novaV.status = "publicada";
+    db.versions.push(novaV);
+
+    db.lessons.filter(function (l) { return l.version_id === vOrig.id; }).forEach(function (l) {
+      const nl = JSON.parse(JSON.stringify(l));
+      nl.id = lmsUid("ls");
+      nl.version_id = novaV.id;
+      db.lessons.push(nl);
+    });
+
+    const qzOrig = db.quizzes.find(function (q) { return q.version_id === vOrig.id; });
+    const novoQz = { id: lmsUid("qz"), version_id: novaV.id, title: "Avaliação — " + copia.title };
+    db.quizzes.push(novoQz);
+    if (qzOrig) {
+      db.questions.filter(function (q) { return q.quiz_id === qzOrig.id; }).forEach(function (q) {
+        const nq = JSON.parse(JSON.stringify(q));
+        nq.id = lmsUid("qs");
+        nq.quiz_id = novoQz.id;
+        db.questions.push(nq);
+      });
+    }
+  }
+
+  lmsSave();
+  return novoId;
+}
+
+/* ---------- diálogo: inativar ou excluir ---------- */
+
+function lmsModalRemover(trainingId) {
+  const t = lmsTraining(trainingId);
+  if (!t) return;
+  const v = lmsVinculos(trainingId);
+  const naoConcluidas = v.matriculas.length - v.conclusoes.length;
+
+  const linha = function (rot, val, grave) {
+    return '<div class="tr-perda__linha' + (grave ? " tr-perda__linha--grave" : "") + '">' +
+      "<span>" + esc(rot) + "</span><b>" + val + "</b></div>";
+  };
+
+  const root = document.createElement("div");
+  root.className = "training-modal";
+  root.innerHTML = `<div class="training-dialog" style="max-width:560px">
+    <button class="training-close" id="rm-close">&times;</button>
+    <h2>Tirar “${esc(t.title)}” do ar</h2>
+    <p>Duas saídas diferentes. Leia qual é qual antes de escolher.</p>
+
+    <div class="tr-perda">
+      ${linha("Aulas", v.aulas.length)}
+      ${linha("Questões da avaliação", v.questoes.length)}
+      ${linha("Matrículas em aberto", naoConcluidas)}
+      ${linha("Comprovantes já emitidos", v.conclusoes.length, v.conclusoes.length > 0)}
+    </div>
+
+    <div class="bt-notice bt-notice--info" style="margin-bottom:12px">
+      <span class="bt-notice__ic">i</span>
+      <div><b>Inativar</b> tira o treinamento da lista de quem ainda não fez
+      ${naoConcluidas ? "(" + naoConcluidas + " matrícula(s) em aberto voltam atrás)" : ""}
+      e mantém ${v.conclusoes.length} comprovante(s). Dá para reativar depois.</div>
+    </div>
+
+    <div class="bt-notice bt-notice--danger">
+      <span class="bt-notice__ic">!</span>
+      <div><b>Excluir</b> apaga o treinamento, as aulas, a avaliação, as
+      matrículas e ${v.conclusoes.length
+        ? "os <b>" + v.conclusoes.length + " comprovantes</b> de quem já concluiu"
+        : "o histórico"}. Não tem volta.</div>
+    </div>
+
+    <div class="tr-conf bt-field">
+      <label>Para excluir, digite o código <b>${esc(t.code)}</b></label>
+      <input id="rm-code" placeholder="${esc(t.code)}" autocomplete="off">
+    </div>
+
+    <div id="rm-msg"></div>
+    <div class="bt-row" style="justify-content:flex-end;margin-top:16px">
+      <button class="bt-btn" id="rm-cancel">Cancelar</button>
+      <button class="bt-btn" id="rm-inativar">Inativar</button>
+      <button class="bt-btn bt-btn--danger" id="rm-excluir">Excluir para sempre</button>
+    </div>
+  </div>`;
+  document.body.appendChild(root);
+
+  const fechar = function () { root.remove(); };
+  root.querySelector("#rm-close").onclick = fechar;
+  root.querySelector("#rm-cancel").onclick = fechar;
+
+  root.querySelector("#rm-inativar").onclick = function () {
+    const n = lmsInativarTreinamento(trainingId);
+    fechar();
+    navigateTo("lms_admin");
+    btAviso("“" + t.title + "” foi inativado." +
+      (n ? " " + n + " matrícula(s) em aberto foram retiradas." : "") +
+      (v.conclusoes.length ? " Os " + v.conclusoes.length + " comprovantes continuam valendo." : ""));
+  };
+
+  root.querySelector("#rm-excluir").onclick = function () {
+    const digitado = root.querySelector("#rm-code").value.trim().toUpperCase();
+    if (digitado !== String(t.code || "").trim().toUpperCase()) {
+      root.querySelector("#rm-msg").innerHTML =
+        '<div class="bt-notice bt-notice--danger" style="margin-top:12px"><span class="bt-notice__ic">!</span>' +
+        "<div>Digite <b>" + esc(t.code) + "</b> para confirmar a exclusão. " +
+        "Se a intenção era só tirar do ar, use <b>Inativar</b>.</div></div>";
+      return;
+    }
+    lmsExcluirTreinamento(trainingId);
+    fechar();
+    navigateTo("lms_admin");
+    btAviso("“" + t.title + "” foi excluído com aulas, matrículas e comprovantes.");
+  };
+}
+
+/* ---------- aviso de rodapé, para não usar alert() ---------- */
+
+function btAviso(texto) {
+  const antigo = document.getElementById("bt-aviso");
+  if (antigo) antigo.remove();
+  const el = document.createElement("div");
+  el.id = "bt-aviso";
+  el.textContent = texto;
+  el.style.cssText =
+    "position:fixed;left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom));" +
+    "z-index:70;max-width:min(520px,92vw);padding:13px 18px;border-radius:14px;" +
+    "background:#0d3f42;color:#eafaf7;font-size:13.5px;font-weight:600;line-height:1.45;" +
+    "box-shadow:0 18px 45px -12px rgba(4,26,28,.55);text-align:center";
+  document.body.appendChild(el);
+  setTimeout(function () { if (el.parentElement) el.remove(); }, 6000);
+}
+
+/* ---------- tela de gestão, refeita ---------- */
+
+const LMS_ADMIN_STATE = { busca: "", filtro: "todos" };
+
+function lmsAdminFichas() {
+  const db = lmsLoad();
+  const busca = btNormalize(LMS_ADMIN_STATE.busca).trim();
+
+  const fichas = db.trainings.map(function (t) {
+    const v = lmsVersionOf(t.id);
+    const aulas = v ? db.lessons.filter(function (l) { return l.version_id === v.id; }).length : 0;
+    const quiz = v ? db.quizzes.find(function (q) { return q.version_id === v.id; }) : null;
+    const questoes = quiz ? db.questions.filter(function (q) { return q.quiz_id === quiz.id; }).length : 0;
+    const matriculas = db.enrollments.filter(function (e) { return e.training_id === t.id; }).length;
+    const feitos = db.completions.filter(function (c) { return c.training_id === t.id; }).length;
+    return {
+      t: t, v: v, aulas: aulas, questoes: questoes, matriculas: matriculas, feitos: feitos,
+      pct: matriculas ? Math.round((feitos / matriculas) * 100) : 0,
+      incompleto: aulas === 0 || questoes === 0
+    };
+  });
+
+  return fichas.filter(function (f) {
+    if (LMS_ADMIN_STATE.filtro === "ativos" && f.t.active === false) return false;
+    if (LMS_ADMIN_STATE.filtro === "inativos" && f.t.active !== false) return false;
+    if (LMS_ADMIN_STATE.filtro === "obrigatorios" && !f.t.mandatory) return false;
+    if (LMS_ADMIN_STATE.filtro === "incompletos" && !f.incompleto) return false;
+    if (!busca) return true;
+    return btNormalize(f.t.title + " " + f.t.code + " " + (f.t.category || "")).indexOf(busca) >= 0;
+  });
+}
+
+function lmsAdminListaHtml() {
+  const fichas = lmsAdminFichas();
+  if (!fichas.length) {
+    return '<div class="bt-state"><strong>Nenhum treinamento neste filtro</strong>' +
+      (LMS_ADMIN_STATE.busca
+        ? "Nada com “" + esc(LMS_ADMIN_STATE.busca) + "”. Limpe a busca para ver todos."
+        : "Troque o filtro acima ou cadastre o primeiro em “Novo treinamento”.") + "</div>";
+  }
+
+  return fichas.map(function (f) {
+    const t = f.t;
+    const inativo = t.active === false;
+    const selos = [];
+    if (t.mandatory) selos.push('<span class="bt-badge bt-badge--info">obrigatório</span>');
+    if (inativo) selos.push('<span class="bt-badge">inativo</span>');
+    if (f.aulas === 0) selos.push('<span class="bt-badge bt-badge--warn">sem aula</span>');
+    if (f.questoes === 0) selos.push('<span class="bt-badge bt-badge--warn">sem questão</span>');
+
+    const num = function (rot, val, falta) {
+      return '<div><div class="tr-num__rot">' + esc(rot) + "</div>" +
+        '<div class="tr-num__val' + (falta ? " tr-num__val--falta" : "") + '">' + val + "</div></div>";
+    };
+
+    return `<div class="tr-card${inativo ? " tr-card--inativo" : f.incompleto ? " tr-card--incompleto" : ""}">
+      <div class="tr-card__topo">
+        <span class="tr-codigo">${esc(t.code)}</span>
+        ${selos.join(" ")}
+      </div>
+      <h3>${esc(t.title)}</h3>
+      <div class="tr-card__meta">
+        ${esc(t.category || "sem categoria")}
+        ${f.v ? " · v" + f.v.version_no + " · corte " + f.v.pass_score + "% · até " + f.v.max_attempts + " tentativa(s)" : " · sem versão publicada"}
+        ${t.validity_months ? " · validade " + t.validity_months + " meses" : " · sem validade"}
+        · prazo ${t.deadline_days || 30} dias
+      </div>
+
+      <div class="tr-nums">
+        ${num("Aulas", f.aulas, f.aulas === 0)}
+        ${num("Questões", f.questoes, f.questoes === 0)}
+        ${num("Matriculados", f.matriculas)}
+        ${num("Concluíram", f.feitos)}
+      </div>
+
+      <div class="tr-prog">
+        <div class="tr-prog__track"><i class="tr-prog__fill" style="display:block;width:${f.pct}%"></i></div>
+        <span class="tr-prog__lbl">${f.matriculas ? f.pct + "% da turma" : "ninguém matriculado"}</span>
+      </div>
+
+      <div class="tr-acoes">
+        <button class="bt-btn bt-btn--sm" data-lms-edit="${esc(t.id)}">Editar</button>
+        <button class="bt-btn bt-btn--sm" data-lms-lessons="${esc(t.id)}">Aulas e avaliação</button>
+        <button class="bt-btn bt-btn--sm" data-lms-assign="${esc(t.id)}">Matricular</button>
+        <div class="tr-acoes__dir">
+          <button class="bt-btn bt-btn--sm" data-lms-dup="${esc(t.id)}" title="Criar uma cópia inativa para editar">Duplicar</button>
+          ${inativo
+            ? '<button class="bt-btn bt-btn--sm" data-lms-ativar="' + esc(t.id) + '">Reativar</button>'
+            : ""}
+          <button class="bt-btn bt-btn--sm bt-btn--danger" data-lms-remover="${esc(t.id)}">Excluir</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+renderLmsAdmin = function () {
+  if (!lmsCanManage()) {
+    return '<div class="bt-state"><strong>Sem acesso</strong>A gestão de treinamentos é restrita a gestor e administração.</div>';
+  }
+  const db = lmsLoad();
+  const total = db.trainings.length;
+  const ativos = db.trainings.filter(function (t) { return t.active !== false; }).length;
+  const obrig = db.trainings.filter(function (t) { return t.mandatory; }).length;
+
+  const semConteudo = db.trainings.filter(function (t) {
+    const v = lmsVersionOf(t.id);
+    if (!v) return true;
+    const aulas = db.lessons.filter(function (l) { return l.version_id === v.id; }).length;
+    const quiz = db.quizzes.find(function (q) { return q.version_id === v.id; });
+    const questoes = quiz ? db.questions.filter(function (q) { return q.quiz_id === quiz.id; }).length : 0;
+    return aulas === 0 || questoes === 0;
+  }).length;
+
+  const filtros = [
+    ["todos", "Todos", total],
+    ["ativos", "Ativos", ativos],
+    ["inativos", "Inativos", total - ativos],
+    ["obrigatorios", "Obrigatórios", obrig],
+    ["incompletos", "Sem conteúdo", semConteudo]
+  ];
+
+  return `
+  <div class="page-title-row">
+    <div class="page-icon">${icon("pencil", 22)}</div>
+    <div>
+      <h1>Gestão de treinamentos</h1>
+      <p>Criar, editar, duplicar, inativar e excluir. Aulas, avaliação e matrículas em cada ficha.</p>
+    </div>
+    <button class="bt-btn bt-btn--primary" id="lms-new">${icon("plus", 16)} Novo treinamento</button>
+  </div>
+
+  <div class="bt-grid--kpi" style="margin-bottom:16px">
+    <div class="bt-kpi"><div class="bt-kpi__label">No ar</div><div class="bt-kpi__value">${ativos}</div>
+      <div class="bt-kpi__hint">de ${total} cadastrados</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Obrigatórios</div><div class="bt-kpi__value">${obrig}</div>
+      <div class="bt-kpi__hint">matriculam sozinhos</div></div>
+    <div class="bt-kpi ${semConteudo ? "bt-kpi--warn" : "bt-kpi--ok"}">
+      <div class="bt-kpi__label">Sem conteúdo</div><div class="bt-kpi__value">${semConteudo}</div>
+      <div class="bt-kpi__hint">${semConteudo ? "faltam aula ou questão" : "todos têm aula e questão"}</div></div>
+    <div class="bt-kpi"><div class="bt-kpi__label">Comprovantes</div><div class="bt-kpi__value">${db.completions.length}</div>
+      <div class="bt-kpi__hint">emitidos até agora</div></div>
+  </div>
+
+  <div class="tr-barra">
+    <div class="tr-busca">
+      <span class="tr-busca__ic">${btIcon("buscar", 15)}</span>
+      <input id="tr-busca" placeholder="Buscar por título, código ou categoria" value="${esc(LMS_ADMIN_STATE.busca)}">
+    </div>
+    <div class="bt-chips">
+      ${filtros.map(function (f) {
+        return '<button class="bt-chip" aria-pressed="' + (LMS_ADMIN_STATE.filtro === f[0]) +
+          '" data-tr-filtro="' + f[0] + '">' + f[1] + " (" + f[2] + ")</button>";
+      }).join("")}
+    </div>
+  </div>
+
+  <div class="tr-lista" id="tr-lista">${lmsAdminListaHtml()}</div>
+
+  <div class="bt-notice bt-notice--info" style="margin-top:18px">
+    <span class="bt-notice__ic">i</span>
+    <div>Obrigatório matricula todos os usuários ativos automaticamente, com o prazo
+    contado da matrícula. <b>Inativar</b> devolve as matrículas em aberto e preserva os
+    comprovantes; <b>excluir</b> apaga tudo, comprovante incluído.</div>
+  </div>`;
+};
+
+/* ---------- eventos ---------- */
+
+const _trPrevAttachAdmin = attachLmsAdminEvents;
+attachLmsAdminEvents = function () {
+  _trPrevAttachAdmin();
+
+  const redesenhar = function () {
+    const caixa = document.getElementById("tr-lista");
+    if (caixa) caixa.innerHTML = lmsAdminListaHtml();
+    attachLmsAdminEvents();
+  };
+
+  const busca = document.getElementById("tr-busca");
+  if (busca) {
+    busca.oninput = function () {
+      LMS_ADMIN_STATE.busca = this.value;
+      const pos = this.selectionStart;
+      redesenhar();
+      // Redesenho troca a lista, não o campo: o foco fica onde estava.
+      const novo = document.getElementById("tr-busca");
+      if (novo && novo !== document.activeElement) { novo.focus(); try { novo.setSelectionRange(pos, pos); } catch (e) {} }
+    };
+  }
+
+  document.querySelectorAll("[data-tr-filtro]").forEach(function (b) {
+    b.onclick = function () {
+      LMS_ADMIN_STATE.filtro = b.getAttribute("data-tr-filtro");
+      navigateTo("lms_admin");
+    };
+  });
+
+  document.querySelectorAll("[data-lms-remover]").forEach(function (b) {
+    b.onclick = function () { lmsModalRemover(b.getAttribute("data-lms-remover")); };
+  });
+
+  document.querySelectorAll("[data-lms-dup]").forEach(function (b) {
+    b.onclick = function () {
+      const id = lmsDuplicarTreinamento(b.getAttribute("data-lms-dup"));
+      navigateTo("lms_admin");
+      if (id) {
+        const novo = lmsTraining(id);
+        btAviso("Cópia criada como “" + novo.title + "”, inativa e não obrigatória. Edite e reative quando estiver pronta.");
+      }
+    };
+  });
+
+  document.querySelectorAll("[data-lms-ativar]").forEach(function (b) {
+    b.onclick = function () {
+      const id = b.getAttribute("data-lms-ativar");
+      const t = lmsTraining(id);
+      lmsReativarTreinamento(id);
+      navigateTo("lms_admin");
+      btAviso("“" + t.title + "” está no ar." + (t.mandatory
+        ? " Sendo obrigatório, todos os usuários ativos foram matriculados de novo."
+        : " Não é obrigatório: use Matricular para escolher quem faz."));
+    };
+  });
+};
+
+
+/* ====================================================================
+   SCM — centro de custo puxado pelo CAMM
+
+   A lista de centro de custo tinha 44 itens, todos juntos, e o CAMM
+   está escrito no próprio nome: "ENVASE - CAMM 1", "FERMENTAÇÃO -
+   CAMM 2", "UTILIDADES - CAMM 3". Quem pedia material para o CAMM 3
+   rolava a lista inteira para achar os oito que interessam.
+
+   Agora, escolhido o CAMM, a lista mostra só os centros daquele CAMM.
+
+   UMA RESSALVA QUE IMPORTA: 30 dos 44 não têm CAMM no nome — COMPRAS,
+   CONTABILIDADE, TI, MANUTENÇÃO, QUALIDADE, LABORATÓRIO e o resto.
+   São corporativos ou compartilhados, e filtrar sem mais nada deixaria
+   quem precisa de "MANUTENÇÃO" sem opção nenhuma — a pessoa escolheria
+   um CC errado ou "Outro", e o rateio sairia furado.
+
+   Então: por padrão aparecem só os do CAMM escolhido, e há uma marca
+   de seleção logo abaixo para incluir os sem CAMM quando for o caso.
+   O padrão atende o pedido; a saída existe para não bloquear ninguém.
+   ==================================================================== */
+
+/** Lê o CAMM do nome do centro de custo. Tolerante porque a lista tem
+ *  "EMPACOTAMENTO -CAMM 2", sem espaço depois do traço. */
+function scmCammDoCentro(nome) {
+  const m = String(nome || "").match(/CAMM\s*0?([123])\b/i);
+  return m ? "CAMM " + m[1] : null;
+}
+
+function scmCentrosDoCamm(camm) {
+  return SCM_CENTRO_CUSTO_OPTIONS.filter(function (c) {
+    return c !== "Outro" && scmCammDoCentro(c) === camm;
+  });
+}
+
+function scmCentrosSemCamm() {
+  return SCM_CENTRO_CUSTO_OPTIONS.filter(function (c) {
+    return c !== "Outro" && !scmCammDoCentro(c);
+  });
+}
+
+/**
+ * Remonta o select de centro de custo conforme o CAMM escolhido.
+ * Preserva o que já estava selecionado se continuar válido — trocar o
+ * CAMM por engano não pode apagar em silêncio o CC certo.
+ */
+function scmAtualizarCentrosCusto() {
+  const selCamm = document.getElementById("scm-camm");
+  const selCC = document.getElementById("scm-centro-custo");
+  if (!selCamm || !selCC) return;
+
+  const camm = selCamm.value;
+  const incluirComuns = (document.getElementById("scm-cc-todos") || {}).checked;
+  const anterior = selCC.value;
+
+  if (!camm) {
+    selCC.innerHTML = '<option value="">Escolha o CAMM primeiro...</option>';
+    selCC.disabled = true;
+    scmMostrarAvisoCentro("");
+    return;
+  }
+  selCC.disabled = false;
+
+  const doCamm = scmCentrosDoCamm(camm);
+  const opc = function (c) {
+    return '<option value="' + esc(c) + '"' + (c === anterior ? " selected" : "") + ">" + esc(c) + "</option>";
+  };
+
+  let html = '<option value="">Selecione...</option>';
+  if (doCamm.length) {
+    html += '<optgroup label="' + esc(camm) + '">' + doCamm.map(opc).join("") + "</optgroup>";
+  }
+  if (incluirComuns) {
+    html += '<optgroup label="Sem CAMM definido (corporativo ou compartilhado)">' +
+      scmCentrosSemCamm().map(opc).join("") + "</optgroup>";
+  }
+  html += '<optgroup label="Fora da lista">' + opc("Outro") + "</optgroup>";
+  selCC.innerHTML = html;
+
+  // Se o CC de antes não pertence mais ao que está à mostra, o select
+  // volta para "Selecione..." e o aviso explica por quê — em vez de
+  // ficar com um valor que não aparece na lista.
+  if (anterior && selCC.value !== anterior) {
+    scmMostrarAvisoCentro("O centro de custo anterior (<b>" + esc(anterior) +
+      "</b>) não é do " + esc(camm) + ". Escolha um da lista.");
+  } else {
+    scmMostrarAvisoCentro(doCamm.length
+      ? ""
+      : "O " + esc(camm) + " não tem centro de custo próprio na lista. " +
+        "Marque a opção abaixo para usar um corporativo.");
+  }
+
+  const bloco = document.getElementById("scm-centro-custo-outro-block");
+  if (bloco) bloco.style.display = selCC.value === "Outro" ? "block" : "none";
+}
+
+function scmMostrarAvisoCentro(html) {
+  const el = document.getElementById("scm-cc-aviso");
+  if (!el) return;
+  el.innerHTML = html
+    ? '<div class="bt-notice bt-notice--warn" style="margin-top:8px"><span class="bt-notice__ic">!</span><div>' + html + "</div></div>"
+    : "";
+}
+
+/* ---------- marca de seleção e aviso entram no formulário ---------- */
+
+const _ccPrevRenderScmForm = renderScmForm;
+renderScmForm = function () {
+  const html = _ccPrevRenderScmForm();
+  const extra =
+    '<label class="bt-row" style="gap:8px;margin-top:9px;cursor:pointer;font-size:12.5px;color:var(--muted)">' +
+    '<input type="checkbox" id="scm-cc-todos">' +
+    "<span>Incluir centros de custo sem CAMM (corporativos e compartilhados)</span></label>" +
+    '<div id="scm-cc-aviso"></div>';
+
+  // Ancora no input do "Outro": o primeiro </div> depois dele é o que
+  // fecha o bloco do centro de custo. Ancorar na abertura do bloco
+  // exigiria contar </div> aninhado, que quebra na próxima mudança.
+  const ancora = 'id="scm-centro-custo-outro"';
+  const i = html.indexOf(ancora);
+  if (i < 0) return html;
+  const fecha = html.indexOf("</div>", i);
+  if (fecha < 0) return html;
+  const corte = fecha + 6;
+  return html.slice(0, corte) + extra + html.slice(corte);
+};
+
+const _ccPrevAttachScmForm = attachScmFormEvents;
+attachScmFormEvents = function () {
+  _ccPrevAttachScmForm();
+
+  const selCamm = document.getElementById("scm-camm");
+  const selCC = document.getElementById("scm-centro-custo");
+  const todos = document.getElementById("scm-cc-todos");
+  if (!selCamm || !selCC) return;
+
+  const anteriorCamm = selCamm.onchange;
+  selCamm.onchange = function () {
+    if (anteriorCamm) anteriorCamm.call(this);
+    scmAtualizarCentrosCusto();
+  };
+  if (todos) todos.onchange = scmAtualizarCentrosCusto;
+
+  // O onchange do CC (que abre o campo "Outro") continua sendo o
+  // original; só reforçamos o aviso ao trocar.
+  const anteriorCC = selCC.onchange;
+  selCC.onchange = function () {
+    if (anteriorCC) anteriorCC.call(this);
+    if (this.value) scmMostrarAvisoCentro("");
+  };
+
+  // Estado inicial: sem CAMM escolhido, o CC começa desabilitado.
+  scmAtualizarCentrosCusto();
+};
 </script>
 </body>
 </html>
