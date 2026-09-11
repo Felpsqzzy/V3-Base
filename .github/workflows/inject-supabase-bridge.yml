@@ -22,11 +22,13 @@ jobs:
           test -f index.html
           test -f supabase-realtime-bridge.js
           test -f biotrop-multiuser-ui.js
+          test -f biotrop-supabase-auth.js
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
           tags = [
+              '<script src="./biotrop-supabase-auth.js"></script>',
               '<script src="./supabase-realtime-bridge.js"></script>',
               '<script src="./biotrop-multiuser-ui.js"></script>'
           ]
@@ -43,7 +45,7 @@ jobs:
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html supabase-realtime-bridge.js biotrop-multiuser-ui.js
+          git add index.html supabase-realtime-bridge.js biotrop-multiuser-ui.js biotrop-supabase-auth.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Ativar camada multiusuário Biotrop [skip publish]'
+          git commit -m 'Ativar autenticação Supabase no portal [skip publish]'
           git push
