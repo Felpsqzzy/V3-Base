@@ -1,107 +1,28 @@
-name: Maintain Supabase bridge
+name: Validate Biotrop HTML
 
-on: [push]
+on:
+  push:
+    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  fix-menu:
-    if: ${{ !contains(github.event.head_commit.message, '[skip bridge]') }}
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Corrigir menu do tecnico
+      - uses: actions/checkout@v4
+      - name: Validar menu do técnico
+        shell: python
         run: |
-          python3 - <<'PY'
           from pathlib import Path
-          import re
-
-          p = Path('index.html')
-          text = p.read_text(encoding='utf-8')
-
-          # Remove patches antigos de navegacao.
-          for marker in [
-              'BIOTROP TECH SCI SCM NAV V3',
-              'BIOTROP TECH SCI SCM SIDEBAR V2',
-              'BIOTROP TECH SCM FORCE',
-              'BIOTROP TECH SCI SCM SIDEBAR',
-              'BIOTROP TECH MENU FINAL V1',
-              'BIOTROP ALMOX NO TABS V1'
-          ]:
-              text = re.sub(
-                  r'<script>\s*/\*\s*' + re.escape(marker) + r'\s*\*/[\s\S]*?</script>\s*',
-                  '', text, flags=re.I
-              )
-
-          # Atualiza o bloco efetivo do tecnico no ultimo btNavGroups.
-          old = '''  if (btIsTechOnly(u)) {
-    return [{
-      label: "Operação",
-      items: [
-        { id: "home", icon: "⌂", label: "Início" },
-        { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
-        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
-        { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },
-        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
-      ]
-    }];
-  }'''
-          new = '''  if (btIsTechOnly(u)) {
-    return [{
-      label: "Operação",
-      items: [
-        { id: "home", icon: "⌂", label: "Início" },
-        { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
-        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
-        { id: "almoxarifado", icon: "+", label: "Nova solicitação" },
-        { id: "almox_scm_form", icon: "⊕", label: "Nova ordem de compra" },
-        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
-      ]
-    }];
-  }'''
-
-          if old in text:
-              # Substitui somente a ocorrencia do ultimo btNavGroups.
-              pos = text.rfind(old)
-              if pos < 0:
-                  raise SystemExit('Bloco do tecnico nao encontrado')
-              text = text[:pos] + new + text[pos + len(old):]
-          else:
-              raise SystemExit('Bloco esperado do tecnico nao encontrado')
-
-          # Remove tabs internas geradas por renderAlmoxarifado.
-          wrapper = '''<script>
-/* BIOTROP ALMOX NO TABS V1 */
-(function(){
-  var _btRenderAlmox = window.renderAlmoxarifado || null;
-  if (typeof _btRenderAlmox !== "function") return;
-  window.renderAlmoxarifado = function(initialTab){
-    var html = _btRenderAlmox(initialTab);
-    return html.replace(/<div class="tabs-row">[\\s\\S]*?<\\/div>\\s*(?=<div id="almox-tab-content")/i, "");
-  };
-})();
-</script>'''
-          text = text.replace('</body>', wrapper + '\n</body>', 1)
-
-          # Mantem uma unica ponte Supabase.
-          tag = '<script src="/supabase-bridge.js"></script>'
-          text = text.replace(tag, '')
-          text = text.replace('</body>', tag + '\n</body>', 1)
-
-          p.write_text(text, encoding='utf-8')
-          print('OK: menu lateral do tecnico separado em SCI e SCM; abas removidas')
-          PY
-
-      - name: Commit
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          git diff --cached --quiet && exit 0
-          git commit -m "Separar SCI e SCM no menu lateral do tecnico [skip bridge]"
-          git push
+          text = Path('index.html').read_text(encoding='utf-8')
+          expected = [
+              'label: "Nova solicitação"',
+              'label: "Nova ordem de compra"',
+              'label: "Minhas solicitações"'
+          ]
+          missing = [x for x in expected if x not in text]
+          if missing:
+              raise SystemExit('Menu do técnico incompleto: ' + ', '.join(missing))
+          print('OK: menu do técnico validado')
