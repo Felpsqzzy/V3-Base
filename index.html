@@ -1580,6 +1580,384 @@ body.v12-dark .modal, body.v12-dark .training-dialog {
   filter: none !important;
 }
 </style>
+<style id="biotrop-nav-visoes">
+/* ---------- divisor de visão dentro do grupo ---------- */
+
+.bt-nav__divisor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 5px 15px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .42);
+  user-select: none;
+}
+.bt-nav__divisor span { flex: 0 0 auto; }
+/* Fio que segue depois do rótulo: separa a visão sem gastar uma linha só
+   para isso. */
+.bt-nav__divisor::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .16), transparent);
+}
+
+/* Primeiro divisor do grupo não precisa de respiro em cima: o cabeçalho
+   do grupo já deu. */
+.bt-nav__items > .bt-nav__divisor:first-child { padding-top: 4px; }
+
+/* Modo compacto: o rótulo não cabe, então o divisor vira só o fio. */
+body.bt-rail .bt-nav__divisor {
+  padding: 7px 6px;
+  justify-content: center;
+}
+body.bt-rail .bt-nav__divisor span { display: none; }
+body.bt-rail .bt-nav__divisor::after {
+  flex: 1;
+  background: rgba(255, 255, 255, .14);
+}
+
+@media (max-width: 1050px) {
+  /* Na gaveta o rótulo volta, porque lá a largura é a mesma do menu
+     expandido. */
+  body.bt-rail .bt-nav__divisor { padding: 12px 12px 5px 15px; justify-content: flex-start; }
+  body.bt-rail .bt-nav__divisor span { display: initial; }
+}
+</style>
+<style id="biotrop-ui-mobile">
+/* ====================================================================
+   CELULAR
+
+   O que estava errado, medido a 375x812:
+
+   - Os campos tinham 13,5 px. Abaixo de 16 px o Safari do iPhone dá
+     zoom na página ao focar o campo, e a tela inteira salta. É a
+     principal causa da sensação de defeito ao digitar.
+   - A barra de cima quebrava em duas linhas: 110 px de altura, 13% da
+     tela, em toda tela do sistema.
+   - As tabelas têm min-width 560 px. Em 341 px de espaço, a coluna de
+     ação (o botão "Ver", "Corrigir e reenviar", "Aprovar") ficava FORA
+     da tela: era preciso arrastar a tabela para o lado para descobrir
+     que existia botão. Em "Apontamentos" a tabela tem 1080 px.
+   - Os cartões do início tinham min-height 176 px: dois e meio por
+     tela.
+   - A tela da aula usava duas colunas fixas, e a de conteúdo chegava a
+     65 px de largura, uma palavra por linha.
+
+   Os números de referência: 16 px em campo (zoom do iOS), 44 px de
+   altura em alvo de toque, e nenhuma rolagem lateral.
+   ==================================================================== */
+
+/* ---------- campos: 16 px e alvo de 46 px ----------
+   Vale até 1050 px porque o iPad em retrato dá o mesmo zoom. */
+
+@media (max-width: 1050px) {
+  .bt-field input, .bt-field select, .bt-field textarea,
+  .modal-input, .modal input, .modal select, .modal textarea,
+  .training-dialog input, .training-dialog select, .training-dialog textarea,
+  input[type="text"], input[type="number"], input[type="tel"], input[type="url"],
+  input[type="date"], input[type="datetime-local"], input[type="time"],
+  input[type="email"], input[type="password"], input[type="search"],
+  select, textarea {
+    font-size: 16px !important;
+    min-height: 46px;
+  }
+  textarea { min-height: 96px; line-height: 1.45; }
+
+  /* Caixa e botão de rádio não são caixa de texto: a altura mínima
+     acima os deformaria. */
+  input[type="checkbox"], input[type="radio"] {
+    min-height: 0; width: 20px; height: 20px; flex: 0 0 auto;
+  }
+  input[type="file"] { width: 100%; min-height: 44px; font-size: 14px !important; }
+
+  /* O controle nativo de arquivo é um botão pequeno seguido de
+     "Nenhum arquivo escolhido", que estoura a linha no celular. Vira
+     um botão de largura cheia. */
+  input[type="file"]::file-selector-button {
+    width: 100%; min-height: 46px; margin: 0; padding: 0 16px;
+    border-radius: 999px; border: 1px solid var(--primary);
+    background: var(--primary-soft); color: var(--primary);
+    font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+  }
+  /* Só nestes dois o texto do nome do arquivo pode sair: os dois
+     mostram a foto escolhida logo abaixo, então a confirmação existe.
+     Nos campos de vídeo e de material da aula o nome é a única pista
+     de que o arquivo entrou, e continua visível. */
+  #apt-photo, #ur-photo { color: transparent; }
+}
+
+@media (max-width: 640px) {
+  /* ---------- barra de cima: uma linha ---------- */
+
+  .bt-topbar {
+    flex-wrap: nowrap; gap: 8px; padding: 9px 12px; min-height: 54px;
+  }
+  /* A frase "Versão local · dados neste navegador" já está no rodapé do
+     login e na gaveta. Aqui só roubava a linha do título. */
+  .bt-topbar__sub { display: none; }
+  .bt-topbar__spacer { display: none; }
+  .bt-topbar__title {
+    font-size: 15.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .bt-topbar > div:not([class]) { flex: 1 1 auto; min-width: 0; }
+  .bt-burger { flex: 0 0 auto; }
+
+  /* ---------- respiro da página e área segura ---------- */
+
+  .bt-page { padding: 13px 14px calc(84px + env(safe-area-inset-bottom)); }
+
+  /* ---------- cabeçalho de página ---------- */
+
+  .page-title-row {
+    gap: 10px 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center;
+  }
+  .page-icon { width: 38px !important; height: 38px !important; border-radius: 11px !important; }
+  .page-icon svg { width: 18px; height: 18px; }
+  .page-title-row > .page-icon { flex: 0 0 auto; }
+  /* flex-basis 0, não auto: com wrap, o navegador decide a quebra pelo
+     tamanho BASE do item, e com basis auto a base é o subtítulo numa
+     linha só (uns 450 px). Dava quebra antes de qualquer encolhimento,
+     e o ícone ficava sozinho numa linha. Com base 0 o texto entra na
+     linha do ícone e depois cresce. */
+  .page-title-row > div:not(.page-icon) { flex: 1 1 0; min-width: 0; }
+  /* "Voltar" é irmão do título. Preso na mesma linha, esmagava o título
+     em três linhas; solto, ele desce e ocupa a largura toda. */
+  .page-title-row > button,
+  .page-title-row > .ghost-btn,
+  .page-title-row > a.bt-btn { flex: 1 0 100%; width: 100%; }
+  .page-title-row h1 { font-size: 20px !important; margin: 0 !important; line-height: 1.22; }
+  .page-title-row p { font-size: 12.5px !important; margin: 3px 0 0 !important; }
+
+  .bt-hello { font-size: 25px; }
+  .bt-stack { gap: 14px; }
+
+  /* ---------- abas internas: faixa que corre de lado ----------
+     Três abas quebravam em duas linhas cada uma ("Usuários e / Acessos")
+     e ficavam ilegíveis. Uma faixa rolável cabe em qualquer largura e é
+     o padrão que o celular já ensina. */
+
+  .tabs-row {
+    flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .tabs-row::-webkit-scrollbar { display: none; }
+  .tabs-row .tab-btn, .tabs-row > button {
+    white-space: nowrap; flex: 0 0 auto; min-height: 44px;
+  }
+
+  /* ---------- assistente de apontamento ---------- */
+
+  .apt-head { margin-bottom: 14px; }
+  .apt-title { font-size: 22px; }
+  .bt-steps { margin-bottom: 14px; gap: 5px; }
+  .apt-grid { gap: 10px; }
+  .apt-choice { padding: 15px !important; }
+  .apt-choice strong { font-size: 17px; }
+  .apt-choice__ic { font-size: 24px; margin-bottom: 4px; }
+  .apt-list { gap: 9px; }
+  .apt-meter { padding: 13px 14px !important; }
+  /* Deslocar no hover não existe no toque: com :active vira tremor. */
+  .apt-choice:hover, .apt-meter:hover, .bt-bigaction:hover { transform: none; }
+
+  /* ---------- cartões do início: linha, não bloco ---------- */
+
+  .bt-bigactions { gap: 10px; }
+  .bt-bigaction {
+    min-height: 0; padding: 13px 14px; border-radius: 16px;
+    grid-template-columns: 40px 1fr; gap: 2px 12px; align-content: center;
+  }
+  .bt-bigaction > span.bt-bigaction__ic {
+    grid-row: 1 / span 2; grid-column: 1; align-self: center;
+    font-size: 21px; width: 40px; height: 40px; display: grid; place-items: center;
+  }
+  .bt-bigaction > b { grid-column: 2; font-size: 15px; }
+  .bt-bigaction > span:not(.bt-bigaction__ic) { grid-column: 2; font-size: 12px; line-height: 1.4; }
+
+  /* ---------- cartões, listas e indicadores ---------- */
+
+  .bt-card__head { padding: 13px 14px; }
+  .bt-card__body { padding: 14px; }
+  .bt-item { padding: 12px 14px; }
+  .bt-grid, .bt-grid--2 { grid-template-columns: 1fr; gap: 12px; }
+  /* Dois indicadores por linha: um a um, um painel de quatro KPIs
+     ocupava a tela inteira antes de mostrar qualquer conteúdo. */
+  .bt-grid--kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .bt-kpi { padding: 12px 13px; }
+  .bt-kpi__value { font-size: 21px; }
+  .bt-kpi__label { font-size: 9.5px; }
+  .bt-kpi__hint { font-size: 11px; }
+
+  /* ---------- botões ---------- */
+
+  .bt-btn { min-height: 44px; padding: 10px 16px; font-size: 13.5px; }
+  .bt-btn--sm { min-height: 38px; padding: 8px 13px; }
+  .bt-btn--primary:hover { transform: none; }
+
+  /* Linha de ação de formulário vira coluna. A ordem do HTML é
+     "Cancelar" e depois a ação principal, então a principal fica
+     embaixo, onde o polegar alcança. */
+  .bt-row[style*="flex-end"] { flex-direction: column; align-items: stretch; gap: 8px; }
+  .bt-row[style*="flex-end"] > button,
+  .bt-row[style*="flex-end"] > .bt-btn,
+  .bt-row[style*="flex-end"] > a.bt-btn { width: 100%; }
+
+  /* Ação principal empurrada para a direita dentro do corpo de um
+     cartão ("Concluir aula") também ganha a largura toda. No cabeçalho
+     do cartão não: lá ela conversa com o título e cabe do lado. */
+  .bt-card__body .bt-row > button.bt-right,
+  .bt-card__body .bt-row > .bt-btn.bt-right { flex: 1 0 100%; width: 100%; margin-left: 0; }
+
+  /* A conversão de tabela em fichas NÃO está nesta media query: quem
+     decide é a largura que a tabela pede contra o espaço que existe,
+     não a largura da tela. Fica logo depois deste bloco. */
+
+  /* O mesmo mínimo de 44 px vale para os ícones de ação fora de
+     tabela. */
+  .icon-btn { min-width: 44px; min-height: 44px; }
+
+  /* Filtros de trilha (Todos, Pendentes, Obrigatórios, Concluídos):
+     tinham 30 px de altura. Viram faixa rolável, como as abas. */
+  .bt-chips {
+    display: flex; flex-wrap: nowrap; gap: 7px; overflow-x: auto;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+    margin-left: 0; width: 100%;
+  }
+  .bt-chips::-webkit-scrollbar { display: none; }
+  .bt-chip { min-height: 38px; flex: 0 0 auto; white-space: nowrap; }
+
+  /* ---------- modal vira folha de baixo ---------- */
+
+  .modal-backdrop, .training-modal { padding: 0 !important; align-items: flex-end !important; }
+  /* O !important em max-height desfaz o "max-height: none" que a
+     correção de layout do desktop precisou pôr. Lá o fundo é que rola;
+     aqui a folha está ancorada embaixo, e sem limite de altura um
+     modal grande (o detalhe da SCI tem 970 px) saía pela borda de CIMA
+     e o topo dele ficava inalcançável. */
+  .modal, .training-dialog {
+    width: 100% !important; max-width: none !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 92vh !important; overflow-y: auto !important;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+  .modal-header { position: sticky; top: 0; z-index: 2; background: var(--surface); }
+  .modal-actions { flex-direction: column; gap: 8px; align-items: stretch; }
+  .modal-actions > button, .modal-actions > .bt-btn { width: 100%; min-height: 46px; }
+
+  /* ---------- aula: uma coluna ----------
+     O grid era inline no HTML (duas colunas fixas), então nenhuma media
+     query o alcançava. Ganhou classe para poder existir. */
+  .lms-split { grid-template-columns: 1fr !important; gap: 12px !important; }
+
+  /* ---------- gaveta ---------- */
+
+  .bt-side { width: min(86vw, 300px); }
+
+  /* ---------- barra inferior ---------- */
+
+  .bt-tabbar button { font-size: 10px; }
+  /* Ver o comentário em btMobileMarcarModal: com modal aberto a barra
+     roubava o toque nos 64 px de baixo da folha. */
+  body.bt-modal-aberto .bt-tabbar { display: none !important; }
+}
+
+/* ====================================================================
+   TABELA VIRA LISTA DE FICHAS
+
+   Sem media query, de propósito. A pergunta certa não é "a tela é
+   pequena?", é "esta tabela cabe no espaço que ela tem?". Uma tabela de
+   5 colunas cabe num tablet de 768 px e não precisa mudar; a de
+   Apontamentos pede 1080 px e não cabe nem ali. Quem mede é
+   btMobileRotularTabelas, que marca data-ficha na tabela que não cabe,
+   abaixo de 1050 px.
+
+   Em ficha: rótulo da coluna à esquerda, valor à direita, primeira
+   coluna como título e o botão de ação em largura cheia no fim. O
+   rótulo sai do próprio <th>, então vale para qualquer tabela do
+   sistema, inclusive as que ainda não existem.
+   ==================================================================== */
+
+.bt-tablewrap:has(table[data-ficha]),
+.table-card:has(table[data-ficha]) { overflow-x: visible; }
+
+/* min-width com !important porque as duas tabelas de utilidades trazem
+   min-width inline (1080px e 900px), e inline vence regra. */
+table[data-ficha] { min-width: 0 !important; display: block; font-size: 13.5px; }
+table[data-ficha] thead { display: none; }
+table[data-ficha] tbody { display: block; }
+table[data-ficha] tbody tr {
+  display: block; padding: 12px 14px; border-bottom: 1px solid var(--border);
+}
+table[data-ficha] tbody tr:last-child { border-bottom: 0; }
+table[data-ficha] tbody tr:hover { background: transparent; }
+
+/* A borda pede !important porque .users-table td carrega border-bottom
+   !important: sem isso cada rótulo da ficha viria com um risco
+   embaixo. */
+table[data-ficha] td[data-rot] {
+  display: flex; gap: 10px; align-items: baseline;
+  padding: 4px 0 !important; border: 0 !important;
+}
+table[data-ficha] td[data-rot]::before {
+  content: attr(data-rot);
+  flex: 0 0 36%; max-width: 36%;
+  font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); line-height: 1.55;
+}
+/* Primeira coluna é o título da ficha: sem rótulo, em cima. */
+table[data-ficha] td[data-primeiro] {
+  display: block; font-size: 15px; font-weight: 800; padding: 0 0 7px !important;
+  border: 0 !important;
+}
+/* A célula de ação é uma linha flexível: um botão só ocupa a largura
+   toda; dois ou três dividem a linha. Os ícones (editar, chave,
+   excluir) têm base menor porque não têm texto, e assim os três cabem
+   lado a lado em vez de empilharem. */
+table[data-ficha] td[data-acao] {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  padding: 11px 0 1px !important; border: 0 !important;
+}
+table[data-ficha] td[data-acao] > .row-actions,
+table[data-ficha] td[data-acao] > .bt-row {
+  flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 8px; align-items: stretch;
+}
+table[data-ficha] td[data-acao] > button,
+table[data-ficha] td[data-acao] > a,
+table[data-ficha] td[data-acao] .row-actions > button,
+table[data-ficha] td[data-acao] .row-actions > a,
+table[data-ficha] td[data-acao] .bt-row > button,
+table[data-ficha] td[data-acao] .bt-row > a {
+  flex: 1 1 120px; width: auto; min-height: 44px;
+}
+table[data-ficha] td[data-acao] .icon-btn { flex: 1 1 56px; min-width: 44px; min-height: 44px; }
+/* Estado vazio ocupa a ficha inteira. */
+table[data-ficha] td[data-vazio] {
+  display: block; padding: 0 !important; border: 0 !important;
+}
+table[data-ficha] td[data-primeiro]::before,
+table[data-ficha] td[data-acao]::before,
+table[data-ficha] td[data-vazio]::before,
+table[data-ficha] td[data-rot=""]::before { content: none; display: none; }
+table[data-ficha] td[data-sem-conteudo] { display: none; }
+/* Número alinhado à direita só faz sentido em coluna de tabela. */
+table[data-ficha] td[data-rot].bt-num { text-align: left; }
+@media (max-width: 640px) {
+  /* ---------- "Tema" e "Configurações" no rodapé da gaveta ----------
+     mod-mobile-barra.js move os dois botões para cá no celular. Aqui
+     eles herdam o traje escuro do rodapé, senão ficariam duas pílulas
+     brancas dentro da barra verde. */
+
+  /* O traje (fundo transparente, borda clara, texto claro) já vem de
+     ".bt-sidefoot button" — btMobileAjustarBarra tira as classes bt-btn
+     dos dois botões justamente para que essa regra valha. Aqui só o
+     arranjo: um do lado do outro, em cima de "Sair". */
+  .bt-sidefoot__acoes { display: flex; gap: 8px; margin-bottom: 8px; }
+  .bt-sidefoot__acoes > button { flex: 1; min-height: 42px; }
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -5096,7 +5474,7 @@ function renderLmsPlayer() {
 
   <div class="bt-progress" style="margin-bottom:18px"><i class="bt-progress__fill" style="width:${pct}%;display:block"></i></div>
 
-  <div style="display:grid;gap:18px;grid-template-columns:minmax(0,2.1fr) minmax(260px,1fr);align-items:start">
+  <div class="lms-split" style="display:grid;gap:18px;grid-template-columns:minmax(0,2.1fr) minmax(260px,1fr);align-items:start">
     <div class="bt-card">
       <div class="bt-card__head">
         <div><h2>${lesson.position}. ${esc(lesson.title)}</h2>
@@ -6096,10 +6474,7 @@ function btIsTechOnly(user) {
   const u = user || STATE.currentUser;
   if (!u) return false;
   if (isAdminUser(u)) return false;
-  const perfil = String(u.perfilId || u.perfil || u.role || u.cargo || u.funcao || "").trim().toLowerCase();
-  const nomePerfil = String(u.perfilNome || u.nomePerfil || "").trim().toLowerCase();
-  return perfil === "tecnico" || perfil.includes("tecnico") || perfil.includes("técnico") ||
-         nomePerfil.includes("tecnico") || nomePerfil.includes("técnico");
+  return u.perfilId === "tecnico";
 }
 
 /** Pendências que viram contador vermelho no menu. */
@@ -6143,9 +6518,8 @@ function btNavGroups(user) {
       items: [
         { id: "home", icon: "⌂", label: "Início" },
         { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
-        { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
-        { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },
-        { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
+        { id: "utilidades", icon: "⏱", label: "Apontar Horímetros" },
+        { id: "almoxarifado", icon: "▤", label: "Almoxarifado" }
       ]
     }];
   }
@@ -6335,7 +6709,7 @@ const BT_PAGE_TITLES = {
   almoxarifado: "Almoxarifado · nova solicitação",
   almox_solicitacoes: "Almoxarifado · solicitações",
   familias: "Famílias de itens",
-  almox_scm_form: "SCM · nova compra",
+  almox_scm_form: "SCM · nova ordem de compra",
   almox_scm_minhas: "SCM · minhas solicitações",
   almox_scm_gestao: "SCM · gestão",
   almox_scm_aprovacao: "SCM · aprovações",
@@ -7208,7 +7582,7 @@ function renderDashLider() {
       hint: aprovar.length ? "aprove ou devolva com motivo" : "nada na sua mesa", nav: "almox_scm_aprovacao"
     })}
     ${dashKpi("Decididas", decididas.length, { hint: "últimos 30 dias" })}
-    ${dashKpi("Minhas SCM", minhas.length, { hint: "abertas por você", nav: "almox_scm_minhas" })}
+    ${dashKpi("Minhas SCM", minhas.length, { hint: "abertas por você", nav: "almox_minhas" })}
     ${dashKpi("Equipe em dia", equipe.length ? Math.round(equipe.reduce(function (s, r) { return s + r.pct; }, 0) / equipe.length) : 100, {
       unit: "%", cls: "bt-kpi--ok", hint: "conformidade de treinamento", nav: "lms_compliance"
     })}
@@ -8047,7 +8421,7 @@ function renderMinhasSolicitacoes() {
     <div class="bt-card__body--flush">
       <div class="bt-tablewrap"><table class="bt-table">
         <thead><tr><th>Código</th><th>Uso</th><th>Data</th><th>Situação</th><th></th></tr></thead>
-        <tbody>${linhasScm || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCM sua</strong>Abra a primeira em Nova compra.</div></td></tr>'}</tbody>
+        <tbody>${linhasScm || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCM sua</strong>Abra a primeira em Nova ordem de compra.</div></td></tr>'}</tbody>
       </table></div>
     </div>
   </div>
@@ -9376,8 +9750,21 @@ btNavGroups = function (user) {
   const u = user || STATE.currentUser;
   const c = btCounts();
 
-  // Visão do técnico: os quatro itens do v7 mais "Minhas solicitações",
-  // pedida na reunião para o técnico acompanhar o que devolveram para ele.
+  /* Visão do técnico: seis itens, nesta ordem, e nada mais.
+
+     É o que ele faz no dia: começar, treinar, apontar consumo, abrir
+     pedido de cadastro (SCI), abrir ordem de compra (SCM) e acompanhar o
+     que abriu.
+
+     Fica fora de propósito:
+       - Solicitações (SCI), Gestão de SCM, Aprovações SCM e Famílias de
+         itens são filas de trabalho do almoxarifado e do líder, não dele;
+       - "Minhas SCM" sai porque "Minhas solicitações" já mostra SCI e SCM
+         juntas — dois itens para a mesma resposta é o que deixava a tela
+         com cara de cheia.
+
+     A permissão continua sendo a barreira: esconder item do menu não
+     fecha rota. As telas retiradas seguem barradas por getPerms. */
   if (btIsTechOnly(u)) {
     return [{
       label: "Operação",
@@ -9386,6 +9773,7 @@ btNavGroups = function (user) {
         { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
         { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
         { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },
+        { id: "almox_scm_form", icon: "⊕", label: "Nova ordem de compra" },
         { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
       ]
     }];
@@ -9816,11 +10204,18 @@ btRenderNav = function () {
    A barra sai. O menu é a navegação; a tela mostra uma coisa só.
    ==================================================================== */
 
+const _corPrevRenderAlmox = renderAlmoxarifado;
+renderAlmoxarifado = function (initialTab) {
+  const html = _corPrevRenderAlmox(initialTab);
+  // Remove a barra de abas mantendo o resto intacto.
+  return html.replace(/<div class="tabs-row">[\s\S]*?<\/div>\s*(?=<div id="almox-tab-content")/, "");
+};
+
 /** Título da área do almoxarifado por tela, já que a aba não diz mais. */
 const ALMOX_TITULOS = {
   form: ["Nova solicitação de cadastro", "Peça o cadastro de um item que ainda não tem código."],
   list: ["Solicitações de cadastro (SCI)", "Fila do almoxarifado: analisar, devolver para revisão e concluir."],
-  scm_form: ["Nova compra de material (SCM)", "Solicite a compra de itens já cadastrados."],
+  scm_form: ["Nova ordem de compra (SCM)", "Solicite a compra de itens já cadastrados."],
   scm_minhas: ["Minhas SCM", "Compras que você abriu."],
   scm_gestao: ["Gestão de SCM", "Atendimento das compras aprovadas."],
   scm_aprovacao: ["Aprovações SCM", "Compras da sua equipe esperando a sua decisão."]
@@ -10466,9 +10861,536 @@ navigateTo = function (areaId) {
   btRefreshNav();
 };
 
+
+/* ====================================================================
+   MENU: SCI e SCM como visões dentro do Almoxarifado
+
+   O grupo Almoxarifado era uma lista de sete itens em sequência, onde
+   "Solicitações (SCI)", "Nova compra (SCM)" e "Gestão de SCM" ficavam no
+   mesmo nível — dava para ler, mas não dava para ver de imediato o que
+   é cadastro de item e o que é compra.
+
+   Agora o grupo continua um só (decisão da reunião: agrupar o
+   almoxarifado em uma área) e por dentro se divide em duas visões, com
+   os itens recuados, do mesmo jeito que Utilidades:
+
+     ALMOXARIFADO
+       Minhas solicitações
+       ── SCI ──
+         Nova solicitação
+         Gestão de SCI
+         Famílias de itens
+       ── SCM ──
+         Nova compra
+         Gestão de SCM
+         Aprovações
+
+   "Minhas solicitações" fica FORA das duas de propósito: ela mostra SCI
+   e SCM juntas, então pertencer a uma das visões seria mentira.
+
+   Os nomes ficaram simétricos: "Gestão de SCI" e "Gestão de SCM". Antes
+   um era "Solicitações (SCI)" e o outro "Gestão de SCM", e a assimetria
+   fazia parecer que eram coisas de natureza diferente.
+   ==================================================================== */
+
+const _visPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const grupos = _visPrevNavGroups(user);
+  const u = user || STATE.currentUser;
+
+  // A visão do técnico não muda: cinco itens em lista, sem divisão.
+  if (btIsTechOnly(u)) return grupos;
+
+  const g = grupos.find(function (x) { return x.label === "Almoxarifado"; });
+  if (!g) return grupos;
+
+  const pega = function (id) { return g.items.find(function (i) { return i.id === id; }) || null; };
+  const renomeia = function (item, label) {
+    if (item) item.label = label;
+    return item;
+  };
+
+  const minhas = pega("almox_minhas");
+  const sci = [
+    renomeia(pega("almoxarifado"), "Nova solicitação"),
+    renomeia(pega("almox_solicitacoes"), "Gestão de SCI"),
+    pega("familias")
+  ].filter(Boolean);
+  const scm = [
+    renomeia(pega("almox_scm_form"), "Nova ordem de compra"),
+    pega("almox_scm_gestao"),
+    renomeia(pega("almox_scm_aprovacao"), "Aprovações")
+  ].filter(Boolean);
+
+  sci.forEach(function (i) { i.sub = true; });
+  scm.forEach(function (i) { i.sub = true; });
+
+  const novos = [];
+  if (minhas) novos.push(minhas);
+  // Divisor só entra se houver item embaixo dele: perfil que não tem
+  // acesso à compra não deve ver o rótulo "SCM" sozinho.
+  if (sci.length) novos.push({ divisor: "SCI · cadastro de item" });
+  novos.push.apply(novos, sci);
+  if (scm.length) novos.push({ divisor: "SCM · compra de material" });
+  novos.push.apply(novos, scm);
+
+  // Qualquer item que eu não tenha previsto continua no fim, sem recuo,
+  // em vez de desaparecer do menu.
+  g.items.forEach(function (i) {
+    if (novos.indexOf(i) < 0) novos.push(i);
+  });
+
+  g.items = novos;
+  return grupos;
+};
+
+/* ---------- renderização do menu, consolidada ---------- */
+
+/**
+ * Esta é a versão final de btRenderNav. Reescrevo inteira em vez de
+ * embrulhar de novo: já havia três camadas de wrapper (grupos, ícones
+ * SVG, marcação de submenu), e acrescentar divisor por cima disso
+ * significaria manipular HTML já montado pela quarta vez.
+ */
+btRenderNav = function () {
+  const cur = STATE.activeArea;
+  const grupos = btNavGroups();
+  const atual = btGroupOf(cur);
+  const filtro = btNormalize(BT_NAV.filter).trim();
+
+  const botao = function (it, grupoLabel) {
+    const classes = ["bt-nav__item"];
+    if (it.id === cur) classes.push("is-current");
+    if (grupoLabel) classes.push("bt-nav__hit");
+    return '<button type="button" class="' + classes.join(" ") + '"' +
+      ' data-nav="' + esc(it.id) + '"' +
+      ' data-label="' + esc(it.label) + '"' +
+      (it.sub && !grupoLabel ? ' data-sub="1"' : "") +
+      ' title="' + esc(it.label) + '">' +
+      '<span class="bt-nav__icon" aria-hidden="true">' + (btNavIcon(it.id) || it.icon || "") + "</span>" +
+      '<span class="bt-nav__label">' + esc(it.label) +
+      (grupoLabel
+        ? '<span style="display:block;font-size:10px;opacity:.55;font-weight:600">' + esc(grupoLabel) + "</span>"
+        : "") +
+      "</span>" +
+      (it.badge ? '<span class="bt-nav__badge">' + it.badge + "</span>" : "") +
+      "</button>";
+  };
+
+  // Busca: lista plana, sem cabeçalho e sem divisor.
+  if (filtro && !BT_NAV.rail) {
+    const hits = [];
+    grupos.forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (it.divisor) return;
+        if (btNormalize(it.label).indexOf(filtro) >= 0 ||
+            btNormalize(g.label).indexOf(filtro) >= 0 ||
+            btNormalize(it.id).indexOf(filtro) >= 0) {
+          hits.push({ grupo: g.label, item: it });
+        }
+      });
+    });
+    if (!hits.length) {
+      return '<div class="bt-nav__empty">Nenhum item do menu com “' + esc(BT_NAV.filter) + "”.</div>";
+    }
+    return hits.map(function (h) { return botao(h.item, h.grupo); }).join("");
+  }
+
+  const padroes = btDefaultOpenMap(grupos, atual);
+  return grupos.map(function (g, gi) {
+    const aberto = BT_NAV.rail ? true : btGroupIsOpen(g, grupos.length, atual, padroes);
+    const pend = g.items.reduce(function (s, it) { return s + (Number(it.badge) || 0); }, 0);
+    const temAtual = g.items.some(function (it) { return it.id === cur; });
+
+    const head = '<button type="button" class="bt-nav__grouphead" data-navgroup="' + esc(g.label) + '"' +
+      ' aria-expanded="' + aberto + '" title="' + esc(g.label) + '">' +
+      '<span class="bt-nav__chev" aria-hidden="true">▸</span>' +
+      '<span class="lbl">' + esc(g.label) + "</span>" +
+      (!aberto && pend ? '<span class="bt-nav__groupcount">' + pend + "</span>" : "") +
+      (!aberto && !pend && temAtual ? '<span class="bt-nav__groupdot"></span>' : "") +
+      "</button>";
+
+    const items = '<div class="bt-nav__items" id="btnavgrp-' + gi + '"' + (aberto ? "" : " hidden") + ">" +
+      g.items.map(function (it) {
+        if (it.divisor) {
+          return '<div class="bt-nav__divisor" role="presentation">' +
+            '<span>' + esc(it.divisor) + "</span></div>";
+        }
+        return botao(it, null);
+      }).join("") + "</div>";
+
+    return head + items;
+  }).join("");
+};
+
+/**
+ * O orçamento de itens abertos não deve contar divisor: ele não é
+ * destino, e contá-lo fecharia um grupo que ainda cabia na tela.
+ */
+btDefaultOpenMap = function (grupos, atual) {
+  const map = {};
+  let usados = 0;
+  const conta = function (g) {
+    return g.items.filter(function (i) { return !i.divisor; }).length;
+  };
+  grupos.forEach(function (g) {
+    if (g.label === atual) { map[g.label] = true; usados += conta(g); }
+  });
+  grupos.forEach(function (g) {
+    if (map[g.label]) return;
+    if (usados + conta(g) <= BT_NAV_BUDGET) { map[g.label] = true; usados += conta(g); }
+    else map[g.label] = false;
+  });
+  return map;
+};
+
+// A barra inferior do celular nunca recebe divisor, mas passa pelo mesmo
+// btNavGroups: filtra por segurança.
+const _visPrevTabItems = btTabItems;
+btTabItems = function () {
+  return _visPrevTabItems().filter(function (t) { return t && !t.divisor; });
+};
+
+
+
+/* ====================================================================
+   VISÃO DO TÉCNICO — painel inicial alinhado ao menu
+
+   O menu do técnico agora tem três destinos no almoxarifado (Nova
+   solicitação, Nova ordem de compra, Minhas solicitações), mas o painel
+   inicial continuava com um cartão só, "Almoxarifado", que prometia
+   "solicite materiais e acompanhe suas solicitações" e caía apenas na
+   SCI.
+
+   Cartão e menu com nomes diferentes para o mesmo caminho é o tipo de
+   coisa que faz a tela parecer defeituosa. O painel passa a espelhar o
+   menu: mesmos nomes, mesma ordem, mesmos destinos.
+   ==================================================================== */
+
+const _tecPrevTechHome = renderTechHome;
+renderTechHome = function () {
+  const c = btCounts();
+  const pend = Number(c.minhasPendencias) || 0;
+
+  const tres =
+    '      <button class="bt-bigaction" data-nav="almoxarifado">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDCE6</span>\n' +
+    "        <b>Nova solicitação</b>\n" +
+    "        <span>Peça o cadastro de um item que ainda não tem código (SCI).</span>\n" +
+    "      </button>\n" +
+    '      <button class="bt-bigaction" data-nav="almox_scm_form">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDED2</span>\n' +
+    "        <b>Nova ordem de compra</b>\n" +
+    "        <span>Solicite a compra de um item já cadastrado (SCM).</span>\n" +
+    "      </button>\n" +
+    '      <button class="bt-bigaction" data-nav="almox_minhas">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDCCB</span>\n' +
+    "        <b>Minhas solicitações</b>\n" +
+    "        <span>Acompanhe suas SCI e SCM." +
+    (pend ? "<br><strong>" + pend + " esperando você.</strong>" : "") +
+    "</span>\n" +
+    "      </button>";
+
+  // O cartão único do almoxarifado vira os três do menu.
+  return _tecPrevTechHome().replace(
+    /<button class="bt-bigaction" data-nav="almoxarifado">[\s\S]*?<\/button>/,
+    tres.replace(/^\s+/, "")
+  );
+};
+
+/* ---------- barra inferior do celular: os nomes do menu ---------- */
+
+/**
+ * A barra do celular do técnico dizia "Almox.", rótulo que não existe
+ * mais em lugar nenhum, e levava à SCI. Com o menu dele definido item a
+ * item, a barra passa a ser os cinco primeiros destinos desse menu, com
+ * nome curto — em vez de uma lista montada por permissão, que era o que
+ * produzia o nome divergente.
+ *
+ * A ordem de compra fica fora por espaço: cinco é o limite da barra, e
+ * ela já está no menu e no painel inicial.
+ */
+const _tecPrevTabItems = btTabItems;
+const TEC_ABAS_CURTAS = {
+  home: "Início",
+  lms_my: "Treinar",
+  utilidades: "Apontar",
+  almoxarifado: "Solicitar",
+  almox_minhas: "Minhas"
+};
+
+btTabItems = function () {
+  const u = STATE.currentUser;
+  if (!btIsTechOnly(u)) return _tecPrevTabItems();
+  const c = btCounts();
+  const pontos = { lms_my: c.trainings, almox_minhas: c.minhasPendencias };
+  return btNavGroups(u)[0].items
+    .filter(function (it) { return it && !it.divisor && TEC_ABAS_CURTAS[it.id]; })
+    .map(function (it) {
+      return { id: it.id, ic: it.icon, label: TEC_ABAS_CURTAS[it.id], dot: pontos[it.id] || 0 };
+    })
+    .slice(0, 5);
+};
+
+
+/* ====================================================================
+   CELULAR — a parte que o CSS não resolve
+
+   1. Rótulo em cada célula da tabela. Quando a tabela vira lista de
+      fichas, o <thead> desaparece, e sem rótulo a ficha fica um monte
+      de valores soltos: "SCI-0001 / Rolamento / 11/09 / Aberto". O
+      rótulo vem do próprio <th>, copiado para data-rot, e o CSS o
+      imprime antes do valor. Assim vale para TODA tabela do sistema,
+      inclusive as que ainda não existem.
+
+   2. A gaveta travava o fundo. Com o menu aberto, rolar por cima do
+      escurecido rolava a página atrás. Trava enquanto está aberta.
+   ==================================================================== */
+
+/* ---------- 1. rótulo nas células ---------- */
+
+/**
+ * Decide se ESTA tabela vira ficha: só quando a largura que ela pede
+ * não cabe no espaço que ela tem, e só abaixo de 1050 px.
+ *
+ * A largura pedida é medida uma vez, na forma de tabela, e guardada em
+ * data-larg-min. Medir de novo depois da conversão devolveria "agora
+ * cabe" — a ficha ocupa a largura do pai — e a tabela ficaria piscando
+ * entre os dois formatos a cada remontagem.
+ */
+function btMobileDecidirFicha(tab) {
+  const caixa = tab.parentElement;
+  if (!caixa) return;
+  // Elemento escondido mede 0 e converteria tudo sem motivo.
+  if (!caixa.clientWidth) return;
+
+  let pedida = Number(tab.getAttribute("data-larg-min"));
+  if (!pedida) {
+    tab.removeAttribute("data-ficha");
+    pedida = tab.scrollWidth;
+    if (!pedida) return;
+    tab.setAttribute("data-larg-min", String(pedida));
+  }
+
+  if (innerWidth > 1050 || pedida <= caixa.clientWidth + 1) tab.removeAttribute("data-ficha");
+  else tab.setAttribute("data-ficha", "1");
+}
+
+function btMobileRotularTabelas(raiz) {
+  const alvo = raiz && raiz.querySelectorAll ? raiz : document;
+  // As duas classes de tabela do sistema: bt-table nas telas novas,
+  // users-table nas telas originais (usuários, SCI, SCM, famílias).
+  alvo.querySelectorAll("table.bt-table, table.users-table").forEach(function (tab) {
+    btMobileDecidirFicha(tab);
+    const rotulos = Array.prototype.map.call(
+      tab.querySelectorAll("thead th"),
+      function (th) { return th.textContent.trim(); }
+    );
+    tab.querySelectorAll("tbody tr").forEach(function (tr) {
+      const celulas = Array.prototype.slice.call(tr.children);
+
+      // Linha de estado vazio ("Nenhuma SCI sua") é uma célula com
+      // colspan: rotular isso seria mentira.
+      if (celulas.length === 1 && celulas[0].hasAttribute("colspan")) {
+        celulas[0].setAttribute("data-vazio", "1");
+        return;
+      }
+
+      celulas.forEach(function (td, i) {
+        if (td.hasAttribute("data-rot")) return;   // já passou por aqui
+        td.setAttribute("data-rot", rotulos[i] || "");
+
+        if (i === 0) { td.setAttribute("data-primeiro", "1"); return; }
+
+        const filhos = Array.prototype.slice.call(td.children);
+        const texto = td.textContent.trim();
+
+        // Célula que só tem botão ou link é coluna de ação: o botão
+        // passa a ocupar a largura da ficha.
+        const soAcao = filhos.length > 0 &&
+          filhos.every(function (f) {
+            return f.tagName === "BUTTON" || f.tagName === "A" ||
+              (f.classList && (f.classList.contains("bt-row") ||
+                               f.classList.contains("row-actions")));
+          });
+        if (soAcao && td.querySelector("button, a")) {
+          td.setAttribute("data-acao", "1");
+          return;
+        }
+
+        // Célula vazia sem rótulo não vira linha em branco na ficha.
+        if (!texto && !filhos.length) td.setAttribute("data-sem-conteudo", "1");
+      });
+    });
+  });
+}
+
+/* ---------- 1b. barra de baixo sai de cena quando abre modal ----------
+
+   Medido: com o detalhe da SCI aberto, um toque nos 64 px de baixo da
+   folha caía na barra de atalhos e navegava para outra tela, em vez de
+   chegar no campo que está ali. A barra tem z-index 30 e o fundo do
+   modal 50, mas quem recebe o toque naquela faixa é a barra — ela tem
+   backdrop-filter e vira camada própria.
+
+   Em vez de disputar z-index, a barra sai enquanto há modal aberto: no
+   celular a folha ocupa a tela e navegar por baixo dela não é o que se
+   quer. De passagem, o fundo para de rolar atrás da folha. */
+
+function btMobileMarcarModal() {
+  const aberto = !!document.querySelector(".modal-backdrop, .training-modal");
+  document.body.classList.toggle("bt-modal-aberto", aberto);
+  if (innerWidth <= 1050) {
+    const gaveta = document.getElementById("bt-side");
+    const gavetaAberta = gaveta && gaveta.classList.contains("is-open");
+    document.body.style.overflow = (aberto || gavetaAberta) ? "hidden" : "";
+  }
+}
+
+/* A tela é remontada por navigateTo, por refresh de lista e por modal.
+   Em vez de embrulhar cada um desses caminhos, observo o que entra no
+   DOM: é um lugar só e pega também as tabelas dentro de modal. */
+(function () {
+  let agendado = false;
+  const agenda = function () {
+    if (agendado) return;
+    agendado = true;
+    // setTimeout e não requestAnimationFrame: rAF só dispara quando a
+    // aba está pintando, e a aba em segundo plano deixaria a tabela
+    // sem rótulo até voltar ao primeiro plano.
+    setTimeout(function () {
+      agendado = false;
+      btMobileRotularTabelas(document);
+      btMobileMarcarModal();
+    }, 0);
+  };
+
+  const observador = new MutationObserver(function (mudancas) {
+    for (let i = 0; i < mudancas.length; i++) {
+      const m = mudancas[i];
+      if ((m.addedNodes && m.addedNodes.length) ||
+          (m.removedNodes && m.removedNodes.length)) { agenda(); return; }
+    }
+  });
+
+  const ligar = function () {
+    observador.observe(document.body, { childList: true, subtree: true });
+    btMobileRotularTabelas(document);
+  };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", ligar);
+  else ligar();
+})();
+
+/* ---------- 2. gaveta não deixa o fundo rolar ---------- */
+
+(function () {
+  const side = function () { return document.getElementById("bt-side"); };
+  let vigiando = null;
+
+  const vigiar = function () {
+    const el = side();
+    if (!el || el === vigiando) return;
+    vigiando = el;
+    // Uma função só decide a trava, porque gaveta e modal podem estar
+    // abertos ao mesmo tempo e quem fechar por último não pode
+    // destravar o que o outro ainda precisa.
+    const obs = new MutationObserver(btMobileMarcarModal);
+    obs.observe(el, { attributes: true, attributeFilter: ["class"] });
+  };
+
+  // A casca é remontada no login e na troca de usuário: reengancha.
+  const anterior = attachShellEvents;
+  attachShellEvents = function () {
+    anterior();
+    vigiar();
+    btMobileRotularTabelas(document);
+  };
+  vigiar();
+
+  // Voltar para o desktop com a gaveta aberta deixaria o body travado.
+  addEventListener("resize", function () {
+    if (innerWidth > 1050) document.body.style.overflow = "";
+  });
+})();
+
+
+/* ====================================================================
+   CELULAR — "Tema" e "Configurações" saem da barra de cima
+
+   Medido a 375 px: os dois botões ocupavam 181 px da barra e sobravam
+   104 px para o título, que é a única coisa ali que diz onde você está.
+   "Minhas solicitações" virava "Minhas so…".
+
+   Eles descem para o rodapé da gaveta, ao lado de "Sair" — que é onde
+   se procura ajuste de conta no celular. No desktop voltam para a
+   barra: a função é chamada também no resize, e é reversível.
+
+   Mover o nó preserva o onclick que attachShellEvents pendurou nele,
+   e a religação por id continua achando o botão onde ele estiver.
+   ==================================================================== */
+
+function btMobileAjustarBarra() {
+  const tema = document.getElementById("bt-theme");
+  const cfg = document.getElementById("bt-settings");
+  const topbar = document.querySelector(".bt-topbar");
+  const rodape = document.querySelector(".bt-sidefoot");
+  if (!tema || !cfg || !topbar || !rodape) return;
+
+  const celular = innerWidth <= 640;
+  const jaNaGaveta = rodape.contains(tema);
+
+  if (celular && !jaNaGaveta) {
+    let caixa = rodape.querySelector(".bt-sidefoot__acoes");
+    if (!caixa) {
+      caixa = document.createElement("div");
+      caixa.className = "bt-sidefoot__acoes";
+      const sair = rodape.querySelector("#logout-btn");
+      rodape.insertBefore(caixa, sair || null);
+    }
+    // Tira as classes bt-btn e deixa valer ".bt-sidefoot button", que
+    // já é feito para o fundo escuro da gaveta. Disputar a cor por
+    // especificidade contra o bt-btn dava pílula clara com texto
+    // claro — ilegível.
+    [tema, cfg].forEach(function (b) {
+      if (b.getAttribute("data-classe-barra") === null) {
+        b.setAttribute("data-classe-barra", b.className);
+      }
+      b.className = "";
+      caixa.appendChild(b);
+    });
+    return;
+  }
+
+  if (!celular && jaNaGaveta) {
+    // Eram os dois últimos filhos da barra, nesta ordem.
+    [tema, cfg].forEach(function (b) {
+      const antiga = b.getAttribute("data-classe-barra");
+      if (antiga !== null) b.className = antiga;
+      topbar.appendChild(b);
+    });
+    const caixa = rodape.querySelector(".bt-sidefoot__acoes");
+    if (caixa && !caixa.children.length) caixa.remove();
+  }
+}
+
+(function () {
+  const anterior = attachShellEvents;
+  attachShellEvents = function () {
+    anterior();
+    btMobileAjustarBarra();
+  };
+  btMobileAjustarBarra();
+
+  let pendente = null;
+  addEventListener("resize", function () {
+    clearTimeout(pendente);
+    pendente = setTimeout(function () {
+      btMobileAjustarBarra();
+      // Girar o telefone muda o que cabe: reavalia ficha por tabela.
+      btMobileRotularTabelas(document);
+    }, 120);
+  });
+})();
 </script>
-
-
-
-<script src="/supabase-bridge.js"></script></body>
+</body>
 </html>
