@@ -1580,6 +1580,53 @@ body.v12-dark .modal, body.v12-dark .training-dialog {
   filter: none !important;
 }
 </style>
+<style id="biotrop-nav-visoes">
+/* ---------- divisor de visão dentro do grupo ---------- */
+
+.bt-nav__divisor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 5px 15px;
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, .42);
+  user-select: none;
+}
+.bt-nav__divisor span { flex: 0 0 auto; }
+/* Fio que segue depois do rótulo: separa a visão sem gastar uma linha só
+   para isso. */
+.bt-nav__divisor::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, .16), transparent);
+}
+
+/* Primeiro divisor do grupo não precisa de respiro em cima: o cabeçalho
+   do grupo já deu. */
+.bt-nav__items > .bt-nav__divisor:first-child { padding-top: 4px; }
+
+/* Modo compacto: o rótulo não cabe, então o divisor vira só o fio. */
+body.bt-rail .bt-nav__divisor {
+  padding: 7px 6px;
+  justify-content: center;
+}
+body.bt-rail .bt-nav__divisor span { display: none; }
+body.bt-rail .bt-nav__divisor::after {
+  flex: 1;
+  background: rgba(255, 255, 255, .14);
+}
+
+@media (max-width: 1050px) {
+  /* Na gaveta o rótulo volta, porque lá a largura é a mesma do menu
+     expandido. */
+  body.bt-rail .bt-nav__divisor { padding: 12px 12px 5px 15px; justify-content: flex-start; }
+  body.bt-rail .bt-nav__divisor span { display: initial; }
+}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -6331,7 +6378,7 @@ const BT_PAGE_TITLES = {
   almoxarifado: "Almoxarifado · nova solicitação",
   almox_solicitacoes: "Almoxarifado · solicitações",
   familias: "Famílias de itens",
-  almox_scm_form: "SCM · nova compra",
+  almox_scm_form: "SCM · nova ordem de compra",
   almox_scm_minhas: "SCM · minhas solicitações",
   almox_scm_gestao: "SCM · gestão",
   almox_scm_aprovacao: "SCM · aprovações",
@@ -7204,7 +7251,7 @@ function renderDashLider() {
       hint: aprovar.length ? "aprove ou devolva com motivo" : "nada na sua mesa", nav: "almox_scm_aprovacao"
     })}
     ${dashKpi("Decididas", decididas.length, { hint: "últimos 30 dias" })}
-    ${dashKpi("Minhas SCM", minhas.length, { hint: "abertas por você", nav: "almox_scm_minhas" })}
+    ${dashKpi("Minhas SCM", minhas.length, { hint: "abertas por você", nav: "almox_minhas" })}
     ${dashKpi("Equipe em dia", equipe.length ? Math.round(equipe.reduce(function (s, r) { return s + r.pct; }, 0) / equipe.length) : 100, {
       unit: "%", cls: "bt-kpi--ok", hint: "conformidade de treinamento", nav: "lms_compliance"
     })}
@@ -8043,7 +8090,7 @@ function renderMinhasSolicitacoes() {
     <div class="bt-card__body--flush">
       <div class="bt-tablewrap"><table class="bt-table">
         <thead><tr><th>Código</th><th>Uso</th><th>Data</th><th>Situação</th><th></th></tr></thead>
-        <tbody>${linhasScm || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCM sua</strong>Abra a primeira em Nova compra.</div></td></tr>'}</tbody>
+        <tbody>${linhasScm || '<tr><td colspan="5"><div class="bt-state"><strong>Nenhuma SCM sua</strong>Abra a primeira em Nova ordem de compra.</div></td></tr>'}</tbody>
       </table></div>
     </div>
   </div>
@@ -9372,8 +9419,21 @@ btNavGroups = function (user) {
   const u = user || STATE.currentUser;
   const c = btCounts();
 
-  // Visão do técnico: os quatro itens do v7 mais "Minhas solicitações",
-  // pedida na reunião para o técnico acompanhar o que devolveram para ele.
+  /* Visão do técnico: seis itens, nesta ordem, e nada mais.
+
+     É o que ele faz no dia: começar, treinar, apontar consumo, abrir
+     pedido de cadastro (SCI), abrir ordem de compra (SCM) e acompanhar o
+     que abriu.
+
+     Fica fora de propósito:
+       - Solicitações (SCI), Gestão de SCM, Aprovações SCM e Famílias de
+         itens são filas de trabalho do almoxarifado e do líder, não dele;
+       - "Minhas SCM" sai porque "Minhas solicitações" já mostra SCI e SCM
+         juntas — dois itens para a mesma resposta é o que deixava a tela
+         com cara de cheia.
+
+     A permissão continua sendo a barreira: esconder item do menu não
+     fecha rota. As telas retiradas seguem barradas por getPerms. */
   if (btIsTechOnly(u)) {
     return [{
       label: "Operação",
@@ -9382,6 +9442,7 @@ btNavGroups = function (user) {
         { id: "lms_my", icon: "▣", label: "Treinamentos", badge: c.trainings },
         { id: "utilidades", icon: "⏱", label: "Apontar consumo" },
         { id: "almoxarifado", icon: "▤", label: "Nova solicitação" },
+        { id: "almox_scm_form", icon: "⊕", label: "Nova ordem de compra" },
         { id: "almox_minhas", icon: "⊟", label: "Minhas solicitações", badge: c.minhasPendencias }
       ]
     }];
@@ -9823,7 +9884,7 @@ renderAlmoxarifado = function (initialTab) {
 const ALMOX_TITULOS = {
   form: ["Nova solicitação de cadastro", "Peça o cadastro de um item que ainda não tem código."],
   list: ["Solicitações de cadastro (SCI)", "Fila do almoxarifado: analisar, devolver para revisão e concluir."],
-  scm_form: ["Nova compra de material (SCM)", "Solicite a compra de itens já cadastrados."],
+  scm_form: ["Nova ordem de compra (SCM)", "Solicite a compra de itens já cadastrados."],
   scm_minhas: ["Minhas SCM", "Compras que você abriu."],
   scm_gestao: ["Gestão de SCM", "Atendimento das compras aprovadas."],
   scm_aprovacao: ["Aprovações SCM", "Compras da sua equipe esperando a sua decisão."]
@@ -10469,6 +10530,276 @@ navigateTo = function (areaId) {
   btRefreshNav();
 };
 
+
+/* ====================================================================
+   MENU: SCI e SCM como visões dentro do Almoxarifado
+
+   O grupo Almoxarifado era uma lista de sete itens em sequência, onde
+   "Solicitações (SCI)", "Nova compra (SCM)" e "Gestão de SCM" ficavam no
+   mesmo nível — dava para ler, mas não dava para ver de imediato o que
+   é cadastro de item e o que é compra.
+
+   Agora o grupo continua um só (decisão da reunião: agrupar o
+   almoxarifado em uma área) e por dentro se divide em duas visões, com
+   os itens recuados, do mesmo jeito que Utilidades:
+
+     ALMOXARIFADO
+       Minhas solicitações
+       ── SCI ──
+         Nova solicitação
+         Gestão de SCI
+         Famílias de itens
+       ── SCM ──
+         Nova compra
+         Gestão de SCM
+         Aprovações
+
+   "Minhas solicitações" fica FORA das duas de propósito: ela mostra SCI
+   e SCM juntas, então pertencer a uma das visões seria mentira.
+
+   Os nomes ficaram simétricos: "Gestão de SCI" e "Gestão de SCM". Antes
+   um era "Solicitações (SCI)" e o outro "Gestão de SCM", e a assimetria
+   fazia parecer que eram coisas de natureza diferente.
+   ==================================================================== */
+
+const _visPrevNavGroups = btNavGroups;
+btNavGroups = function (user) {
+  const grupos = _visPrevNavGroups(user);
+  const u = user || STATE.currentUser;
+
+  // A visão do técnico não muda: cinco itens em lista, sem divisão.
+  if (btIsTechOnly(u)) return grupos;
+
+  const g = grupos.find(function (x) { return x.label === "Almoxarifado"; });
+  if (!g) return grupos;
+
+  const pega = function (id) { return g.items.find(function (i) { return i.id === id; }) || null; };
+  const renomeia = function (item, label) {
+    if (item) item.label = label;
+    return item;
+  };
+
+  const minhas = pega("almox_minhas");
+  const sci = [
+    renomeia(pega("almoxarifado"), "Nova solicitação"),
+    renomeia(pega("almox_solicitacoes"), "Gestão de SCI"),
+    pega("familias")
+  ].filter(Boolean);
+  const scm = [
+    renomeia(pega("almox_scm_form"), "Nova ordem de compra"),
+    pega("almox_scm_gestao"),
+    renomeia(pega("almox_scm_aprovacao"), "Aprovações")
+  ].filter(Boolean);
+
+  sci.forEach(function (i) { i.sub = true; });
+  scm.forEach(function (i) { i.sub = true; });
+
+  const novos = [];
+  if (minhas) novos.push(minhas);
+  // Divisor só entra se houver item embaixo dele: perfil que não tem
+  // acesso à compra não deve ver o rótulo "SCM" sozinho.
+  if (sci.length) novos.push({ divisor: "SCI · cadastro de item" });
+  novos.push.apply(novos, sci);
+  if (scm.length) novos.push({ divisor: "SCM · compra de material" });
+  novos.push.apply(novos, scm);
+
+  // Qualquer item que eu não tenha previsto continua no fim, sem recuo,
+  // em vez de desaparecer do menu.
+  g.items.forEach(function (i) {
+    if (novos.indexOf(i) < 0) novos.push(i);
+  });
+
+  g.items = novos;
+  return grupos;
+};
+
+/* ---------- renderização do menu, consolidada ---------- */
+
+/**
+ * Esta é a versão final de btRenderNav. Reescrevo inteira em vez de
+ * embrulhar de novo: já havia três camadas de wrapper (grupos, ícones
+ * SVG, marcação de submenu), e acrescentar divisor por cima disso
+ * significaria manipular HTML já montado pela quarta vez.
+ */
+btRenderNav = function () {
+  const cur = STATE.activeArea;
+  const grupos = btNavGroups();
+  const atual = btGroupOf(cur);
+  const filtro = btNormalize(BT_NAV.filter).trim();
+
+  const botao = function (it, grupoLabel) {
+    const classes = ["bt-nav__item"];
+    if (it.id === cur) classes.push("is-current");
+    if (grupoLabel) classes.push("bt-nav__hit");
+    return '<button type="button" class="' + classes.join(" ") + '"' +
+      ' data-nav="' + esc(it.id) + '"' +
+      ' data-label="' + esc(it.label) + '"' +
+      (it.sub && !grupoLabel ? ' data-sub="1"' : "") +
+      ' title="' + esc(it.label) + '">' +
+      '<span class="bt-nav__icon" aria-hidden="true">' + (btNavIcon(it.id) || it.icon || "") + "</span>" +
+      '<span class="bt-nav__label">' + esc(it.label) +
+      (grupoLabel
+        ? '<span style="display:block;font-size:10px;opacity:.55;font-weight:600">' + esc(grupoLabel) + "</span>"
+        : "") +
+      "</span>" +
+      (it.badge ? '<span class="bt-nav__badge">' + it.badge + "</span>" : "") +
+      "</button>";
+  };
+
+  // Busca: lista plana, sem cabeçalho e sem divisor.
+  if (filtro && !BT_NAV.rail) {
+    const hits = [];
+    grupos.forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (it.divisor) return;
+        if (btNormalize(it.label).indexOf(filtro) >= 0 ||
+            btNormalize(g.label).indexOf(filtro) >= 0 ||
+            btNormalize(it.id).indexOf(filtro) >= 0) {
+          hits.push({ grupo: g.label, item: it });
+        }
+      });
+    });
+    if (!hits.length) {
+      return '<div class="bt-nav__empty">Nenhum item do menu com “' + esc(BT_NAV.filter) + "”.</div>";
+    }
+    return hits.map(function (h) { return botao(h.item, h.grupo); }).join("");
+  }
+
+  const padroes = btDefaultOpenMap(grupos, atual);
+  return grupos.map(function (g, gi) {
+    const aberto = BT_NAV.rail ? true : btGroupIsOpen(g, grupos.length, atual, padroes);
+    const pend = g.items.reduce(function (s, it) { return s + (Number(it.badge) || 0); }, 0);
+    const temAtual = g.items.some(function (it) { return it.id === cur; });
+
+    const head = '<button type="button" class="bt-nav__grouphead" data-navgroup="' + esc(g.label) + '"' +
+      ' aria-expanded="' + aberto + '" title="' + esc(g.label) + '">' +
+      '<span class="bt-nav__chev" aria-hidden="true">▸</span>' +
+      '<span class="lbl">' + esc(g.label) + "</span>" +
+      (!aberto && pend ? '<span class="bt-nav__groupcount">' + pend + "</span>" : "") +
+      (!aberto && !pend && temAtual ? '<span class="bt-nav__groupdot"></span>' : "") +
+      "</button>";
+
+    const items = '<div class="bt-nav__items" id="btnavgrp-' + gi + '"' + (aberto ? "" : " hidden") + ">" +
+      g.items.map(function (it) {
+        if (it.divisor) {
+          return '<div class="bt-nav__divisor" role="presentation">' +
+            '<span>' + esc(it.divisor) + "</span></div>";
+        }
+        return botao(it, null);
+      }).join("") + "</div>";
+
+    return head + items;
+  }).join("");
+};
+
+/**
+ * O orçamento de itens abertos não deve contar divisor: ele não é
+ * destino, e contá-lo fecharia um grupo que ainda cabia na tela.
+ */
+btDefaultOpenMap = function (grupos, atual) {
+  const map = {};
+  let usados = 0;
+  const conta = function (g) {
+    return g.items.filter(function (i) { return !i.divisor; }).length;
+  };
+  grupos.forEach(function (g) {
+    if (g.label === atual) { map[g.label] = true; usados += conta(g); }
+  });
+  grupos.forEach(function (g) {
+    if (map[g.label]) return;
+    if (usados + conta(g) <= BT_NAV_BUDGET) { map[g.label] = true; usados += conta(g); }
+    else map[g.label] = false;
+  });
+  return map;
+};
+
+// A barra inferior do celular nunca recebe divisor, mas passa pelo mesmo
+// btNavGroups: filtra por segurança.
+const _visPrevTabItems = btTabItems;
+btTabItems = function () {
+  return _visPrevTabItems().filter(function (t) { return t && !t.divisor; });
+};
+
+
+
+/* ====================================================================
+   VISÃO DO TÉCNICO — painel inicial alinhado ao menu
+
+   O menu do técnico agora tem três destinos no almoxarifado (Nova
+   solicitação, Nova ordem de compra, Minhas solicitações), mas o painel
+   inicial continuava com um cartão só, "Almoxarifado", que prometia
+   "solicite materiais e acompanhe suas solicitações" e caía apenas na
+   SCI.
+
+   Cartão e menu com nomes diferentes para o mesmo caminho é o tipo de
+   coisa que faz a tela parecer defeituosa. O painel passa a espelhar o
+   menu: mesmos nomes, mesma ordem, mesmos destinos.
+   ==================================================================== */
+
+const _tecPrevTechHome = renderTechHome;
+renderTechHome = function () {
+  const c = btCounts();
+  const pend = Number(c.minhasPendencias) || 0;
+
+  const tres =
+    '      <button class="bt-bigaction" data-nav="almoxarifado">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDCE6</span>\n' +
+    "        <b>Nova solicitação</b>\n" +
+    "        <span>Peça o cadastro de um item que ainda não tem código (SCI).</span>\n" +
+    "      </button>\n" +
+    '      <button class="bt-bigaction" data-nav="almox_scm_form">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDED2</span>\n' +
+    "        <b>Nova ordem de compra</b>\n" +
+    "        <span>Solicite a compra de um item já cadastrado (SCM).</span>\n" +
+    "      </button>\n" +
+    '      <button class="bt-bigaction" data-nav="almox_minhas">\n' +
+    '        <span class="bt-bigaction__ic" aria-hidden="true">\uD83D\uDCCB</span>\n' +
+    "        <b>Minhas solicitações</b>\n" +
+    "        <span>Acompanhe suas SCI e SCM." +
+    (pend ? "<br><strong>" + pend + " esperando você.</strong>" : "") +
+    "</span>\n" +
+    "      </button>";
+
+  // O cartão único do almoxarifado vira os três do menu.
+  return _tecPrevTechHome().replace(
+    /<button class="bt-bigaction" data-nav="almoxarifado">[\s\S]*?<\/button>/,
+    tres.replace(/^\s+/, "")
+  );
+};
+
+/* ---------- barra inferior do celular: os nomes do menu ---------- */
+
+/**
+ * A barra do celular do técnico dizia "Almox.", rótulo que não existe
+ * mais em lugar nenhum, e levava à SCI. Com o menu dele definido item a
+ * item, a barra passa a ser os cinco primeiros destinos desse menu, com
+ * nome curto — em vez de uma lista montada por permissão, que era o que
+ * produzia o nome divergente.
+ *
+ * A ordem de compra fica fora por espaço: cinco é o limite da barra, e
+ * ela já está no menu e no painel inicial.
+ */
+const _tecPrevTabItems = btTabItems;
+const TEC_ABAS_CURTAS = {
+  home: "Início",
+  lms_my: "Treinar",
+  utilidades: "Apontar",
+  almoxarifado: "Solicitar",
+  almox_minhas: "Minhas"
+};
+
+btTabItems = function () {
+  const u = STATE.currentUser;
+  if (!btIsTechOnly(u)) return _tecPrevTabItems();
+  const c = btCounts();
+  const pontos = { lms_my: c.trainings, almox_minhas: c.minhasPendencias };
+  return btNavGroups(u)[0].items
+    .filter(function (it) { return it && !it.divisor && TEC_ABAS_CURTAS[it.id]; })
+    .map(function (it) {
+      return { id: it.id, ic: it.icon, label: TEC_ABAS_CURTAS[it.id], dot: pontos[it.id] || 0 };
+    })
+    .slice(0, 5);
+};
 </script>
 </body>
 </html>
