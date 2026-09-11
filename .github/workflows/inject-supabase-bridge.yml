@@ -15,16 +15,27 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Publicar HTML correto como index
+      - name: Ativar ponte online no index
         shell: bash
         run: |
           set -euo pipefail
-          test -f BIOTROP-Manutencao-LOCAL.html
-          cp BIOTROP-Manutencao-LOCAL.html index.html
-          rm -f BIOTROP-Manutencao-LOCAL.html
+          test -f index.html
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./supabase-realtime-bridge.js"></script>'
+          if tag not in s:
+              marker = '</head>'
+              if marker in s:
+                  s = s.replace(marker, '  ' + tag + '\n' + marker, 1)
+              else:
+                  s = tag + '\n' + s
+              p.write_text(s, encoding='utf-8')
+          PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add -A
+          git add index.html supabase-realtime-bridge.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Publicar HTML correto como index [skip publish]'
+          git commit -m 'Ativar sincronização online Supabase [skip publish]'
           git push
