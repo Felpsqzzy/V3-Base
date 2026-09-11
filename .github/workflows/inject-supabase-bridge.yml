@@ -15,27 +15,35 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Ativar ponte online no index
+      - name: Ativar camada multiusuário no index
         shell: bash
         run: |
           set -euo pipefail
           test -f index.html
+          test -f supabase-realtime-bridge.js
+          test -f biotrop-multiuser-ui.js
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          tag = '<script src="./supabase-realtime-bridge.js"></script>'
-          if tag not in s:
-              marker = '</head>'
-              if marker in s:
-                  s = s.replace(marker, '  ' + tag + '\n' + marker, 1)
-              else:
-                  s = tag + '\n' + s
-              p.write_text(s, encoding='utf-8')
+          tags = [
+              '<script src="./supabase-realtime-bridge.js"></script>',
+              '<script src="./biotrop-multiuser-ui.js"></script>'
+          ]
+          marker = '</head>'
+          if marker in s:
+              for tag in tags:
+                  if tag not in s:
+                      s = s.replace(marker, '  ' + tag + '\n' + marker, 1)
+          else:
+              for tag in reversed(tags):
+                  if tag not in s:
+                      s = tag + '\n' + s
+          p.write_text(s, encoding='utf-8')
           PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html supabase-realtime-bridge.js
+          git add index.html supabase-realtime-bridge.js biotrop-multiuser-ui.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Ativar sincronização online Supabase [skip publish]'
+          git commit -m 'Ativar camada multiusuário Biotrop [skip publish]'
           git push
