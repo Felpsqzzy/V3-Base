@@ -24,9 +24,6 @@ jobs:
 
   create_neon_branch:
     name: Create Neon Branch
-    outputs:
-      db_url: ${{ steps.create_neon_branch.outputs.db_url }}
-      db_url_with_pooler: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
     needs: setup
     if: |
       github.event_name == 'pull_request' && (
@@ -34,9 +31,14 @@ jobs:
       || github.event.action == 'opened'
       || github.event.action == 'reopened')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
-      - name: Get branch expiration date as an env variable (2 weeks from now)
-        id: get_expiration_date
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get branch expiration date (14 days)
         run: echo "EXPIRES_AT=$(date -u --date '+14 days' +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_ENV"
 
       - name: Create Neon Branch
@@ -47,6 +49,33 @@ jobs:
           branch_name: preview/pr-${{ github.event.number }}-${{ needs.setup.outputs.branch }}
           api_key: ${{ secrets.NEON_API_KEY }}
           expires_at: ${{ env.EXPIRES_AT }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run PostgreSQL migrations on preview branch
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_SSL: "true"
+
+      - name: Schema health check
+        run: npm run db:check
+        env:
+          DATABASE_URL: ${{ steps.create_neon_branch.outputs.db_url_with_pooler }}
+          DATABASE_SSL: "true"
+
+      - name: Post preview database information
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = `preview/pr-${context.issue.number}-${{ needs.setup.outputs.branch }}`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `✅ Neon Preview criado para este PR.\n\nBanco: \`${branch}\`\nMigrations e health check executados automaticamente.`
+            });
 
   delete_neon_branch:
     name: Delete Neon Branch
