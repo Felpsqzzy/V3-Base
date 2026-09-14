@@ -1,10 +1,14 @@
 {
   "name": "biotrop-v3-base",
   "private": true,
-  "version": "1.0.0",
-  "description": "Biotrop Manutenção - backend PostgreSQL e Microsoft Entra ID",
+  "version": "1.1.0",
+  "description": "Biotrop Manutenção - frontend, API Node.js e PostgreSQL/Neon",
   "engines": {
     "node": ">=20"
+  },
+  "scripts": {
+    "db:migrate": "node scripts/migrate-postgres.cjs",
+    "db:check": "node scripts/check-postgres.cjs"
   },
   "dependencies": {
     "@azure/msal-node": "^6.0.0",
