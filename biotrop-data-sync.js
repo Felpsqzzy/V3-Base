@@ -1,6 +1,7 @@
-/* BIOTROP · sincronização multiusuário via PostgreSQL/API
- * Sem Supabase. Mantém o localStorage como cache/local-fallback, mas sincroniza
- * SCI, SCM e Utilidades com o PostgreSQL quando a sessão é corporativa.
+/* BIOTROP · PostgreSQL/Neon como fonte oficial
+ * localStorage existe somente como cache de interface durante a transição.
+ * Não usa Supabase. Escritas vão para /api/data e atualizações usam /api/realtime
+ * com fallback para polling quando EventSource não estiver disponível.
  */
 (function(){
   'use strict';
@@ -19,11 +20,11 @@
   var initialized = false;
   var applyingRemote = false;
   var authorized = false;
-  var running = false;
   var pollTimer = null;
   var pushTimers = {};
   var baseline = {};
   var lastSeen = {};
+  var eventSources = {};
   var pendingReload = false;
 
   window.BIOTROP_SYNC_STATE = 'offline';
@@ -63,7 +64,6 @@
   function dispatch(name, detail){
     try { window.dispatchEvent(new CustomEvent(name, {detail: detail || {}})); } catch (_) {}
   }
-
   async function request(url, options){
     var opts = options || {};
     opts.credentials = 'include';
@@ -80,60 +80,55 @@
     return data;
   }
 
+  function applyRow(namespace, row){
+    var key = KEY_BY_NS[namespace];
+    if(!key || !row) return;
+    var current = getLocal(key);
+    var map = mapArray(Array.isArray(current) ? current : []);
+    var id = String(row.recordId);
+    if(row.deleted) delete map[id];
+    else map[id] = clone(row.payload);
+    setLocal(key, Object.keys(map).map(function(k){ return map[k]; }));
+
+    baseline[namespace] = baseline[namespace] || {};
+    baseline[namespace][id] = {
+      version:Number(row.version),
+      payload:clone(row.payload),
+      deleted:!!row.deleted,
+      updatedAt:row.updatedAt
+    };
+    if(row.updatedAt && (!lastSeen[namespace] || String(row.updatedAt) > String(lastSeen[namespace]))) lastSeen[namespace] = row.updatedAt;
+    dispatch('biotrop:data-changed',{namespace:namespace,source:'realtime',row:row});
+    scheduleReload();
+  }
+
   function rebuildLocal(namespace, rows){
     var key = KEY_BY_NS[namespace];
     if(!key) return;
     var local = getLocal(key);
-    if(!Array.isArray(local)) local = [];
-    var localMap = mapArray(local);
-    var remoteMap = {};
+    var localMap = mapArray(Array.isArray(local) ? local : []);
     var changed = false;
-    var previousBaseline = baseline[namespace] || {};
-    var nextBaseline = {};
 
     (rows || []).forEach(function(row){
       var id = String(row.recordId);
-      var previous = previousBaseline[id] || null;
-      var serverVersion = Number(row.version);
-
-      remoteMap[id] = row;
-      nextBaseline[id] = {
-        version: serverVersion,
-        payload: clone(row.payload),
-        deleted: !!row.deleted,
-        updatedAt: row.updatedAt
-      };
       if(row.updatedAt && (!lastSeen[namespace] || String(row.updatedAt) > String(lastSeen[namespace]))) lastSeen[namespace] = row.updatedAt;
-
-      /* Se o usuário tem uma cópia local diferente do último estado que ele
-         conhecia e o servidor avançou a versão, é um conflito real. */
-      if(previous && serverVersion > Number(previous.version)){
-        var localExists = Object.prototype.hasOwnProperty.call(localMap,id);
-        var localValue = localExists ? localMap[id] : undefined;
-        var localChanged = previous.deleted !== !!(!localExists) || JSON.stringify(localValue) !== JSON.stringify(previous.payload);
-        if(localChanged && !applyingRemote){
-          window.BIOTROP_SYNC_CONFLICTS.push({namespace:namespace,recordId:id,serverVersion:serverVersion});
-          dispatch('biotrop:sync-conflict',{namespace:namespace,recordId:id,row:row});
-          return;
-        }
-      }
-
+      baseline[namespace] = baseline[namespace] || {};
+      baseline[namespace][id] = {
+        version:Number(row.version),
+        payload:clone(row.payload),
+        deleted:!!row.deleted,
+        updatedAt:row.updatedAt
+      };
       if(row.deleted){
-        if(Object.prototype.hasOwnProperty.call(localMap,id)){
-          delete localMap[id];
-          changed = true;
-        }
+        if(Object.prototype.hasOwnProperty.call(localMap,id)){ delete localMap[id]; changed=true; }
       }else if(JSON.stringify(localMap[id]) !== JSON.stringify(row.payload)){
-        localMap[id] = clone(row.payload);
-        changed = true;
+        localMap[id]=clone(row.payload);
+        changed=true;
       }
     });
 
-    baseline[namespace] = nextBaseline;
-
     if(changed){
-      var merged = Object.keys(localMap).map(function(id){ return localMap[id]; });
-      setLocal(key, merged);
+      setLocal(key, Object.keys(localMap).map(function(id){ return localMap[id]; }));
       dispatch('biotrop:data-changed',{namespace:namespace,source:'remote'});
       scheduleReload();
     }
@@ -145,22 +140,23 @@
     if(editableFocus()) return;
     setTimeout(function(){
       if(editableFocus()) return;
-      pendingReload = false;
+      pendingReload=false;
       location.reload();
-    },350);
+    },250);
   }
 
   async function pullNamespace(namespace, since){
     try{
       var url = '/api/data?namespace=' + encodeURIComponent(namespace);
-      if(since) url += '&since=' + encodeURIComponent(new Date(new Date(since).getTime()-1500).toISOString());
+      if(since) url += '&since=' + encodeURIComponent(new Date(new Date(since).getTime()-1000).toISOString());
       var data = await request(url, {method:'GET',headers:{}});
-      rebuildLocal(namespace, data.rows || []);
-      return true;
+      var rows = data.rows || [];
+      rebuildLocal(namespace, rows);
+      return {ok:true,count:rows.length};
     }catch(error){
       if(error.status===401 || error.status===403) authorized=false;
       if(error.status!==401 && error.status!==403 && error.status!==503) console.warn('[BIOTROP SYNC]', namespace, error.message);
-      return false;
+      return {ok:false,count:0};
     }
   }
 
@@ -176,15 +172,7 @@
           expectedVersion: expectedVersion == null ? null : expectedVersion
         })
       });
-      var row = data.row;
-      baseline[namespace] = baseline[namespace] || {};
-      baseline[namespace][recordId] = {
-        version:Number(row.version),
-        payload:clone(row.payload),
-        deleted:!!row.deleted,
-        updatedAt:row.updatedAt
-      };
-      if(row.updatedAt && (!lastSeen[namespace] || String(row.updatedAt) > String(lastSeen[namespace]))) lastSeen[namespace]=row.updatedAt;
+      applyRow(namespace, data.row);
       window.BIOTROP_SYNC_STATE='online';
       dispatch('biotrop:data-synced',{namespace:namespace,recordId:recordId});
       return true;
@@ -193,7 +181,7 @@
         var row = error.payload && error.payload.row;
         window.BIOTROP_SYNC_CONFLICTS.push({namespace:namespace,recordId:recordId});
         dispatch('biotrop:sync-conflict',{namespace:namespace,recordId:recordId,row:row||null});
-        if(row) rebuildLocal(namespace,[row]);
+        if(row) applyRow(namespace,row);
         return false;
       }
       if(error.status===401 || error.status===403 || error.status===503) authorized=false;
@@ -239,40 +227,74 @@
   function schedulePush(namespace){
     if(!authorized || applyingRemote) return;
     clearTimeout(pushTimers[namespace]);
-    pushTimers[namespace]=setTimeout(function(){ pushNamespace(namespace); },450);
+    pushTimers[namespace]=setTimeout(function(){ pushNamespace(namespace); },350);
+  }
+
+  function stopRealtime(){
+    Object.keys(eventSources).forEach(function(namespace){
+      try{ eventSources[namespace].close(); }catch(_){ }
+      delete eventSources[namespace];
+    });
+    clearInterval(pollTimer);
+  }
+
+  function connectRealtime(namespace){
+    if(!authorized || typeof EventSource === 'undefined') return false;
+    try{
+      var source = new EventSource('/api/realtime?namespace=' + encodeURIComponent(namespace) +
+        (lastSeen[namespace] ? '&since=' + encodeURIComponent(lastSeen[namespace]) : ''), {withCredentials:true});
+      source.addEventListener('change',function(event){
+        try{ applyRow(namespace, JSON.parse(event.data)); }catch(_){ }
+      });
+      source.addEventListener('error',function(){
+        try{ source.close(); }catch(_){ }
+        delete eventSources[namespace];
+      });
+      source.addEventListener('reconnect',function(){
+        try{ source.close(); }catch(_){ }
+        delete eventSources[namespace];
+        setTimeout(function(){ if(authorized) connectRealtime(namespace); },300);
+      });
+      eventSources[namespace]=source;
+      return true;
+    }catch(_){
+      return false;
+    }
   }
 
   async function initialize(){
-    if(initialized || running) return;
+    if(initialized) return;
     initialized=true;
-    running=true;
     if(String(window.BIOTROP_AUTH_SOURCE||'')==='local-recovery'){
       authorized=false;
       window.BIOTROP_SYNC_STATE='local';
-      running=false;
       return;
     }
-    if(!window.BIOTROP_AUTH_USER_ID){
-      running=false;
-      return;
-    }
+    if(!window.BIOTROP_AUTH_USER_ID) return;
+
     authorized=true;
     window.BIOTROP_SYNC_STATE='syncing';
 
     for(var i=0;i<NAMESPACES.length;i++){
       var namespace=NAMESPACES[i];
-      await pullNamespace(namespace,null);
-      await pushNamespace(namespace);
+      var pulled=await pullNamespace(namespace,null);
+      var local = getLocal(KEY_BY_NS[namespace]);
+      /* Importação inicial segura: só envia cache local quando a API confirma
+         que o namespace está vazio. Depois disso, PostgreSQL é a autoridade. */
+      if(pulled.ok && pulled.count===0 && Array.isArray(local) && local.length) await pushNamespace(namespace);
     }
 
     window.BIOTROP_SYNC_STATE='online';
-    dispatch('biotrop:sync-ready',{namespaces:NAMESPACES.slice(),intervalMs:3000});
-    clearInterval(pollTimer);
-    pollTimer=setInterval(async function(){
-      if(!authorized) return;
-      for(var j=0;j<NAMESPACES.length;j++) await pullNamespace(NAMESPACES[j],lastSeen[NAMESPACES[j]]||null);
-    },3000);
-    running=false;
+    dispatch('biotrop:sync-ready',{namespaces:NAMESPACES.slice(),mode:'postgres-primary',realtime:'sse'});
+
+    stopRealtime();
+    var connected=NAMESPACES.map(connectRealtime).some(Boolean);
+    if(!connected){
+      pollTimer=setInterval(async function(){
+        if(!authorized) return;
+        for(var j=0;j<NAMESPACES.length;j++) await pullNamespace(NAMESPACES[j],lastSeen[NAMESPACES[j]]||null);
+      },3000);
+    }
   }
 
   function installStorageHook(){
@@ -280,20 +302,15 @@
     originalSetItem=Storage.prototype.setItem;
     Storage.prototype.setItem=function(key,value){
       originalSetItem.call(this,key,value);
-      if(this===window.localStorage && SYNC[key] && !applyingRemote){
-        if(authorized) schedulePush(SYNC[key]);
-      }
+      if(this===window.localStorage && SYNC[key] && !applyingRemote) schedulePush(SYNC[key]);
     };
   }
 
-  window.addEventListener('biotrop:auth-ready',function(){
-    initialized=false;
-    initialize();
-  });
+  window.addEventListener('biotrop:auth-ready',function(){ initialized=false; initialize(); });
   window.addEventListener('biotrop:auth-logout',function(){
     authorized=false;
     window.BIOTROP_SYNC_STATE='offline';
-    clearInterval(pollTimer);
+    stopRealtime();
   });
   window.addEventListener('focusout',function(){
     if(window.BIOTROP_SYNC_STATE==='online' && pendingReload && !editableFocus()){
