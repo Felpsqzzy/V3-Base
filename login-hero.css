@@ -1,0 +1,61 @@
+/* Biotrop - acabamento da tela inicial/login */
+.login-left{
+  position:relative !important;
+  flex:1.72 !important;
+  min-width:0 !important;
+  min-height:100vh !important;
+  overflow:hidden !important;
+  background:#003c41 !important;
+}
+.login-left::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,35,39,.06) 0%,rgba(0,35,39,0) 62%,rgba(0,35,39,.18) 100%);
+  z-index:2;
+}
+.left-panel-img{
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+  display:block !important;
+  filter:saturate(1.03) contrast(1.01) !important;
+  z-index:1;
+}
+.login-right{
+  flex:1 !important;
+  min-width:380px;
+  max-width:520px;
+  background:#07191b !important;
+  color:#fff !important;
+  border-left:1px solid rgba(255,255,255,.05);
+}
+.login-right .right-inner{max-width:390px;}
+.login-right .welcome-title,
+.login-right .secure-title,
+.login-right .help-title{color:#f5fffc !important;}
+.login-right .welcome-sub,
+.login-right .secure-sub,
+.login-right .help-sub,
+.login-right .field-label,
+.login-right .checkbox-row{color:#a9c6bf !important;}
+.login-right .input-wrap{background:#0b2225 !important;border-color:#29484a !important;}
+.login-right .input-wrap input{color:#f1fffb !important;}
+.login-right .input-wrap:focus-within{border-color:#00d6a0 !important;box-shadow:0 0 0 3px rgba(0,214,160,.08);}
+.login-right .submit-btn{background:linear-gradient(90deg,#008d8d,#00a97f) !important;box-shadow:0 10px 28px rgba(0,170,127,.18);}
+.login-right .submit-btn:hover{background:linear-gradient(90deg,#007d7d,#009b74) !important;}
+.login-right .secure-box{background:#0d2928 !important;border:1px solid rgba(0,214,160,.14);}
+.login-right .divider::before,
+.login-right .divider::after{border-color:#29484a !important;}
+.login-right .divider{color:#75918a !important;}
+.login-right .hint-box{background:#0d2928 !important;color:#bceee0 !important;}
+
+@media (max-width:900px){
+  .login-wrap{flex-direction:column !important;}
+  .login-left{min-height:300px !important;height:42vh !important;flex:none !important;}
+  .login-right{min-width:0 !important;max-width:none !important;flex:1 !important;border-left:0;border-top:1px solid rgba(255,255,255,.05);padding:28px 18px !important;}
+}
