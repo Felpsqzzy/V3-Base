@@ -1,0 +1,13 @@
+{
+  "name": "biotrop-v3-base",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Biotrop Manutenção - backend PostgreSQL",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "pg": "^8.13.1"
+  }
+}
