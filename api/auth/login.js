@@ -18,10 +18,10 @@ module.exports = async function handler(req, res) {
     const email = String(body.email || '').trim().toLowerCase();
     const senha = String(body.senha || '');
     if (!email || !senha) return sendJson(res, 400, { ok: false, erro: 'Informe e-mail e senha.' });
-    if (!process.env.LOGIN_LOCAL_ATIVO || process.env.LOGIN_LOCAL_ATIVO !== 'true') {
-      return sendJson(res, 403, { ok: false, erro: 'Login local desativado. Configure o login corporativo Microsoft Entra para produção.' });
-    }
 
+    // Login local PostgreSQL permanece ativo.
+    // LOGIN_LOCAL_ATIVO=false não bloqueia mais o login local; Microsoft Entra
+    // pode coexistir como método adicional de autenticação.
     const client = await db().connect();
     try {
       await client.query('BEGIN');
