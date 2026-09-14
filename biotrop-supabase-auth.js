@@ -28,50 +28,80 @@
     if(!box)return;
     box.innerHTML='<div class="'+(kind==='ok'?'hint-box':'login-error')+'">'+text+'</div>';
   }
-  async function signIn(form){
-    var email=(document.getElementById('login-usuario').value||'').trim().toLowerCase();
+  function localRole(role){
+    role=String(role||'').toLowerCase();
+    if(role==='super_admin'||role==='administrador') return 'admin';
+    if(role==='pcm') return 'gestor';
+    if(role==='lider') return 'lider';
+    if(role==='almoxarife') return 'almoxarife';
+    return 'tecnico';
+  }
+  async function buildLocalUser(c,authUser){
+    var profileQuery=await c.from('profiles').select('*').eq('id',authUser.id).maybeSingle();
+    if(profileQuery.error) throw profileQuery.error;
+    var profile=profileQuery.data;
+    if(!profile){
+      var ensured=await c.rpc('ensure_current_profile');
+      if(ensured.error) throw ensured.error;
+      profile=(ensured.data&&ensured.data.id)?ensured.data:null;
+    }
+    if(!profile||profile.active===false||profile.is_active===false){
+      throw new Error('Seu usuário está sem perfil ativo no sistema.');
+    }
+    var role=profile.role_code||profile.app_role||'tecnico';
+    return {
+      id:authUser.id,
+      nome:profile.full_name||profile.name||authUser.email.split('@')[0],
+      usuario:authUser.email,
+      email:authUser.email,
+      perfilId:localRole(role),
+      role_code:role,
+      app_role:role,
+      time:profile.sector||profile.department||'',
+      telefone:profile.phone||'',
+      ativo:true,
+      auth:true
+    };
+  }
+  async function resolveLoginEmail(c,login){
+    var r=await c.rpc('resolve_login_email',{p_login:login});
+    if(!r.error && r.data) return String(r.data).toLowerCase();
+    if(login.indexOf('@')>=0) return login;
+    throw new Error('Usuário não encontrado. Informe o e-mail cadastrado.');
+  }
+  async function cacheAndStart(user){
+    window.BIOTROP_AUTH_USER_ID=user.id;
+    window.BIOTROP_ONLINE_USER=user.id;
+    try{localStorage.setItem('btlocal.biotrop_supabase_user_id',user.id);}catch(_){ }
+    try{
+      var users=Array.isArray(window.USERS)?window.USERS.slice():[];
+      var i=users.findIndex(function(u){return String(u.id)===String(user.id);});
+      if(i<0) users.push(user); else users[i]=Object.assign({},users[i],user);
+      window.USERS=users;
+      localStorage.setItem('btlocal.biotrop_users_v2',JSON.stringify(users));
+    }catch(_){ }
+    if(typeof startLocalSession==='function') startLocalSession(user);
+  }
+  async function signIn(){
+    var login=(document.getElementById('login-usuario').value||'').trim().toLowerCase();
     var password=document.getElementById('login-senha').value||'';
-    if(!email||!password){msg('Informe e-mail e senha.');return false;}
+    if(!login||!password){msg('Informe e-mail/usuário e senha.');return false;}
     msg('Validando acesso…','ok');
     try{
       var c=await ensureClient();
+      var email=await resolveLoginEmail(c,login);
       var auth=await c.auth.signInWithPassword({email:email,password:password});
       if(auth.error) throw auth.error;
-      var authUser=auth.data.user;
-      var profileQuery=await c.from('profiles').select('*').eq('id',authUser.id).maybeSingle();
-      if(profileQuery.error) throw profileQuery.error;
-      var profile=profileQuery.data;
-      if(!profile||profile.active===false||profile.is_active===false){
-        await c.auth.signOut();
-        throw new Error('Seu usuário está sem perfil ativo no sistema.');
-      }
-      window.BIOTROP_AUTH_USER_ID=authUser.id;
-      window.BIOTROP_ONLINE_USER=authUser.id;
-      try{localStorage.setItem('btlocal.biotrop_supabase_user_id',authUser.id);}catch(_){ }
-      var role=profile.role_code||profile.app_role||'tecnico';
-      var user={
-        id:authUser.id,
-        nome:profile.full_name||profile.name||email.split('@')[0],
-        usuario:email,
-        email:email,
-        perfilId:role,
-        role_code:role,
-        app_role:role,
-        time:profile.sector||profile.department||'',
-        ativo:true,
-        auth:true
-      };
-      if(Array.isArray(window.USERS)){
-        var i=window.USERS.findIndex(function(u){return String(u.id)===String(user.id)});
-        if(i<0) window.USERS.push(user); else window.USERS[i]=Object.assign({},window.USERS[i],user);
-        try{localStorage.setItem('btlocal.biotrop_users_v2',JSON.stringify(window.USERS));}catch(_){ }
-      }
-      if(typeof startLocalSession==='function') startLocalSession(user);
+      var user=await buildLocalUser(c,auth.data.user);
+      await c.rpc('record_last_login').catch(function(){});
+      await cacheAndStart(user);
       msg('Acesso confirmado.','ok');
       return true;
     }catch(e){
       console.error('[BIOTROP AUTH]',e);
-      msg(e && e.message ? 'Não foi possível entrar: '+e.message : 'Não foi possível validar o acesso.');
+      var text=String((e&&e.message)||'Falha ao validar acesso.');
+      if(/invalid login credentials|invalid email or password/i.test(text)) text='E-mail/usuário ou senha inválidos.';
+      msg('Não foi possível entrar: '+text);
       return false;
     }
   }
@@ -80,31 +110,31 @@
       var c=await ensureClient();
       var auth=await c.auth.getUser();
       if(!auth||!auth.data||!auth.data.user)return;
-      var q=await c.from('profiles').select('*').eq('id',auth.data.user.id).maybeSingle();
-      if(!q.data||q.data.active===false||q.data.is_active===false)return;
-      window.BIOTROP_AUTH_USER_ID=auth.data.user.id;
-      window.BIOTROP_ONLINE_USER=auth.data.user.id;
-    }catch(_){ }
+      var user=await buildLocalUser(c,auth.data.user);
+      await cacheAndStart(user);
+    }catch(e){ console.warn('[BIOTROP AUTH] restore:',e); }
   }
   document.addEventListener('submit',function(ev){
     var form=ev.target;
     if(!form||form.id!=='login-form')return;
     ev.preventDefault();
     ev.stopImmediatePropagation();
-    signIn(form);
+    signIn();
   },true);
   document.addEventListener('click',function(ev){
     var btn=ev.target && (ev.target.closest ? ev.target.closest('#forgot-pass-btn') : null);
     if(!btn)return;
     ev.preventDefault();ev.stopImmediatePropagation();
-    var emailEl=document.getElementById('login-usuario');
-    var email=(emailEl&&emailEl.value||'').trim();
-    if(!email){msg('Digite seu e-mail para recuperar a senha.');return;}
+    var loginEl=document.getElementById('login-usuario');
+    var login=(loginEl&&loginEl.value||'').trim().toLowerCase();
+    if(!login){msg('Digite seu e-mail/usuário para recuperar a senha.');return;}
     ensureClient().then(function(c){
-      return c.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+      return resolveLoginEmail(c,login).then(function(email){
+        return c.auth.resetPasswordForEmail(email,{redirectTo:location.origin});
+      });
     }).then(function(r){if(r&&r.error)throw r.error;msg('Se o e-mail existir no sistema, o link de recuperação foi enviado.','ok');})
       .catch(function(e){msg(e&&e.message?'Não foi possível solicitar a recuperação: '+e.message:'Não foi possível solicitar a recuperação.');});
   },true);
-  window.BIOTROP_SIGNOUT_SUPABASE=async function(){try{var c=await ensureClient();await c.auth.signOut();}catch(_){}}
-  window.addEventListener('load',restore);
+  window.BIOTROP_SIGNOUT_SUPABASE=async function(){try{var c=await ensureClient();await c.auth.signOut();}catch(_){}};
+  window.addEventListener('load',function(){setTimeout(restore,300);});
 })();
