@@ -2,11 +2,12 @@
   "name": "biotrop-v3-base",
   "private": true,
   "version": "1.0.0",
-  "description": "Biotrop Manutenção - backend PostgreSQL",
+  "description": "Biotrop Manutenção - backend PostgreSQL e Microsoft Entra ID",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@azure/msal-node": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "pg": "^8.13.1"
   }
