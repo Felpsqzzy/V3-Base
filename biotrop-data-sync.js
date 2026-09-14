@@ -88,31 +88,36 @@
     var localMap = mapArray(local);
     var remoteMap = {};
     var changed = false;
+    var previousBaseline = baseline[namespace] || {};
+    var nextBaseline = {};
 
     (rows || []).forEach(function(row){
       var id = String(row.recordId);
-      baseline[namespace] = baseline[namespace] || {};
-      baseline[namespace][id] = {
-        version: Number(row.version),
+      var previous = previousBaseline[id] || null;
+      var serverVersion = Number(row.version);
+
+      remoteMap[id] = row;
+      nextBaseline[id] = {
+        version: serverVersion,
         payload: clone(row.payload),
         deleted: !!row.deleted,
         updatedAt: row.updatedAt
       };
-      remoteMap[id] = row;
       if(row.updatedAt && (!lastSeen[namespace] || String(row.updatedAt) > String(lastSeen[namespace]))) lastSeen[namespace] = row.updatedAt;
-    });
 
-    Object.keys(remoteMap).forEach(function(id){
-      var row = remoteMap[id];
-      if(localMap[id] && JSON.stringify(localMap[id]) !== JSON.stringify(row.payload)){
-        /* Localidade diferente do estado conhecido: deixar o push resolver o conflito. */
-        var base = baseline[namespace][id];
-        if(base && base.version < Number(row.version)){
-          window.BIOTROP_SYNC_CONFLICTS.push({namespace:namespace,recordId:id});
+      /* Se o usuário tem uma cópia local diferente do último estado que ele
+         conhecia e o servidor avançou a versão, é um conflito real. */
+      if(previous && serverVersion > Number(previous.version)){
+        var localExists = Object.prototype.hasOwnProperty.call(localMap,id);
+        var localValue = localExists ? localMap[id] : undefined;
+        var localChanged = previous.deleted !== !!(!localExists) || JSON.stringify(localValue) !== JSON.stringify(previous.payload);
+        if(localChanged && !applyingRemote){
+          window.BIOTROP_SYNC_CONFLICTS.push({namespace:namespace,recordId:id,serverVersion:serverVersion});
           dispatch('biotrop:sync-conflict',{namespace:namespace,recordId:id,row:row});
           return;
         }
       }
+
       if(row.deleted){
         if(Object.prototype.hasOwnProperty.call(localMap,id)){
           delete localMap[id];
@@ -124,6 +129,8 @@
       }
     });
 
+    baseline[namespace] = nextBaseline;
+
     if(changed){
       var merged = Object.keys(localMap).map(function(id){ return localMap[id]; });
       setLocal(key, merged);
@@ -133,12 +140,14 @@
   }
 
   function scheduleReload(){
-    if(pendingReload || editableFocus()) return;
+    if(pendingReload) return;
     pendingReload = true;
+    if(editableFocus()) return;
     setTimeout(function(){
+      if(editableFocus()) return;
       pendingReload = false;
-      if(!editableFocus()) location.reload();
-    }, 350);
+      location.reload();
+    },350);
   }
 
   async function pullNamespace(namespace, since){
@@ -218,7 +227,6 @@
         continue;
       }
       if(remote.deleted){
-        /* Se o usuário recriou o mesmo ID localmente, envia como nova versão. */
         await pushRecord(namespace,id,localItem,false,remote.version);
         continue;
       }
@@ -241,6 +249,7 @@
     if(String(window.BIOTROP_AUTH_SOURCE||'')==='local-recovery'){
       authorized=false;
       window.BIOTROP_SYNC_STATE='local';
+      running=false;
       return;
     }
     if(!window.BIOTROP_AUTH_USER_ID){
@@ -260,7 +269,7 @@
     dispatch('biotrop:sync-ready',{namespaces:NAMESPACES.slice(),intervalMs:3000});
     clearInterval(pollTimer);
     pollTimer=setInterval(async function(){
-      if(!authorized || document.hidden && false) return;
+      if(!authorized) return;
       for(var j=0;j<NAMESPACES.length;j++) await pullNamespace(NAMESPACES[j],lastSeen[NAMESPACES[j]]||null);
     },3000);
     running=false;
@@ -287,7 +296,10 @@
     clearInterval(pollTimer);
   });
   window.addEventListener('focusout',function(){
-    if(window.BIOTROP_SYNC_STATE==='online' && pendingReload && !editableFocus()) scheduleReload();
+    if(window.BIOTROP_SYNC_STATE==='online' && pendingReload && !editableFocus()){
+      pendingReload=false;
+      setTimeout(function(){ if(!editableFocus()) location.reload(); },100);
+    }
   });
 
   installStorageHook();
