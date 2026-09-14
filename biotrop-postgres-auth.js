@@ -25,6 +25,7 @@
       localStorage.setItem('btlocal.biotrop_users_v2',JSON.stringify(users));
     }catch(_){ }
     if(typeof window.startLocalSession==='function') window.startLocalSession(user);
+    try{ window.dispatchEvent(new CustomEvent('biotrop:auth-ready',{detail:user})); }catch(_){ }
   }
 
   function localUsers(){
@@ -55,7 +56,6 @@
       }
     }
 
-    /* Recuperação inicial documentada do projeto: conta administrativa local. */
     if(!found && String(senha||'')==='admin123' && (normalized==='admin@biotrop.com' || normalized==='admin@biotrop.com.br')){
       found={
         id:'local-admin-recovery',
@@ -103,7 +103,6 @@
         return;
       }
 
-      /* PostgreSQL indisponível ou usuário ainda não provisionado: tenta o modo local. */
       if(localLogin(email,senha)){
         box('Acesso local temporário. O PostgreSQL ainda não está disponível.',true);
         return;
@@ -134,6 +133,7 @@
     window.BIOTROP_AUTH_USER_ID=null;
     window.BIOTROP_ONLINE_USER=null;
     window.BIOTROP_AUTH_SOURCE=null;
+    try{ window.dispatchEvent(new CustomEvent('biotrop:auth-logout')); }catch(_){ }
   }
 
   function ensureMicrosoftButton(){
