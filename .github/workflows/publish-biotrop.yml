@@ -16,16 +16,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Limpar legado Supabase e ativar PostgreSQL
+      - name: Configurar index, login PostgreSQL e tela inicial
         shell: bash
         run: |
           set -euo pipefail
           test -f index.html
           test -f biotrop-postgres-auth.js
+          test -f login-hero.css
           python - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
+
+          # Remove integrações legadas que não devem voltar ao projeto.
           old_tags = [
               '<script src="./biotrop-supabase-auth.js"></script>',
               '<script src="./supabase-realtime-bridge.js"></script>',
@@ -34,6 +37,8 @@ jobs:
           ]
           for tag in old_tags:
               s = s.replace(tag, '')
+
+          # Autenticação PostgreSQL/API.
           pg_tag = '<script src="./biotrop-postgres-auth.js"></script>'
           if pg_tag not in s:
               marker = '</head>'
@@ -41,12 +46,22 @@ jobs:
                   s = s.replace(marker, '  ' + pg_tag + '\n' + marker, 1)
               else:
                   s = pg_tag + '\n' + s
+
+          # Acabamento da tela inicial/login.
+          css_tag = '<link rel="stylesheet" href="./login-hero.css">'
+          if css_tag not in s:
+              marker = '</head>'
+              if marker in s:
+                  s = s.replace(marker, '  ' + css_tag + '\n' + marker, 1)
+              else:
+                  s = css_tag + '\n' + s
+
           p.write_text(s, encoding='utf-8')
           PY
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html login-hero.css
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Publicar portal com autenticação PostgreSQL [skip publish]'
+          git commit -m 'Configurar tela inicial Biotrop e login PostgreSQL [skip publish]'
           git push
