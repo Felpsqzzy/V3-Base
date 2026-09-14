@@ -1,5 +1,6 @@
-/* BIOTROP · autenticação do portal via PostgreSQL/API
- * O navegador nunca recebe DATABASE_URL nem senha do banco.
+/* BIOTROP · autenticação do portal via PostgreSQL/API + Microsoft Entra ID
+ * O navegador nunca recebe DATABASE_URL, client secret ou senha do banco.
+ * O login local existente continua disponível; Microsoft entra como segunda opção.
  */
 (function(){
   'use strict';
@@ -13,7 +14,7 @@
   function start(user){
     window.BIOTROP_AUTH_USER_ID=user.id;
     window.BIOTROP_ONLINE_USER=user.id;
-    window.BIOTROP_AUTH_SOURCE='postgresql';
+    window.BIOTROP_AUTH_SOURCE=user.authSource||'postgresql';
     try{
       var users=Array.isArray(window.USERS)?window.USERS.slice():[];
       var idx=users.findIndex(function(u){return String(u.id)===String(user.id);});
@@ -54,6 +55,54 @@
     window.BIOTROP_AUTH_SOURCE=null;
   }
 
+  function ensureMicrosoftButton(){
+    if(document.getElementById('biotrop-microsoft-login')) return;
+    var form=document.getElementById('login-form');
+    if(!form) return;
+
+    var style=document.createElement('style');
+    style.textContent='\n#biotrop-microsoft-login{width:100%;margin-top:12px;display:flex;align-items:center;justify-content:center;gap:10px;padding:11px 18px;border-radius:999px;border:1px solid #cfd9d7;background:#fff;color:#17332b;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:.15s ease}#biotrop-microsoft-login:hover{background:#f4f8f7;border-color:#9db4af}#biotrop-microsoft-login svg{width:18px;height:18px;flex:none}\n';
+    document.head.appendChild(style);
+
+    var button=document.createElement('button');
+    button.type='button';
+    button.id='biotrop-microsoft-login';
+    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M1 1h10.5v10.5H1z"></path><path fill="#81bc06" d="M12.5 1H23v10.5H12.5z"></path><path fill="#05a6f0" d="M1 12.5h10.5V23H1z"></path><path fill="#ffba08" d="M12.5 12.5H23V23H12.5z"></path></svg><span>Entrar com Microsoft</span>';
+    button.addEventListener('click',function(){
+      button.disabled=true;
+      button.style.opacity='.7';
+      location.href='/api/auth/microsoft/start';
+    });
+
+    var divider=form.querySelector('.divider');
+    if(divider) form.insertBefore(button,divider.nextSibling || null);
+    else form.appendChild(button);
+  }
+
+  function handleAuthResult(){
+    try{
+      var params=new URLSearchParams(location.search);
+      if(params.get('login')==='ok'){
+        history.replaceState({},'',location.pathname);
+        box('Login Microsoft confirmado.','ok');
+      }
+      if(params.get('login')==='erro'){
+        var reason=params.get('motivo')||'Não foi possível concluir o login Microsoft.';
+        history.replaceState({},'',location.pathname);
+        var map={
+          configuracao_microsoft:'Login Microsoft ainda não configurado no servidor.',
+          email_nao_autorizado:'Seu e-mail Microsoft não está liberado no sistema.',
+          tenant_nao_autorizado:'A conta pertence a um tenant Microsoft não autorizado.',
+          usuario_bloqueado:'Seu usuário está bloqueado ou inativo.',
+          sessao_microsoft_expirada:'A tentativa de login Microsoft expirou. Tente novamente.',
+          nonce_invalido:'Falha de segurança na validação Microsoft.',
+          falha_autenticacao_microsoft:'Não foi possível concluir o login Microsoft.'
+        };
+        box(map[reason]||'Não foi possível concluir o login Microsoft.');
+      }
+    }catch(_){ }
+  }
+
   document.addEventListener('submit',function(ev){
     var form=ev.target;
     if(!form||form.id!=='login-form')return;
@@ -63,5 +112,9 @@
   },true);
 
   window.BIOTROP_SIGNOUT_POSTGRES=logout;
-  window.addEventListener('load',function(){setTimeout(restore,250);});
+  window.addEventListener('load',function(){
+    ensureMicrosoftButton();
+    handleAuthResult();
+    setTimeout(restore,250);
+  });
 })();
