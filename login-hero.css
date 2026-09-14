@@ -1,9 +1,20 @@
-/* Biotrop - acabamento da tela inicial/login */
+/* BIOTROP — composição correta da tela de login */
+.login-wrap{
+  display:flex !important;
+  width:100% !important;
+  min-height:100vh !important;
+  height:100vh !important;
+  overflow:hidden !important;
+}
+
+/* Lado visual: mantém a arte grande sem esmagar o formulário */
 .login-left{
   position:relative !important;
-  flex:1.72 !important;
+  flex:0 0 62% !important;
+  width:62% !important;
   min-width:0 !important;
-  min-height:100vh !important;
+  height:100vh !important;
+  min-height:0 !important;
   overflow:hidden !important;
   background:#003c41 !important;
 }
@@ -12,7 +23,7 @@
   position:absolute;
   inset:0;
   pointer-events:none;
-  background:linear-gradient(90deg,rgba(0,35,39,.06) 0%,rgba(0,35,39,0) 62%,rgba(0,35,39,.18) 100%);
+  background:linear-gradient(90deg,rgba(0,35,39,.05) 0%,rgba(0,35,39,0) 60%,rgba(0,35,39,.16) 100%);
   z-index:2;
 }
 .left-panel-img{
@@ -21,20 +32,36 @@
   width:100% !important;
   height:100% !important;
   object-fit:cover !important;
-  object-position:center center !important;
+  object-position:left center !important;
   display:block !important;
   filter:saturate(1.03) contrast(1.01) !important;
-  z-index:1;
+  z-index:1 !important;
 }
+
+/* Formulário: painel amplo e legível */
 .login-right{
-  flex:1 !important;
-  min-width:380px;
-  max-width:520px;
+  flex:1 1 38% !important;
+  width:38% !important;
+  min-width:0 !important;
+  max-width:none !important;
+  height:100vh !important;
+  min-height:0 !important;
+  padding:34px 34px !important;
   background:#07191b !important;
   color:#fff !important;
-  border-left:1px solid rgba(255,255,255,.05);
+  border-left:1px solid rgba(255,255,255,.07) !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  overflow:auto !important;
 }
-.login-right .right-inner{max-width:390px;}
+.login-right .right-inner{
+  width:100% !important;
+  max-width:430px !important;
+}
+
+.login-right .brand-row{margin-bottom:24px !important;}
+.login-right .logo-img-right{max-width:150px !important;height:auto !important;}
 .login-right .welcome-title,
 .login-right .secure-title,
 .login-right .help-title{color:#f5fffc !important;}
@@ -43,19 +70,75 @@
 .login-right .help-sub,
 .login-right .field-label,
 .login-right .checkbox-row{color:#a9c6bf !important;}
-.login-right .input-wrap{background:#0b2225 !important;border-color:#29484a !important;}
+.login-right .input-wrap{
+  background:#0b2225 !important;
+  border-color:#29484a !important;
+  min-height:48px !important;
+}
 .login-right .input-wrap input{color:#f1fffb !important;}
-.login-right .input-wrap:focus-within{border-color:#00d6a0 !important;box-shadow:0 0 0 3px rgba(0,214,160,.08);}
-.login-right .submit-btn{background:linear-gradient(90deg,#008d8d,#00a97f) !important;box-shadow:0 10px 28px rgba(0,170,127,.18);}
-.login-right .submit-btn:hover{background:linear-gradient(90deg,#007d7d,#009b74) !important;}
-.login-right .secure-box{background:#0d2928 !important;border:1px solid rgba(0,214,160,.14);}
+.login-right .input-wrap:focus-within{
+  border-color:#00d6a0 !important;
+  box-shadow:0 0 0 3px rgba(0,214,160,.08) !important;
+}
+.login-right .submit-btn{
+  background:linear-gradient(90deg,#008d8d,#00a97f) !important;
+  box-shadow:0 10px 28px rgba(0,170,127,.18) !important;
+  min-height:52px !important;
+}
+.login-right .submit-btn:hover{
+  background:linear-gradient(90deg,#007d7d,#009b74) !important;
+}
+.login-right .secure-box{
+  background:#0d2928 !important;
+  border:1px solid rgba(0,214,160,.14) !important;
+}
 .login-right .divider::before,
 .login-right .divider::after{border-color:#29484a !important;}
 .login-right .divider{color:#75918a !important;}
 .login-right .hint-box{background:#0d2928 !important;color:#bceee0 !important;}
 
+/* Microsoft fica com o mesmo peso visual do login principal */
+#biotrop-microsoft-login{
+  min-height:46px !important;
+  background:#fff !important;
+  color:#17332b !important;
+}
+
+/* Tablets / celular */
+@media (max-width:1100px){
+  .login-left{flex-basis:58% !important;width:58% !important;}
+  .login-right{width:42% !important;flex-basis:42% !important;padding:28px 24px !important;}
+}
+
 @media (max-width:900px){
-  .login-wrap{flex-direction:column !important;}
-  .login-left{min-height:300px !important;height:42vh !important;flex:none !important;}
-  .login-right{min-width:0 !important;max-width:none !important;flex:1 !important;border-left:0;border-top:1px solid rgba(255,255,255,.05);padding:28px 18px !important;}
+  .login-wrap{
+    flex-direction:column !important;
+    height:auto !important;
+    min-height:100vh !important;
+    overflow:visible !important;
+  }
+  .login-left{
+    width:100% !important;
+    flex:0 0 340px !important;
+    height:340px !important;
+    min-height:340px !important;
+  }
+  .login-right{
+    width:100% !important;
+    flex:1 1 auto !important;
+    min-height:620px !important;
+    height:auto !important;
+    padding:28px 18px 40px !important;
+    border-left:0 !important;
+    border-top:1px solid rgba(255,255,255,.05) !important;
+  }
+}
+
+@media (max-width:560px){
+  .login-left{
+    flex-basis:260px !important;
+    height:260px !important;
+    min-height:260px !important;
+  }
+  .login-right{min-height:650px !important;}
 }
