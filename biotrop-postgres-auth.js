@@ -54,14 +54,14 @@
       }
 
       if(r.status===401){
-        box('E-mail ou senha incorretos.');
+        box(data.erro||'E-mail ou senha incorretos.');
         return;
       }
       if(r.status===403){
         box(data.erro||'Acesso não autorizado para este usuário.');
         return;
       }
-      box('Não foi possível validar o acesso agora. Tente novamente em instantes.');
+      box(data.erro||'Não foi possível validar o acesso agora. Tente novamente em instantes.');
     }catch(e){
       console.error('[BIOTROP AUTH]',e);
       box('Não foi possível conectar ao servidor. Tente novamente.');
