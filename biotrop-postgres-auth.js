@@ -1,8 +1,6 @@
-/* BIOTROP · autenticação do portal via PostgreSQL/API + Microsoft Entra ID
+/* BIOTROP · autenticação via PostgreSQL/API + Microsoft Entra ID
  * O navegador nunca recebe DATABASE_URL, client secret ou senha do banco.
- * O login local existente continua disponível; Microsoft entra como segunda opção.
- * Em caso de PostgreSQL indisponível, existe um modo local de recuperação para
- * não deixar o administrador sem acesso ao portal durante a configuração do banco.
+ * A autenticação é exclusivamente validada pelo servidor.
  */
 (function(){
   'use strict';
@@ -11,6 +9,19 @@
     var el=document.getElementById('login-error-box');
     if(!el)return;
     el.innerHTML='<div class="'+(ok?'hint-box':'login-error')+'">'+text+'</div>';
+  }
+
+  function cleanLocalRecoveryUi(){
+    try{
+      var selectors=['.demo-note','#reset-local-btn'];
+      selectors.forEach(function(selector){
+        document.querySelectorAll(selector).forEach(function(el){ el.remove(); });
+      });
+      document.querySelectorAll('.bt-topbar__sub').forEach(function(el){
+        var text=String(el.textContent||'');
+        if(/vers[aã]o local/i.test(text)) el.textContent='Acesso online · dados sincronizados';
+      });
+    }catch(_){ }
   }
 
   function start(user){
@@ -22,71 +33,9 @@
       var idx=users.findIndex(function(u){return String(u.id)===String(user.id);});
       if(idx<0) users.push(user); else users[idx]=Object.assign({},users[idx],user);
       window.USERS=users;
-      localStorage.setItem('btlocal.biotrop_users_v2',JSON.stringify(users));
     }catch(_){ }
     if(typeof window.startLocalSession==='function') window.startLocalSession(user);
     try{ window.dispatchEvent(new CustomEvent('biotrop:auth-ready',{detail:user})); }catch(_){ }
-  }
-
-  function localUsers(){
-    try{
-      if(Array.isArray(window.USERS)) return window.USERS;
-      var raw=localStorage.getItem('btlocal.biotrop_users_v2');
-      var parsed=raw?JSON.parse(raw):[];
-      if(Array.isArray(parsed)){
-        window.USERS=parsed;
-        return parsed;
-      }
-    }catch(_){ }
-    return [];
-  }
-
-  function localLogin(email,senha){
-    var users=localUsers();
-    var normalized=String(email||'').trim().toLowerCase();
-    var found=null;
-
-    for(var i=0;i<users.length;i++){
-      var u=users[i]||{};
-      var candidate=String(u.usuario||u.email||'').trim().toLowerCase();
-      var pass=String(u.senha||u.password||u.senha_hash_local||'');
-      if(candidate===normalized && pass===String(senha||'')){
-        found=Object.assign({},u,{auth:true,authSource:'local-recovery'});
-        break;
-      }
-    }
-
-    if(!found && String(senha||'')==='admin123' && (normalized==='admin@biotrop.com' || normalized==='admin@biotrop.com.br')){
-      found={
-        id:'local-admin-recovery',
-        nome:'Administrador',
-        usuario:normalized,
-        email:normalized,
-        perfilId:'admin',
-        perfil:'admin',
-        time:'',
-        telefone:'',
-        ativo:true,
-        auth:true,
-        authSource:'local-recovery',
-        senha:'admin123'
-      };
-      try{
-        var current=users.slice();
-        var exists=current.some(function(u){return String(u.usuario||u.email||'').trim().toLowerCase()===normalized;});
-        if(!exists){
-          current.push(found);
-          window.USERS=current;
-          localStorage.setItem('btlocal.biotrop_users_v2',JSON.stringify(current));
-        }
-      }catch(_){ }
-    }
-
-    if(found && found.ativo!==false && found.bloqueado!==true){
-      start(found);
-      return true;
-    }
-    return false;
   }
 
   async function login(){
@@ -96,26 +45,17 @@
     box('Validando acesso…',true);
     try{
       var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:email,senha:senha})});
-      var data=await r.json();
+      var data={};
+      try{ data=await r.json(); }catch(_){ }
       if(r.ok && data.ok){
         start(data.usuario);
         box('Acesso confirmado.',true);
         return;
       }
-
-      if(localLogin(email,senha)){
-        box('Acesso local temporário. O PostgreSQL ainda não está disponível.',true);
-        return;
-      }
-
-      throw new Error(data.erro||'Não foi possível entrar.');
+      throw new Error(data.erro||'Não foi possível validar o acesso no servidor.');
     }catch(e){
       console.error('[BIOTROP AUTH]',e);
-      if(localLogin(email,senha)){
-        box('Acesso local temporário. O PostgreSQL ainda não está disponível.',true);
-        return;
-      }
-      box(e.message||'Não foi possível validar o acesso.');
+      box(e.message||'Não foi possível validar o acesso no servidor.');
     }
   }
 
@@ -148,7 +88,7 @@
     var button=document.createElement('button');
     button.type='button';
     button.id='biotrop-microsoft-login';
-    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M1 1h10.5v10.5H1z"></path><path fill="#81bc06" d="M12.5 1H23v10.5H12.5z"></path><path fill="#05a6f0" d="M1 12.5h10.5V23H1z"></path><path fill="#ffba08" d="M12.5 12.5H23V23H12.5z"></path></svg><span>Entrar com Microsoft</span>';
+    button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#f35325" d="M1 1h10.5v10.5H1z"></path><path fill="#81bc06" d="M12.5 1H23v10.5H12.5z"></path><path fill="#05a6f0" d="M1 12.5h10.5V23H1z"></path><path fill="#ffba08" d="M12.5 12.5H23V23h-10.5z"></path></svg><span>Entrar com Microsoft</span>';
     button.addEventListener('click',function(){
       button.disabled=true;
       button.style.opacity='.7';
@@ -165,7 +105,7 @@
       var params=new URLSearchParams(location.search);
       if(params.get('login')==='ok'){
         history.replaceState({},'',location.pathname);
-        box('Login Microsoft confirmado.','ok');
+        box('Login Microsoft confirmado.',true);
       }
       if(params.get('login')==='erro'){
         var reason=params.get('motivo')||'Não foi possível concluir o login Microsoft.';
@@ -194,8 +134,9 @@
 
   window.BIOTROP_SIGNOUT_POSTGRES=logout;
   window.addEventListener('load',function(){
+    cleanLocalRecoveryUi();
     ensureMicrosoftButton();
     handleAuthResult();
-    setTimeout(restore,250);
+    setTimeout(function(){ cleanLocalRecoveryUi(); restore(); },250);
   });
 })();
