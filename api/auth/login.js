@@ -9,7 +9,9 @@ function db() {
     pool = new Pool({
       connectionString: process.env.DATABASE_URL,
       max: 5,
-      ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : undefined
+      connectionTimeoutMillis: 10000,
+      idleTimeoutMillis: 10000,
+      ssl: { rejectUnauthorized: false }
     });
   }
   return pool;
@@ -112,13 +114,27 @@ module.exports = async function handler(req, res) {
     console.error('[BIOTROP PostgreSQL AUTH]', err);
 
     const message = String(err?.message || '');
+    const code = String(err?.code || '');
+    const errno = String(err?.errno || '');
+
     if (/DATABASE_URL/i.test(message)) {
       return sendJson(res, 500, { ok: false, erro: 'DATABASE_URL não está configurado no ambiente Production.' });
     }
     if (/relation .* does not exist|column .* does not exist/i.test(message)) {
       return sendJson(res, 500, { ok: false, erro: 'O banco não está com a estrutura necessária para o login.' });
     }
-    return sendJson(res, 500, { ok: false, erro: 'Falha ao acessar o PostgreSQL.' });
+
+    // Diagnóstico controlado: não retorna senha, DATABASE_URL ou stack trace.
+    const detalhe = [code, errno, message]
+      .filter(Boolean)
+      .join(' | ')
+      .replace(/postgres(?:ql)?:\/\/[^\s]+/gi, '[DATABASE_URL ocultada]')
+      .slice(0, 300);
+
+    return sendJson(res, 500, {
+      ok: false,
+      erro: `Falha ao acessar o PostgreSQL.${detalhe ? ` ${detalhe}` : ''}`
+    });
   } finally {
     if (client) client.release();
   }
