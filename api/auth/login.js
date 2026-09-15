@@ -4,10 +4,11 @@ const { createSession, setSessionCookie, sendJson } = require('../_auth');
 
 let pool;
 function db() {
-  if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL não configurado.');
+  const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('NEON_DATABASE_URL/DATABASE_URL não configurado.');
   if (!pool) {
     pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
+      connectionString,
       max: 5,
       connectionTimeoutMillis: 10000,
       idleTimeoutMillis: 10000,
@@ -117,8 +118,8 @@ module.exports = async function handler(req, res) {
     const code = String(err?.code || '');
     const errno = String(err?.errno || '');
 
-    if (/DATABASE_URL/i.test(message)) {
-      return sendJson(res, 500, { ok: false, erro: 'DATABASE_URL não está configurado no ambiente Production.' });
+    if (/NEON_DATABASE_URL|DATABASE_URL/i.test(message)) {
+      return sendJson(res, 500, { ok: false, erro: 'NEON_DATABASE_URL/DATABASE_URL não está configurado no ambiente Production.' });
     }
     if (/relation .* does not exist|column .* does not exist/i.test(message)) {
       return sendJson(res, 500, { ok: false, erro: 'O banco não está com a estrutura necessária para o login.' });
