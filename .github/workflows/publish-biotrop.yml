@@ -16,7 +16,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Configurar index, login PostgreSQL, sincronização multiusuário e tela inicial
+      - name: Preparar portal PostgreSQL multiusuário
         shell: bash
         run: |
           set -euo pipefail
@@ -24,12 +24,15 @@ jobs:
           test -f biotrop-postgres-auth.js
           test -f biotrop-data-sync.js
           test -f login-hero.css
+
           python - <<'PY'
           from pathlib import Path
+          import re
+
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
 
-          # Remove integrações legadas que não devem voltar ao projeto.
+          # Remove qualquer injeção legada do Supabase.
           old_tags = [
               '<script src="./biotrop-supabase-auth.js"></script>',
               '<script src="./supabase-realtime-bridge.js"></script>',
@@ -39,32 +42,29 @@ jobs:
           for tag in old_tags:
               s = s.replace(tag, '')
 
-          # Autenticação PostgreSQL/API.
+          # Remove o aviso e o link de recuperação da versão local.
+          s = re.sub(r'<div[^>]*class=["\']demo-note["\'][^>]*>.*?</div>\s*', '', s, flags=re.I | re.S)
+          s = re.sub(r'<div[^>]*>\s*<button[^>]*id=["\']reset-local-btn["\'][^>]*>.*?</button>\s*</div>\s*', '', s, flags=re.I | re.S)
+
+          # O texto antigo não pode mais aparecer na interface.
+          s = re.sub(r'Versão local\s*\(offline\)\.\s*Os dados ficam salvos apenas neste navegador\.?\s*', '', s, flags=re.I)
+          s = re.sub(r'Não consigo entrar\s*[·•-]\s*recriar acesso padrão', '', s, flags=re.I)
+          s = s.replace('Versão local · dados neste navegador', 'Acesso online · dados sincronizados')
+          s = s.replace('Versão local - dados neste navegador', 'Acesso online · dados sincronizados')
+
+          # Garante que a autenticação e a sincronização atuais estão presentes.
+          marker = '</head>'
           pg_tag = '<script src="./biotrop-postgres-auth.js"></script>'
-          if pg_tag not in s:
-              marker = '</head>'
-              if marker in s:
-                  s = s.replace(marker, '  ' + pg_tag + '\n' + marker, 1)
-              else:
-                  s = pg_tag + '\n' + s
-
-          # Sincronização multiusuário PostgreSQL (polling de 3s + conflitos).
           sync_tag = '<script src="./biotrop-data-sync.js"></script>'
-          if sync_tag not in s:
-              marker = '</head>'
-              if marker in s:
-                  s = s.replace(marker, '  ' + sync_tag + '\n' + marker, 1)
-              else:
-                  s = sync_tag + '\n' + s
-
-          # Acabamento da tela inicial/login.
           css_tag = '<link rel="stylesheet" href="./login-hero.css">'
-          if css_tag not in s:
-              marker = '</head>'
-              if marker in s:
-                  s = s.replace(marker, '  ' + css_tag + '\n' + marker, 1)
-              else:
-                  s = css_tag + '\n' + s
+          if marker in s:
+              for tag in (pg_tag, sync_tag, css_tag):
+                  if tag not in s:
+                      s = s.replace(marker, '  ' + tag + '\n' + marker, 1)
+          else:
+              for tag in (pg_tag, sync_tag, css_tag):
+                  if tag not in s:
+                      s = tag + '\n' + s
 
           p.write_text(s, encoding='utf-8')
           PY
@@ -73,5 +73,5 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html login-hero.css biotrop-data-sync.js
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Ativar sincronização multiusuário PostgreSQL [skip publish]'
+          git commit -m 'Remover modo local do portal e publicar multiusuario [skip publish]'
           git push
