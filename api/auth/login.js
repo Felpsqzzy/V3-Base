@@ -118,23 +118,23 @@ module.exports = async function handler(req, res) {
     const code = String(err?.code || '');
     const errno = String(err?.errno || '');
 
-    if (/NEON_DATABASE_URL|DATABASE_URL/i.test(message)) {
-      return sendJson(res, 500, { ok: false, erro: 'NEON_DATABASE_URL/DATABASE_URL não está configurado no ambiente Production.' });
-    }
-    if (/relation .* does not exist|column .* does not exist/i.test(message)) {
-      return sendJson(res, 500, { ok: false, erro: 'O banco não está com a estrutura necessária para o login.' });
-    }
-
-    // Diagnóstico controlado: não retorna senha, DATABASE_URL ou stack trace.
+    // Diagnóstico controlado: não retorna senha, connection string ou stack trace.
     const detalhe = [code, errno, message]
       .filter(Boolean)
       .join(' | ')
-      .replace(/postgres(?:ql)?:\/\/[^\s]+/gi, '[DATABASE_URL ocultada]')
+      .replace(/postgres(?:ql)?:\/\/[^\s]+/gi, '[CONNECTION_STRING_OCULTADA]')
       .slice(0, 300);
+
+    if (/NEON_DATABASE_URL|DATABASE_URL/i.test(message)) {
+      return sendJson(res, 500, {
+        ok: false,
+        erro: 'NEON_DATABASE_URL/DATABASE_URL não está configurado no ambiente Production.'
+      });
+    }
 
     return sendJson(res, 500, {
       ok: false,
-      erro: `Falha ao acessar o PostgreSQL.${detalhe ? ` ${detalhe}` : ''}`
+      erro: `Falha PostgreSQL: ${detalhe || 'erro desconhecido'}`
     });
   } finally {
     if (client) client.release();
