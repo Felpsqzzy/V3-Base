@@ -52,10 +52,19 @@
         box('Acesso confirmado.',true);
         return;
       }
-      throw new Error(data.erro||'Não foi possível validar o acesso no servidor.');
+
+      if(r.status===401){
+        box('E-mail ou senha incorretos.');
+        return;
+      }
+      if(r.status===403){
+        box(data.erro||'Acesso não autorizado para este usuário.');
+        return;
+      }
+      box('Não foi possível validar o acesso agora. Tente novamente em instantes.');
     }catch(e){
       console.error('[BIOTROP AUTH]',e);
-      box(e.message||'Não foi possível validar o acesso no servidor.');
+      box('Não foi possível conectar ao servidor. Tente novamente.');
     }
   }
 
