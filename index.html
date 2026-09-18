@@ -2089,6 +2089,7 @@ table[data-ficha] td[data-rot].bt-num { text-align: left; }
   <link rel="stylesheet" href="./login-hero.css">
   <link rel="stylesheet" href="./src/ui/theme.css">
   <script src="./biotrop-data-sync.js"></script>
+  <script src="./pcm-admin.js"></script>
 </head>
 <body>
 <div id="app"></div>
@@ -2352,6 +2353,7 @@ let STATE = {
   activeArea: "home",
   loginError: "",
 };
+window.BIOTROP_STATE = STATE;
 
 function esc(str) {
   const d = document.createElement("div");
@@ -2664,13 +2666,14 @@ function navigateTo(areaId) {
   else if (areaId === "familias" && (admin || almox.familias)) {
     el.innerHTML = renderFamiliasPage(); attachFamiliasPageEvents();
   }
-  else if (areaId === "pcm") el.innerHTML = renderPlaceholder("PCM", "clipboard", "Planejamento e Controle de Manutenção: ordens de serviço, planos preventivos e indicadores.");
+  else if (areaId === "pcm") { if (window.renderPcmPage) { el.innerHTML = window.renderPcmPage(); window.attachPcmPageEvents && window.attachPcmPageEvents(); } else { el.innerHTML = renderPlaceholder("PCM", "clipboard", "Planejamento e Controle de Manutenção: ordens de serviço, planos preventivos e indicadores."); } }
   else if (areaId === "utilidades") { el.innerHTML = renderUtilitiesPage(STATE.currentUser); attachUtilitiesEvents(); }
   else if (areaId === "treinamentos" && (perms.training || admin)) { el.innerHTML = renderTrainingArea(STATE.currentUser, admin); attachTrainingAreaEvents(STATE.currentUser, admin); }
   else if (areaId === "admin" && admin) { el.innerHTML = renderAdmin(); attachAdminEvents(); }
 
   updateActiveNav();
   if (areaId === "home") attachHomeEvents();
+  if (window.BIOTROP_MASTER_DATA_HOOK) window.BIOTROP_MASTER_DATA_HOOK(areaId);
 }
 
 // ============================= HOME =============================
