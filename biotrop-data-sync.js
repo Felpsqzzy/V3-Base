@@ -323,7 +323,7 @@
   window.addEventListener('focusout',function(){
     if(window.BIOTROP_SYNC_STATE==='online' && pendingReload && !editableFocus()){
       pendingReload=false;
-      setTimeout(function(){ if(!editableFocus()) location.reload(); },100);
+      setTimeout(function(){ if(!editableFocus()) dispatch("biotrop:sync-refresh"); },100);
     }
   });
 
