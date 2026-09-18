@@ -4795,6 +4795,12 @@ function endLocalSession() {
   if (float) float.remove();
   STATE.currentUser = null;
   STATE.screen = "login";
+  // Limpa também a sessão server-side; falha de rede não impede o logout visual.
+  try {
+    if (typeof window.BIOTROP_SIGNOUT_POSTGRES === "function") {
+      window.BIOTROP_SIGNOUT_POSTGRES().catch(function(){});
+    }
+  } catch (e) {}
   render();
 }
 
