@@ -25,7 +25,6 @@ module.exports = async function handler(req, res) {
   try {
     const session = verifySession(readCookie(req, 'biotrop_session'));
     if (!session) {
-      clearSessionCookie(res);
       return sendJson(res, 401, { ok: false });
     }
 
@@ -33,7 +32,7 @@ module.exports = async function handler(req, res) {
     try {
       const r = await c.query(
         `SELECT u.id,u.nome,u.email::text AS email,u.perfil_id,u.time,u.telefone,u.ativo,u.bloqueado,
-                a.ativo AS autorizado
+                COALESCE(a.autorizado, false) AS autorizado
            FROM core.usuario u
            LEFT JOIN core.email_autorizado a ON a.email=u.email
           WHERE u.id=$1
