@@ -4777,7 +4777,7 @@ function installV12Controls() {
   }
 
   const out = document.getElementById("logout-btn");
-  if (out) out.onclick = function () { endLocalSession(); };
+  if (out) out.onclick = function () { logoutServerSession(); };
 }
 
 function openV12Settings() {
