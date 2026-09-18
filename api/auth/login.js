@@ -87,7 +87,7 @@ module.exports = async function handler(req, res) {
     const r = await client.query(
       `SELECT u.id, u.nome, u.email::text AS email, u.senha_hash, u.perfil_id, u.time, u.telefone,
               u.ativo, u.bloqueado, u.motivo_bloqueio,
-              a.ativo AS autorizado
+              COALESCE(a.autorizado, false) AS autorizado
          FROM core.usuario u
          LEFT JOIN core.email_autorizado a ON a.email = u.email
         WHERE lower(u.email::text) = lower($1)
