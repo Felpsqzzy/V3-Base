@@ -2217,41 +2217,6 @@ function showStorageWarning() {
   }
   box.textContent = STORAGE_MESSAGE;
 }
-function resetLocalAccounts() {
-  try {
-    if (storageAvailable()) {
-      localStorage.removeItem(USERS_KEY);
-      localStorage.removeItem(PROFILES_KEY);
-      localStorage.removeItem(LOCAL_SESSION_KEY);
-    }
-  } catch (e) {}
-  delete MEM_STORE[USERS_KEY];
-  delete MEM_STORE[PROFILES_KEY];
-  delete MEM_STORE[LOCAL_SESSION_KEY];
-  PROFILES = loadProfiles();
-  USERS = loadUsers();
-}
-function ensureAdminAccount() {
-  PROFILES = loadProfiles();
-  USERS = loadUsers();
-  const active = USERS.some(function (u) {
-    const p = getProfile(u);
-    return p && p.fixo && u.ativo !== false;
-  });
-  if (active) return false;
-  const seed = JSON.parse(JSON.stringify(DEFAULT_USERS[0]));
-  const same = USERS.find(function (u) { return String(u.usuario || "").trim().toLowerCase() === seed.usuario; });
-  if (same) {
-    same.perfilId = "admin";
-    same.senha = seed.senha;
-    same.ativo = true;
-  } else {
-    USERS.push(seed);
-  }
-  saveUsers(USERS);
-  console.warn("[BIOTROP LOCAL] nenhum administrador ativo encontrado; acesso padrão restaurado.");
-  return true;
-}
 function seedStore(key, seed) {
   const cur = readStore(key, null);
   if (Array.isArray(cur) && cur.length) return cur;
@@ -2279,9 +2244,7 @@ function getPerms(user) {
   return p ? Object.assign({}, p.permissoes, { training: true }) : { almoxarifado: {}, pcm: {}, utilidades: {}, training: true };
 }
 
-const DEFAULT_USERS = [
-  { id: "u-admin", nome: "Administrador", usuario: "admin@biotrop.com", senha: "admin123", perfilId: "admin", time: "PCM", emailLider: "", ativo: true }
-];
+const DEFAULT_USERS = [];
 function loadUsers() {
   return seedStore(USERS_KEY, DEFAULT_USERS);
 }
@@ -2383,15 +2346,6 @@ let SCM_LIST = loadScm();
 })();
 
 let USERS = loadUsers();
-(function migrateAdminEmail() {
-  let changed = false;
-  USERS.forEach(function (u) {
-    if (u.usuario === "admin") { u.usuario = "admin@biotrop.com"; changed = true; }
-    if (u.time === undefined) { u.time = ""; changed = true; }
-    if (u.emailLider === undefined) { u.emailLider = ""; changed = true; }
-  });
-  if (changed) saveUsers(USERS);
-})();
 let STATE = {
   screen: "login",
   currentUser: null,
@@ -2494,35 +2448,28 @@ function renderLogin() {
 
 function attachLoginEvents(){
   showStorageWarning();
-  const reset=document.getElementById("reset-local-btn"); if(reset) reset.onclick=function(){
-    if(!confirm("Recriar o acesso padrão?\n\nUsuários e perfis voltam ao estado inicial (admin@biotrop.com / admin123).\nSolicitações, leituras e treinamentos já cadastrados são mantidos."))return;
-    resetLocalAccounts();
-    document.getElementById("login-usuario").value="admin@biotrop.com";
-    document.getElementById("login-senha").value="admin123";
-    document.getElementById("login-error-box").innerHTML='<div class="hint-box">Acesso padrão recriado. Clique em <b>Entrar no sistema</b>.</div>';
+  const toggle=document.getElementById("toggle-pass-btn");
+  if(toggle) toggle.onclick=function(){
+    const input=document.getElementById("login-senha");
+    input.type=input.type==="password"?"text":"password";
+    this.innerHTML=icon(input.type==="password"?"eye":"eyeoff",17);
   };
-  const toggle=document.getElementById("toggle-pass-btn"); if(toggle) toggle.onclick=function(){const input=document.getElementById("login-senha");input.type=input.type==="password"?"text":"password";this.innerHTML=icon(input.type==="password"?"eye":"eyeoff",17)};
-  const forgot=document.getElementById("forgot-pass-btn"); if(forgot) forgot.onclick=function(){const hint=document.getElementById("forgot-hint"); if(hint) hint.style.display="block"; document.getElementById("login-error-box").innerHTML='<div class="hint-box">Nesta versão local a senha é redefinida pelo administrador em <b>Administração &gt; Usuários</b>.</div>';};
-  const help=document.getElementById("help-link-btn"); if(help) help.onclick=function(){document.getElementById("forgot-pass-btn")?.click()};
-  const reg=document.getElementById("register-access-btn"); if(reg) reg.onclick=function(){
-    const root=document.createElement('div');root.className='training-modal';root.innerHTML='<div class="training-dialog" style="max-width:560px"><button class="training-close" id="r-close">×</button><h2>Solicitar acesso</h2><p>Nesta versão local as contas são criadas pelo administrador do sistema, em Administração &gt; Usuários.</p><div class="hint-box">Depois de criar a conta, o administrador atribui o perfil e libera o acesso.</div><div class="modal-actions"><button class="primary-btn" id="r-ok">Entendi</button></div></div>';
-    document.body.appendChild(root);root.querySelector('#r-close').onclick=root.querySelector('#r-ok').onclick=()=>root.remove();
-  };
-  const form=document.getElementById("login-form"); if(form) form.onsubmit=function(e){
-    e.preventDefault();
-    const email=(document.getElementById("login-usuario").value||"").trim().toLowerCase();
-    const pass=document.getElementById("login-senha").value||"";
+  const forgot=document.getElementById("forgot-pass-btn");
+  if(forgot) forgot.onclick=function(){
+    const hint=document.getElementById("forgot-hint");
+    if(hint) hint.style.display="block";
     const box=document.getElementById("login-error-box");
-    if(!email||!pass){box.innerHTML='<div class="login-error">Informe e-mail e senha.</div>';return}
-    PROFILES=loadProfiles();
-    USERS=loadUsers();
-    ensureAdminAccount();
-    const user=USERS.find(function(u){return String(u.usuario||"").trim().toLowerCase()===email});
-    if(!user){box.innerHTML='<div class="login-error">Este e-mail não está cadastrado neste navegador. Cadastrados: '+esc(USERS.map(function(u){return u.usuario}).join(", "))+'.</div>';return}
-    if(String(user.senha||"")!==pass){box.innerHTML='<div class="login-error">Senha incorreta para '+esc(user.usuario)+'.</div>';return}
-    if(user.ativo===false){box.innerHTML='<div class="login-error">Acesso bloqueado. Fale com a administração do sistema.</div>';return}
-    box.innerHTML="";
-    startLocalSession(user);
+    if(box) box.innerHTML='<div class="hint-box">Solicite a redefinição de senha ao administrador do sistema.</div>';
+  };
+  const help=document.getElementById("help-link-btn");
+  if(help) help.onclick=function(){ document.getElementById("forgot-pass-btn")?.click(); };
+  const reg=document.getElementById("register-access-btn");
+  if(reg) reg.onclick=function(){
+    const root=document.createElement("div");
+    root.className="training-modal";
+    root.innerHTML='<div class="training-dialog" style="max-width:560px"><button class="training-close" id="r-close">×</button><h2>Solicitar acesso</h2><p>O acesso é liberado pelo administrador da plataforma.</p><div class="hint-box">Informe ao time de Manutenção seu nome e e-mail corporativo para cadastro.</div><div class="modal-actions"><button class="primary-btn" id="r-ok">Entendi</button></div></div>';
+    document.body.appendChild(root);
+    root.querySelector("#r-close").onclick=root.querySelector("#r-ok").onclick=function(){root.remove();};
   };
 }
 
@@ -2658,7 +2605,7 @@ function attachShellEvents() {
     this.style.display = "none";
   };
   document.getElementById("logout-btn").onclick = function () {
-    endLocalSession();
+    logoutServerSession();
   };
   attachSidebarNavEvents();
   installV12Controls();
@@ -4776,47 +4723,24 @@ function attachRegistration(){
 }
 
 
-// ===================== SESSÃO LOCAL / TEMA / CONFIGURAÇÕES (sem Supabase) =====================
-const LOCAL_SESSION_KEY = "btlocal.biotrop_local_session_v1";
+// ===================== SESSÃO DO SERVIDOR / TEMA / CONFIGURAÇÕES =====================
 const THEME_KEY = "btlocal.biotrop_theme";
 
-function startLocalSession(user) {
-  PROFILES = loadProfiles();
-  STATE.currentUser = user;
-  STATE.screen = "app";
-  STATE.activeArea = "home";
-  try { localStorage.setItem(LOCAL_SESSION_KEY, String(user.id)); } catch (e) {}
-  render();
+function logoutServerSession(){
+  const finish=function(){
+    const float=document.querySelector(".v12-float");
+    if(float) float.remove();
+    STATE.currentUser=null;
+    STATE.screen="login";
+    STATE.activeArea="home";
+    render();
+  };
+  try{
+    if(typeof window.BIOTROP_SIGNOUT_POSTGRES==="function") window.BIOTROP_SIGNOUT_POSTGRES().finally(finish);
+    else finish();
+  }catch(e){ finish(); }
 }
 
-function endLocalSession() {
-  try { localStorage.removeItem(LOCAL_SESSION_KEY); } catch (e) {}
-  const float = document.querySelector(".v12-float");
-  if (float) float.remove();
-  STATE.currentUser = null;
-  STATE.screen = "login";
-  // Limpa também a sessão server-side; falha de rede não impede o logout visual.
-  try {
-    if (typeof window.BIOTROP_SIGNOUT_POSTGRES === "function") {
-      window.BIOTROP_SIGNOUT_POSTGRES().catch(function(){});
-    }
-  } catch (e) {}
-  render();
-}
-
-function restoreLocalSession() {
-  let id = null;
-  try { id = localStorage.getItem(LOCAL_SESSION_KEY); } catch (e) {}
-  if (!id) return false;
-  PROFILES = loadProfiles();
-  USERS = loadUsers();
-  const user = USERS.find(function (u) { return String(u.id) === String(id); });
-  if (!user || user.ativo === false) { try { localStorage.removeItem(LOCAL_SESSION_KEY); } catch (e) {} return false; }
-  STATE.currentUser = user;
-  STATE.screen = "app";
-  STATE.activeArea = "home";
-  return true;
-}
 
 function applyTheme() {
   let theme = "light";
@@ -4968,28 +4892,31 @@ function openBiosegSettings(){openV12Settings()}
 window.attachTrainingAreaEvents=attachBiosegEvents;
 })();
 
+window.addEventListener("biotrop:auth-logout", function () {
+  STATE.currentUser=null;
+  STATE.screen="login";
+  STATE.activeArea="home";
+  render();
+});
+
 window.addEventListener("DOMContentLoaded", function () {
   try {
     applyTheme();
-    PROFILES = loadProfiles();
-    USERS = loadUsers();
-    ensureAdminAccount();
-    FAMILIES = loadFamilies();
-    SCI_LIST = loadSci();
-    SCM_LIST = loadScm();
+    PROFILES=loadProfiles();
+    USERS=loadUsers();
+    FAMILIES=loadFamilies();
+    SCI_LIST=loadSci();
+    SCM_LIST=loadScm();
     getUtilityData();
-    if (restoreLocalSession()) {
-      render();
-    } else {
-      STATE.screen = "login";
-      render();
-    }
-  } catch (e) {
-    console.error("[BIOTROP LOCAL] falha na inicialização:", e);
-    STATE.screen = "login";
+    STATE.screen="login";
+    STATE.currentUser=null;
     render();
-    const box = document.getElementById("login-error-box");
-    if (box) box.innerHTML = '<div class="login-error">' + esc(e.message || "Falha ao iniciar a aplicação local.") + "</div>";
+  } catch (e) {
+    console.error("[BIOTROP] falha na inicialização:", e);
+    STATE.screen="login";
+    render();
+    const box=document.getElementById("login-error-box");
+    if(box) box.innerHTML='<div class="login-error">'+esc(e.message || "Falha ao iniciar a aplicação.")+"</div>";
   }
 });
 

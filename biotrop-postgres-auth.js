@@ -49,7 +49,14 @@
       if(idx<0) users.push(user); else users[idx]=Object.assign({},users[idx],user);
       window.USERS=users;
     }catch(_){ }
-    if(typeof window.startLocalSession==='function') window.startLocalSession(user);
+    try{
+      if(typeof STATE!=='undefined'){
+        STATE.currentUser=user;
+        STATE.screen='app';
+        STATE.activeArea='home';
+        if(typeof render==='function') render();
+      }
+    }catch(_){ }
     try{ window.dispatchEvent(new CustomEvent('biotrop:auth-ready',{detail:user})); }catch(_){ }
   }
 
@@ -87,8 +94,13 @@
     try{
       var r=await fetch('/api/auth/session',{credentials:'include',cache:'no-store'});
       if(r.status===401||r.status===403){
-        try{ localStorage.removeItem('btlocal.biotrop_local_session_v1'); }catch(_){}
-        if(typeof window.endLocalSession==='function') window.endLocalSession();
+        window.BIOTROP_AUTH_USER_ID=null;
+        window.BIOTROP_ONLINE_USER=null;
+        window.BIOTROP_AUTH_SOURCE=null;
+        try{
+          if(typeof STATE!=='undefined'){ STATE.currentUser=null; STATE.screen='login'; STATE.activeArea='home'; }
+          if(typeof render==='function') render();
+        }catch(_){}
         return;
       }
       if(!r.ok)return; // Erro 5xx/rede não derruba uma sessão válida.
@@ -162,7 +174,7 @@
   },true);
 
   window.BIOTROP_SIGNOUT_POSTGRES=logout;
-  window.addEventListener('biotrop:auth-expired',function(){ logout().finally(function(){ if(typeof window.endLocalSession==='function') window.endLocalSession(); }); });
+  window.addEventListener('biotrop:auth-expired',function(){ logout().finally(function(){ try{ if(typeof STATE!=='undefined'){ STATE.currentUser=null; STATE.screen='login'; STATE.activeArea='home'; } if(typeof render==='function') render(); }catch(_){} }); });
   window.addEventListener('load',function(){
     cleanLocalRecoveryUi();
     ensureMicrosoftButton();
