@@ -10,15 +10,12 @@ const status = p => t(p?.status) || 'pendente_aprovacao_lider';
 const deny = msg => { const e=new Error(msg); e.statusCode=403; throw e; };
 
 function normStatus(v){
-  return ({
-    'Pendente Aprovação Líder':'pendente_aprovacao_lider',
-    'Aprovada':'aprovada','Reprovada':'reprovada',
-    'Revisão Solicitada':'revisao_solicitada',
-    'Em Tratativa (Almoxarife)':'em_tratativa','Concluída':'concluida'
-  })[t(v)] || t(v);
+  const x=t(v);
+  return ({'Pendente Aprovação Líder':'pendente_aprovacao_lider','Aprovada':'aprovada','Reprovada':'reprovada','Revisão Solicitada':'revisao_solicitada','Em Tratativa (Almoxarife)':'em_tratativa','Concluída':'concluida'})[x] || x;
 }
 function normUrgency(v){
-  return ({Baixa:'baixa',Média:'media',Alta:'alta',baixa:'baixa',media:'media',alta:'alta'})[t(v)] || 'media';
+  const x=lo(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+  return ({baixa:'baixa',media:'media',alta:'alta'})[x] || 'media';
 }
 function changed(a,b,k){ return t(a?.[k]) !== t(b?.[k]); }
 
@@ -64,18 +61,13 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
   if(!current){
     if(next.solicitanteId&&!idEq(next.solicitanteId,actor.id)) deny('Solicitante inválido.');
     const a=await resolveApprover(client,actor,next);
-    Object.assign(next,{
-      solicitanteId:actor.id,solicitanteNome:actor.nome,solicitanteEmail:actor.email,solicitanteTime:actor.time||'',
-      aprovadorId:a.id,aprovadorEmail:a.email,aprovadorNome:a.nome,aprovadorOrigem:a.origem,
-      status:'pendente_aprovacao_lider',decididoPorId:null,decididoEm:null
-    });
+    Object.assign(next,{solicitanteId:actor.id,solicitanteNome:actor.nome,solicitanteEmail:actor.email,solicitanteTime:actor.time||'',aprovadorId:a.id,aprovadorEmail:a.email,aprovadorNome:a.nome,aprovadorOrigem:a.origem,status:'pendente_aprovacao_lider',decididoPorId:null,decididoEm:null});
     return next;
   }
 
   const cs=status(current), ns=normStatus(next.status||cs);
   const admin=role(actor,ADMIN_PROFILES), approver=idEq(current.aprovadorId,actor.id)&&role(actor,APPROVER_PROFILES);
   const requester=idEq(current.solicitanteId,actor.id), almox=role(actor,ALMOX_PROFILES);
-
   if(!admin&&changed(current,next,'solicitanteId')) deny('Solicitante não pode ser alterado.');
   if(!admin&&changed(current,next,'aprovadorId')) deny('Aprovador não pode ser alterado.');
 
@@ -86,13 +78,11 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
     }
     next.status=ns; return next;
   }
-
   if(approver){
     if(cs!=='pendente_aprovacao_lider'||!['aprovada','reprovada','revisao_solicitada'].includes(ns)) deny('Transição de aprovação inválida.');
     if(['reprovada','revisao_solicitada'].includes(ns)&&!t(next.observacaoLider)) deny('Observação obrigatória para reprovar ou solicitar revisão.');
     next.status=ns; next.decididoPorId=actor.id; next.decididoEm=new Date().toISOString(); return next;
   }
-
   if(requester){
     if(cs==='revisao_solicitada'&&ns==='pendente_aprovacao_lider'){
       const a=await resolveApprover(client,actor,current);
@@ -103,13 +93,11 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
     if(changed(current,next,'decididoPorId')||changed(current,next,'decididoEm')) deny('Solicitante não pode preencher dados da decisão.');
     next.status=cs; return next;
   }
-
   if(almox){
     const ok=(cs==='aprovada'&&ns==='em_tratativa')||(cs==='em_tratativa'&&ns==='concluida');
     if(!ok&&ns!==cs) deny('Transição de almoxarifado inválida.');
     next.status=ns; return next;
   }
-
   if(ns!==cs) deny('Perfil sem permissão para alterar o status da SCM.');
   next.status=cs; return next;
 }
@@ -120,9 +108,8 @@ async function syncScmToDatabase({client,session,payload,currentPayload}){
   if(!['CAMM 1','CAMM 2','CAMM 3'].includes(camm)) deny('CAMM inválido.');
   const a=await approverOf(client,payload.aprovadorId||null,payload.aprovadorEmail||'');
   if(!a) deny('Aprovador não encontrado.');
-
   const r=await client.query(
-    'INSERT INTO almox.scm(origin_id,codigo,time_solicitante,tipo_solicitacao,capex_projeto,camm,urgencia,numero_om,tipo_fornecedor,nome_fornecedor,tipo_pedido,descricao_uso,solicitante_id,solicitante_nome,solicitante_email,solicitante_time,aprovador_id,aprovador_email,aprovador_origem,status,decidido_por_id,decidido_em,observacao_lider,observacao_almoxarife,numero_processo_me,atualizado_em) VALUES($1,$2,$3,$4,$5,$6::core.camm,$7::almox.urgencia,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::almox.scm_status,$21,$22,$23,$24,$25,now()) ON CONFLICT(origin_id) DO UPDATE SET codigo=EXCLUDED.codigo,time_solicitante=EXCLUDED.time_solicitante,tipo_solicitacao=EXCLUDED.tipo_solicitacao,capex_projeto=EXCLUDED.capex_projeto,camm=EXCLUDED.camm,urgencia=EXCLUDED.urgencia,numero_om=EXCLUDED.numero_om,tipo_fornecedor=EXCLUDED.tipo_fornecedor,nome_fornecedor=EXCLUDED.nome_fornecedor,tipo_pedido=EXCLUDED.tipo_pedido,descricao_uso=EXCLUDED.descricao_uso,solicitante_id=EXCLUDED.solicitante_id,solicitante_nome=EXCLUDED.solicitante_nome,solicitante_email=EXCLUDED.solicitante_email,solicitante_time=EXCLUDED.solicitante_time,aprovador_id=EXCLUDED.aprovador_id,aprovador_email=EXCLUDED.aprovador_email,aprovador_origem=EXCLUDED.aprovador_origem,status=EXCLUDED.status,decidido_por_id=EXCLUDED.decidido_por_id,decidido_em=EXCLUDED.decidido_em,observacao_lider=EXCLUDED.observacao_lider,observacao_almoxarife=EXCLUDED.observacao_almoxarife,numero_processo_me=EXCLUDED.numero_processo_me,atualizado_em=now() RETURNING id',
+    'INSERT INTO almox.scm(origem_id,codigo,time_solicitante,tipo_solicitacao,capex_projeto,camm,urgencia,numero_om,tipo_fornecedor,nome_fornecedor,tipo_pedido,descricao_uso,solicitante_id,solicitante_nome,solicitante_email,solicitante_time,aprovador_id,aprovador_email,aprovador_origem,status,decidido_por_id,decidido_em,observacao_lider,observacao_almoxarife,numero_processo_me,atualizado_em) VALUES($1,$2,$3,$4,$5,$6::core.camm,$7::almox.urgencia,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20::almox.scm_status,$21,$22,$23,$24,$25,now()) ON CONFLICT(origem_id) DO UPDATE SET codigo=EXCLUDED.codigo,time_solicitante=EXCLUDED.time_solicitante,tipo_solicitacao=EXCLUDED.tipo_solicitacao,capex_projeto=EXCLUDED.capex_projeto,camm=EXCLUDED.camm,urgencia=EXCLUDED.urgencia,numero_om=EXCLUDED.numero_om,tipo_fornecedor=EXCLUDED.tipo_fornecedor,nome_fornecedor=EXCLUDED.nome_fornecedor,tipo_pedido=EXCLUDED.tipo_pedido,descricao_uso=EXCLUDED.descricao_uso,solicitante_id=EXCLUDED.solicitante_id,solicitante_nome=EXCLUDED.solicitante_nome,solicitante_email=EXCLUDED.solicitante_email,solicitante_time=EXCLUDED.solicitante_time,aprovador_id=EXCLUDED.aprovador_id,aprovador_email=EXCLUDED.aprovador_email,aprovador_origem=EXCLUDED.aprovador_origem,status=EXCLUDED.status,decidido_por_id=EXCLUDED.decidido_por_id,decidido_em=EXCLUDED.decidido_em,observacao_lider=EXCLUDED.observacao_lider,observacao_almoxarife=EXCLUDED.observacao_almoxarife,numero_processo_me=EXCLUDED.numero_processo_me,atualizado_em=now() RETURNING id',
     [t(payload.id)||code,code,t(payload.timeSolicitante)||'Não informado',t(payload.tipoSolicitacao)||null,t(payload.capexProjeto)||null,camm,normUrgency(payload.urgencia),t(payload.numeroOM)||null,t(payload.tipoFornecedor)||null,t(payload.nomeFornecedor)||null,t(payload.tipoPedido)||null,t(payload.descricaoUso)||'Sem descrição',payload.solicitanteId,t(payload.solicitanteNome),t(payload.solicitanteEmail)||null,t(payload.solicitanteTime)||null,a.id,a.email,t(payload.aprovadorOrigem)||'grupo',normStatus(payload.status),payload.decididoPorId||null,payload.decididoEm||null,t(payload.observacaoLider)||null,t(payload.observacaoAlmoxarife)||null,t(payload.numeroProcessoME)||null]
   );
   const scmId=r.rows[0].id;
@@ -135,10 +122,7 @@ async function syncScmToDatabase({client,session,payload,currentPayload}){
       [scmId,i+1,t(item.codigoSistema)||'SEM-CODIGO',t(item.descricaoItem)||null,qty,Number.isFinite(Number(item.estoqueMinimo))?Number(item.estoqueMinimo):null,t(item.marcaModeloSerie)||null]);
   }
   const prev=normStatus(currentPayload?.status||''), nowStatus=normStatus(payload.status);
-  if(prev&&prev!==nowStatus) await client.query('INSERT INTO almox.scm_historico(scm_id,de,para,por_usuario_id,por_nome,nota) VALUES($1,$2::almox.scm_status,$3::almox.scm_status,$4,$5,$6)',
-    [scmId,prev,nowStatus,String(session.sub),t(payload.decididoPorNome||payload.solicitanteNome),t(payload.observacaoLider||payload.observacaoAlmoxarife)]);
-  else if(!prev) await client.query('INSERT INTO almox.scm_historico(scm_id,de,para,por_usuario_id,por_nome,nota) VALUES($1,NULL,$2::almox.scm_status,$3,$4,$5)',
-    [scmId,nowStatus,String(session.sub),t(payload.solicitanteNome),t(payload.observacaoLider||'')]);
+  if(prev&&prev!==nowStatus) await client.query('INSERT INTO almox.scm_historico(scm_id,de,para,por_usuario_id,por_nome,nota) VALUES($1,$2::almox.scm_status,$3::almox.scm_status,$4,$5,$6)',[scmId,prev,nowStatus,String(session.sub),t(payload.decididoPorNome||payload.solicitanteNome),t(payload.observacaoLider||payload.observacaoAlmoxarife)]);
+  else if(!prev) await client.query('INSERT INTO almox.scm_historico(scm_id,de,para,por_usuario_id,por_nome,nota) VALUES($1,NULL,$2::almox.scm_status,$3,$4,$5)',[scmId,nowStatus,String(session.sub),t(payload.solicitanteNome),t(payload.observacaoLider||'')]);
 }
-function normUrgency(v){ return ({Baixa:'baixa',Média:'media',Alta:'alta',baixa:'baixa',media:'media',alta:'alta'})[t(v)]||'media'; }
 module.exports={authorizeScmMutation,syncScmToDatabase};
