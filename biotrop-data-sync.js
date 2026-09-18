@@ -141,7 +141,15 @@
     setTimeout(function(){
       if(editableFocus()) return;
       pendingReload=false;
-      location.reload();
+      // Nunca recarrega a página inteira durante sincronização: isso fazia o
+      // app reconstruir o estado local e podia causar o retorno à tela de login.
+      try{
+        if(typeof navigateTo==='function' && typeof STATE!=='undefined' && STATE.screen==='app'){
+          navigateTo(STATE.activeArea);
+        }else{
+          dispatch('biotrop:sync-refresh');
+        }
+      }catch(_){ dispatch('biotrop:sync-refresh'); }
     },250);
   }
 
@@ -154,7 +162,7 @@
       rebuildLocal(namespace, rows);
       return {ok:true,count:rows.length};
     }catch(error){
-      if(error.status===401 || error.status===403) authorized=false;
+      if(error.status===401 || error.status===403){ authorized=false; dispatch('biotrop:auth-expired',{status:error.status}); }
       if(error.status!==401 && error.status!==403 && error.status!==503) console.warn('[BIOTROP SYNC]', namespace, error.message);
       return {ok:false,count:0};
     }
@@ -184,7 +192,7 @@
         if(row) applyRow(namespace,row);
         return false;
       }
-      if(error.status===401 || error.status===403 || error.status===503) authorized=false;
+      if(error.status===401 || error.status===403){ authorized=false; dispatch('biotrop:auth-expired',{status:error.status}); } else if(error.status===503) authorized=false;
       console.warn('[BIOTROP SYNC PUSH]', namespace, recordId, error.message);
       return false;
     }
