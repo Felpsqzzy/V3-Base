@@ -14,7 +14,7 @@ function normStatus(v){
   return ({'Pendente Aprovação Líder':'pendente_aprovacao_lider','Aprovada':'aprovada','Reprovada':'reprovada','Revisão Solicitada':'revisao_solicitada','Em Tratativa (Almoxarife)':'em_tratativa','Concluída':'concluida'})[x] || x;
 }
 function normUrgency(v){
-  const x=lo(v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+  const x=lo(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'');
   return ({baixa:'baixa',media:'media',alta:'alta'})[x] || 'media';
 }
 function changed(a,b,k){ return t(a?.[k]) !== t(b?.[k]); }
@@ -35,16 +35,19 @@ async function approverOf(client,id,email){
   );
   return r.rows[0] || null;
 }
-async function resolveApprover(client,actor,requested){
+async function resolveApprover(client,actor,requested,allowRequested){
   const rid=t(requested?.aprovadorId), rem=lo(requested?.aprovadorEmail);
   let a=null;
-  if(rid||rem){
+  if(allowRequested && (rid||rem)){
     a=await approverOf(client,rid||null,rem);
     if(!a) deny('Aprovador informado não existe.');
     if(rid&&!idEq(rid,a.id)) deny('Aprovador inconsistente.');
     if(rem&&lo(a.email)!==rem) deny('E-mail do aprovador inconsistente.');
-  }else if(actor.responsavelId) a=await approverOf(client,actor.responsavelId,'');
-  else if(actor.emailLiderExcecao) a=await approverOf(client,null,actor.emailLiderExcecao);
+  }else if(actor.responsavelId){
+    a=await approverOf(client,actor.responsavelId,'');
+  }else if(actor.emailLiderExcecao){
+    a=await approverOf(client,null,actor.emailLiderExcecao);
+  }
   if(!a) deny('O grupo do solicitante não possui responsável definido.');
   if(!a.ativo||a.bloqueado) deny('O aprovador está inativo ou bloqueado.');
   if(!APPROVER_PROFILES.has(t(a.perfilId))) deny('O aprovador não possui perfil de aprovação.');
@@ -60,7 +63,7 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
   }
   if(!current){
     if(next.solicitanteId&&!idEq(next.solicitanteId,actor.id)) deny('Solicitante inválido.');
-    const a=await resolveApprover(client,actor,next);
+    const a=await resolveApprover(client,actor,next,false);
     Object.assign(next,{solicitanteId:actor.id,solicitanteNome:actor.nome,solicitanteEmail:actor.email,solicitanteTime:actor.time||'',aprovadorId:a.id,aprovadorEmail:a.email,aprovadorNome:a.nome,aprovadorOrigem:a.origem,status:'pendente_aprovacao_lider',decididoPorId:null,decididoEm:null});
     return next;
   }
@@ -73,7 +76,7 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
 
   if(admin){
     if(next.aprovadorId||next.aprovadorEmail){
-      const a=await resolveApprover(client,actor,next);
+      const a=await resolveApprover(client,actor,next,true);
       Object.assign(next,{aprovadorId:a.id,aprovadorEmail:a.email,aprovadorNome:a.nome,aprovadorOrigem:a.origem});
     }
     next.status=ns; return next;
@@ -85,7 +88,7 @@ async function authorizeScmMutation({client,session,currentPayload,nextPayload,d
   }
   if(requester){
     if(cs==='revisao_solicitada'&&ns==='pendente_aprovacao_lider'){
-      const a=await resolveApprover(client,actor,current);
+      const a=await resolveApprover(client,actor,current,false);
       Object.assign(next,{status:'pendente_aprovacao_lider',aprovadorId:a.id,aprovadorEmail:a.email,aprovadorNome:a.nome,aprovadorOrigem:a.origem,decididoPorId:null,decididoEm:null});
       return next;
     }
