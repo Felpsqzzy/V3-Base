@@ -4,6 +4,7 @@
  */
 (function(){
   'use strict';
+  window.BIOTROP_REMOTE_AUTH = true;
 
   function box(text, ok){
     var el=document.getElementById('login-error-box');
@@ -58,7 +59,7 @@
     if(!email||!senha){box('Informe e-mail e senha.');return;}
     box('Validando acesso…',true);
     try{
-      var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({email:email,senha:senha})});
+      var r=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',cache:'no-store',body:JSON.stringify({email:email,senha:senha})});
       var data={};
       try{ data=await r.json(); }catch(_){ }
       if(r.ok && data.ok){
