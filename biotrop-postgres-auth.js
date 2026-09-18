@@ -25,6 +25,20 @@
   }
 
   function start(user){
+    // Persistir a identidade retornada pelo servidor apenas como cache de UI.
+    // A autorização real continua sendo validada por /api/auth/session.
+    try{
+      var users=Array.isArray(window.USERS)?window.USERS.slice():[];
+      var idx=users.findIndex(function(u){return String(u.id)===String(user.id);});
+      var cached=Object.assign({}, user, {
+        perfilId:user.perfilId||'tecnico',
+        usuario:user.usuario||user.email,
+        authSource:user.authSource||'postgresql'
+      });
+      if(idx<0) users.push(cached); else users[idx]=Object.assign({},users[idx],cached);
+      window.USERS=users;
+      if(typeof window.saveUsers==='function') window.saveUsers(users);
+    }catch(_){}
     window.BIOTROP_AUTH_USER_ID=user.id;
     window.BIOTROP_ONLINE_USER=user.id;
     window.BIOTROP_AUTH_SOURCE=user.authSource||'postgresql';
@@ -70,8 +84,13 @@
 
   async function restore(){
     try{
-      var r=await fetch('/api/auth/session',{credentials:'include'});
-      if(!r.ok)return;
+      var r=await fetch('/api/auth/session',{credentials:'include',cache:'no-store'});
+      if(r.status===401||r.status===403){
+        try{ localStorage.removeItem('btlocal.biotrop_local_session_v1'); }catch(_){}
+        if(typeof window.endLocalSession==='function') window.endLocalSession();
+        return;
+      }
+      if(!r.ok)return; // Erro 5xx/rede não derruba uma sessão válida.
       var data=await r.json();
       if(data.ok&&data.usuario) start(data.usuario);
     }catch(_){ }
@@ -142,6 +161,7 @@
   },true);
 
   window.BIOTROP_SIGNOUT_POSTGRES=logout;
+  window.addEventListener('biotrop:auth-expired',function(){ logout().finally(function(){ if(typeof window.endLocalSession==='function') window.endLocalSession(); }); });
   window.addEventListener('load',function(){
     cleanLocalRecoveryUi();
     ensureMicrosoftButton();
