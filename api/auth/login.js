@@ -1,11 +1,16 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-const { createSession, setSessionCookie, sendJson } = require('../_auth');
+const { createSession, setSessionCookie, sendJson, sameOrigin } = require('../_auth');
 
 let pool;
+const attempts = new Map();
+const WINDOW_MS = 15 * 60 * 1000;
+const LOCK_MS = 30 * 60 * 1000;
+const MAX_FAILURES = 5;
+
 function db() {
   const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-  if (!connectionString) throw new Error('NEON_DATABASE_URL/DATABASE_URL não configurado.');
+  if (!connectionString) throw new Error('Banco não configurado.');
   if (!pool) {
     pool = new Pool({
       connectionString,
@@ -18,8 +23,45 @@ function db() {
   return pool;
 }
 
+function clientIp(req) {
+  const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  return (forwarded || String(req.socket?.remoteAddress || 'unknown')).slice(0, 120);
+}
+
+function rateKey(email, ip) {
+  return email + '|' + ip;
+}
+
+function blocked(key) {
+  const item = attempts.get(key);
+  if (!item) return false;
+  const now = Date.now();
+  if (item.lockedUntil > now) return true;
+  if (now - item.first > WINDOW_MS) {
+    attempts.delete(key);
+    return false;
+  }
+  return item.failures >= MAX_FAILURES;
+}
+
+function failure(key) {
+  const now = Date.now();
+  const item = attempts.get(key);
+  if (!item || now - item.first > WINDOW_MS) {
+    attempts.set(key, { first: now, failures: 1, lockedUntil: 0 });
+    return;
+  }
+  item.failures += 1;
+  if (item.failures >= MAX_FAILURES) item.lockedUntil = now + LOCK_MS;
+}
+
+function success(key) {
+  attempts.delete(key);
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return sendJson(res, 405, { ok: false, erro: 'Método não permitido.' });
+  if (!sameOrigin(req)) return sendJson(res, 403, { ok: false, erro: 'Origem não autorizada.' });
 
   let client;
   let transactionOpen = false;
@@ -28,7 +70,15 @@ module.exports = async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const email = String(body.email || '').trim().toLowerCase();
     const senha = String(body.senha || '');
-    if (!email || !senha) return sendJson(res, 400, { ok: false, erro: 'Informe e-mail e senha.' });
+    if (!email || !senha || email.length > 254 || senha.length > 1024) {
+      return sendJson(res, 400, { ok: false, erro: 'Informe e-mail e senha válidos.' });
+    }
+
+    const key = rateKey(email, clientIp(req));
+    if (blocked(key)) {
+      res.setHeader('Retry-After', String(Math.ceil(LOCK_MS / 1000)));
+      return sendJson(res, 429, { ok: false, erro: 'Muitas tentativas. Aguarde alguns minutos e tente novamente.' });
+    }
 
     client = await db().connect();
     await client.query('BEGIN');
@@ -52,6 +102,7 @@ module.exports = async function handler(req, res) {
       );
       await client.query('COMMIT');
       transactionOpen = false;
+      failure(key);
       return sendJson(res, 401, { ok: false, erro: 'E-mail ou senha inválidos.' });
     }
 
@@ -63,6 +114,7 @@ module.exports = async function handler(req, res) {
       );
       await client.query('COMMIT');
       transactionOpen = false;
+      failure(key);
       return sendJson(res, 403, { ok: false, erro: 'Acesso não autorizado para este usuário.' });
     }
 
@@ -73,16 +125,19 @@ module.exports = async function handler(req, res) {
       );
       await client.query('COMMIT');
       transactionOpen = false;
+      failure(key);
       return sendJson(res, 401, { ok: false, erro: 'E-mail ou senha inválidos.' });
     }
 
-    await client.query(`UPDATE core.usuario SET ultimo_login_em = now() WHERE id = $1`, [user.id]);
+    await client.query('UPDATE core.usuario SET ultimo_login_em = now() WHERE id = $1', [user.id]);
     await client.query(
       `INSERT INTO core.login_evento (email, usuario_id, sucesso, motivo) VALUES ($1::citext, $2, true, 'login local')`,
       [email, user.id]
     );
     await client.query('COMMIT');
     transactionOpen = false;
+
+    success(key);
 
     const appUser = {
       id: user.id,
@@ -96,45 +151,17 @@ module.exports = async function handler(req, res) {
       auth: true
     };
 
-    try {
-      const token = createSession(appUser);
-      setSessionCookie(res, token);
-    } catch (sessionErr) {
-      console.error('[BIOTROP SESSION]', sessionErr);
-      return sendJson(res, 500, {
-        ok: false,
-        erro: 'A sessão do servidor não está configurada. Verifique SESSION_SECRET no ambiente Production.'
-      });
-    }
-
+    const token = createSession(appUser);
+    setSessionCookie(res, token);
     return sendJson(res, 200, { ok: true, usuario: appUser });
   } catch (err) {
     if (transactionOpen && client) {
-      try { await client.query('ROLLBACK'); } catch (_) { }
+      try { await client.query('ROLLBACK'); } catch (_) {}
     }
-    console.error('[BIOTROP PostgreSQL AUTH]', err);
-
-    const message = String(err?.message || '');
-    const code = String(err?.code || '');
-    const errno = String(err?.errno || '');
-
-    // Diagnóstico controlado: não retorna senha, connection string ou stack trace.
-    const detalhe = [code, errno, message]
-      .filter(Boolean)
-      .join(' | ')
-      .replace(/postgres(?:ql)?:\/\/[^\s]+/gi, '[CONNECTION_STRING_OCULTADA]')
-      .slice(0, 300);
-
-    if (/NEON_DATABASE_URL|DATABASE_URL/i.test(message)) {
-      return sendJson(res, 500, {
-        ok: false,
-        erro: 'NEON_DATABASE_URL/DATABASE_URL não está configurado no ambiente Production.'
-      });
-    }
-
+    console.error('[BIOTROP AUTH] falha interna', { code: err?.code || 'UNKNOWN' });
     return sendJson(res, 500, {
       ok: false,
-      erro: `Falha PostgreSQL: ${detalhe || 'erro desconhecido'}`
+      erro: 'Não foi possível autenticar agora. Tente novamente em instantes.'
     });
   } finally {
     if (client) client.release();
